@@ -19,10 +19,10 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Large raw excel files (Parquet is pushed instead)
+# Large raw excel files (Parquet files in data/ are tracked and pushed)
 *.xlsx
 *.xls
 ~$*.xlsx
 
-# Vercel
+# Vercel CLI
 .vercel/

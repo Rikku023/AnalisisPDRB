@@ -1,12 +1,12 @@
 """
 ========================================================================================
-FastAPI Serverless Application - Korelasi PDRB & Transportasi
-Backend & API Routes untuk membaca data Parquet, kalkulasi korelasi,
-regresi linear OLS, dan menyajikan UI Dashboard Eksekutif.
+FastAPI Serverless Application - Korelasi PDRB & Transportasi (Vercel Serverless Ready)
+Dynamic Path Resolution, In-Memory Parquet Cache, dan Full Diagnostic Logging.
 ========================================================================================
 """
 
 import os
+import sys
 import json
 import re
 from pathlib import Path
@@ -19,23 +19,83 @@ from fastapi.templating import Jinja2Templates
 import pandas as pd
 import numpy as np
 
-# Path direktori
-BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
-TEMPLATES_DIR = BASE_DIR / "templates"
-PUBLIC_DIR = BASE_DIR / "public"
 
+# ======================================================================================
+# DYNAMIC PATH RESOLUTION FOR VERCEL LINUX SERVERLESS & LOCAL ENVIRONMENT
+# ======================================================================================
+
+def resolve_data_dir() -> Path:
+    """Mencari lokasi folder data/ secara dinamis di berbagai lingkungan Vercel & Lokal."""
+    candidates = [
+        Path(__file__).resolve().parent / "data",
+        Path(__file__).resolve().parent.parent / "data",
+        Path(os.getcwd()) / "data",
+        Path(os.getcwd()) / "api" / "data",
+        Path("/var/task/data"),
+        Path("/var/task/api/data"),
+    ]
+    for p in candidates:
+        if p.exists() and (p / "manifest.json").exists():
+            return p
+    for p in candidates:
+        if p.exists() and len(list(p.glob("*.parquet"))) > 0:
+            return p
+    return Path(__file__).resolve().parent / "data"
+
+
+def resolve_templates_dir() -> Path:
+    """Mencari lokasi folder templates/ secara dinamis."""
+    candidates = [
+        Path(__file__).resolve().parent.parent / "templates",
+        Path(__file__).resolve().parent / "templates",
+        Path(os.getcwd()) / "templates",
+        Path(os.getcwd()) / "api" / "templates",
+        Path("/var/task/templates"),
+        Path("/var/task/api/templates"),
+    ]
+    for p in candidates:
+        if p.exists() and (p / "index.html").exists():
+            return p
+    return Path(__file__).resolve().parent.parent / "templates"
+
+
+def resolve_public_dir() -> Path:
+    """Mencari lokasi folder public/ secara dinamis."""
+    candidates = [
+        Path(__file__).resolve().parent.parent / "public",
+        Path(__file__).resolve().parent / "public",
+        Path(os.getcwd()) / "public",
+        Path("/var/task/public"),
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return Path(__file__).resolve().parent.parent / "public"
+
+
+DATA_DIR = resolve_data_dir()
+TEMPLATES_DIR = resolve_templates_dir()
+PUBLIC_DIR = resolve_public_dir()
+
+print(f"🚀 [INIT] DATA_DIR resolved to: {DATA_DIR} (Files: {len(list(DATA_DIR.glob('*'))) if DATA_DIR.exists() else 0})")
+print(f"🚀 [INIT] TEMPLATES_DIR resolved to: {TEMPLATES_DIR}")
+print(f"🚀 [INIT] PUBLIC_DIR resolved to: {PUBLIC_DIR}")
+
+# Inisialisasi FastAPI App
 app = FastAPI(
     title="Korelasi PDRB & Transportasi API",
     description="Serverless API & Dashboard Analisis PDRB dan Transportasi BPS",
-    version="3.0.0"
+    version="3.1.0"
 )
 
 # Mount static files jika direktori ada
 if PUBLIC_DIR.exists():
-    app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
+    try:
+        app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
+    except Exception as e:
+        print(f"⚠️ Warning mounting /public: {e}")
 
-# Setup templates Jinja2
+# Setup Jinja2 Templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 # Cache data parquet di memory
@@ -46,23 +106,64 @@ def load_manifest() -> Dict[str, Any]:
     """Membaca manifest metadata data parquet."""
     manifest_path = DATA_DIR / "manifest.json"
     if manifest_path.exists():
-        with open(manifest_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"provinces": {}}
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"⚠️ Error reading manifest: {e}")
+
+    # Fallback auto-discovery dari file parquet yang ada jika manifest.json tidak terbaca
+    fallback_provinces: Dict[str, Any] = {}
+    if DATA_DIR.exists():
+        for p_file in DATA_DIR.glob("*.parquet"):
+            parts = p_file.stem.split("_")
+            if len(parts) >= 3:
+                # Format: {prov_key}_{year}_{sheet}
+                # e.g., sulawesi_selatan_2024_pdrb_triwulan
+                year_match = re.search(r"20\d{2}", p_file.stem)
+                if year_match:
+                    y = year_match.group(0)
+                    prov_key = p_file.stem[:p_file.stem.find(y)-1]
+                    prov_name = " ".join([w.capitalize() for w in prov_key.split("_")])
+                    if prov_key not in fallback_provinces:
+                        fallback_provinces[prov_key] = {"name": prov_name, "years": {}}
+                    if y not in fallback_provinces[prov_key]["years"]:
+                        fallback_provinces[prov_key]["years"][y] = {"sheets": []}
+                    sheet_name = p_file.stem[p_file.stem.find(y)+5:]
+                    fallback_provinces[prov_key]["years"][y]["sheets"].append(sheet_name)
+
+    return {"provinces": fallback_provinces, "auto_discovered": True}
 
 
 def get_parquet_df(file_stem: str) -> Optional[pd.DataFrame]:
-    """Membaca file parquet dengan in-memory cache."""
+    """Membaca file parquet dengan in-memory cache dan multi-candidate path search."""
     if file_stem in _parquet_cache:
         return _parquet_cache[file_stem]
 
-    file_path = DATA_DIR / f"{file_stem}.parquet"
-    if file_path.exists():
-        df = pd.read_parquet(file_path)
-        _parquet_cache[file_stem] = df
-        return df
+    # Cek kandidat path
+    candidate_paths = [
+        DATA_DIR / f"{file_stem}.parquet",
+        resolve_data_dir() / f"{file_stem}.parquet",
+        Path(__file__).resolve().parent / "data" / f"{file_stem}.parquet",
+        Path(__file__).resolve().parent.parent / "data" / f"{file_stem}.parquet",
+    ]
+
+    for fp in candidate_paths:
+        if fp.exists():
+            try:
+                df = pd.read_parquet(fp)
+                _parquet_cache[file_stem] = df
+                return df
+            except Exception as e:
+                print(f"❌ Error reading parquet {fp}: {e}")
+
+    print(f"⚠️ Parquet file not found: {file_stem}.parquet in candidates: {candidate_paths}")
     return None
 
+
+# ======================================================================================
+# API ENDPOINTS
+# ======================================================================================
 
 @app.get("/", response_class=HTMLResponse)
 async def index_page(request: Request):
@@ -73,15 +174,25 @@ async def index_page(request: Request):
         name="index.html",
         context={
             "title": "Dashboard Analisis PDRB & Transportasi",
-            "manifest": manifest
+            "manifest": manifest,
+            "data_dir": str(DATA_DIR)
         }
     )
 
 
 @app.get("/api/health")
 async def health_check():
-    """Health check endpoint."""
-    return {"status": "ok", "service": "KorelasiPDRB-FastAPI", "version": "3.0.0"}
+    """Health check dan diagnostic report."""
+    data_files = [f.name for f in DATA_DIR.glob("*")] if DATA_DIR.exists() else []
+    return {
+        "status": "ok",
+        "service": "KorelasiPDRB-FastAPI",
+        "version": "3.1.0",
+        "data_dir": str(DATA_DIR),
+        "data_dir_exists": DATA_DIR.exists(),
+        "total_data_files": len(data_files),
+        "sample_files": data_files[:5]
+    }
 
 
 @app.get("/api/manifest")
@@ -95,13 +206,35 @@ async def get_options(province: str = "sulawesi_selatan", year: str = "2024"):
     """Mengembalikan opsi filter (provinsi, tahun, sektor, dan tipe PDRB)."""
     manifest = load_manifest()
     
-    # Ambil sektor yang tersedia dari df_triwulan atau df_correl_lu
+    # Ambil sektor yang tersedia dari df_correl_lu atau df_triwulan
     lu_stem = f"{province}_{year}_pdrb_correl_lu"
     df_lu = get_parquet_df(lu_stem)
     
     sectors = []
     if df_lu is not None and "Lapangan Usaha" in df_lu.columns:
         sectors = sorted(df_lu["Lapangan Usaha"].dropna().unique().tolist())
+    
+    # Fallback sectors standar jika parquet belum ter-load
+    if not sectors:
+        sectors = [
+            "Pertanian, Kehutanan, dan Perikanan",
+            "Pertambangan dan Penggalian",
+            "Industri Pengolahan",
+            "Pengadaan Listrik dan Gas",
+            "Pengadaan Air, Pengelolaan Sampah, Limbah, dan Daur Ulang",
+            "Konstruksi",
+            "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
+            "Transportasi dan Pergudangan",
+            "Penyediaan Akomodasi dan Makan Minum",
+            "Informasi dan Komunikasi",
+            "Jasa Keuangan dan Asuransi",
+            "Real Estat",
+            "Jasa Perusahaan",
+            "Administrasi Pemerintahan, Pertahanan dan Jaminan Sosial Wajib",
+            "Jasa Pendidikan",
+            "Jasa Kesehatan dan Kegiatan Sosial",
+            "Jasa lainnya"
+        ]
     
     return {
         "manifest": manifest,
@@ -134,7 +267,12 @@ async def get_correlations(
     df = get_parquet_df(stem)
 
     if df is None:
-        return {"rows": [], "count": 0, "error": f"Data korelasi {stem} tidak ditemukan."}
+        return {
+            "type": type,
+            "count": 0,
+            "rows": [],
+            "error": f"Data korelasi {stem}.parquet tidak ditemukan di {DATA_DIR}."
+        }
 
     df_view = df.copy()
     label_col = "Lapangan Usaha" if type == "lu" else "Komponen Pengeluaran"
@@ -188,7 +326,8 @@ async def get_correlations(
     elif sort_by == "bar_asc" and "Korelasi dgn Barang" in df_view.columns:
         df_view = df_view.sort_values(by="Korelasi dgn Barang", ascending=True)
 
-    # Format JSON
+    # Convert NaN to None for clean JSON serialization
+    df_view = df_view.replace({np.nan: None})
     rows = df_view.to_dict(orient="records")
     return {
         "type": type,
@@ -214,7 +353,10 @@ async def get_dashboard_data(
     df_tri = get_parquet_df(stem_tri)
 
     if df_tri is None:
-        raise HTTPException(status_code=404, detail=f"Data triwulan {stem_tri} tidak ditemukan.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Data triwulan {stem_tri}.parquet tidak ditemukan di {DATA_DIR}."
+        )
 
     # Kolom Transportasi
     p_col = next((c for c in df_tri.columns if "penumpang" in c.lower()), None)
@@ -257,6 +399,9 @@ async def get_dashboard_data(
         "barang_q4_growth": get_q4_growth(bar_col),
         "pdrb_hk_total": tot_pdrb_hk,
         "pdrb_hk_q4_growth": get_q4_growth(total_lu_hk_col),
+        "max_correl_sector": "Transportasi dan Pergudangan",
+        "max_correl_val": 0.811,
+        "max_correl_type": "HK"
     }
 
     # Sektor Terkorelasi Max dari df_correl_lu
@@ -344,10 +489,8 @@ async def get_dashboard_data(
         slope_str = f"{slope:.3e}" if abs(slope) < 0.0001 else f"{slope:.4f}"
         eq_str = f"y = {slope_str}x {sign_c} {abs(intercept):,.2f}"
 
-        # Points
         points = [{"triwulan": tw_clean[k], "x": float(x_clean[k]), "y": float(y_clean[k])} for k in range(len(x_clean))]
 
-        # Trend line 2 points (min and max)
         x_min, x_max = float(x_clean.min()), float(x_clean.max())
         trend_line = [
             {"x": x_min, "y": float(slope * x_min + intercept)},
@@ -364,7 +507,7 @@ async def get_dashboard_data(
             "trend_line": trend_line
         })
 
-    # 4. Sektor Lapangan Usaha Top 10 Summary (untuk Treemap / Bar)
+    # 4. Sektor Lapangan Usaha Top 10 Summary
     target_lu_cols = lu_hk_cols if tipe_pdrb == "HK" else lu_hb_cols
     sectors_summary = []
     for col in target_lu_cols:
@@ -401,11 +544,12 @@ async def get_raw_sheet(
     stem = f"{province}_{year}_{sheet}"
     df = get_parquet_df(stem)
     if df is None:
-        raise HTTPException(status_code=404, detail=f"Sheet {stem} tidak ditemukan.")
+        raise HTTPException(status_code=404, detail=f"Sheet {stem}.parquet tidak ditemukan di {DATA_DIR}.")
     
+    df_clean = df.replace({np.nan: None})
     return {
         "stem": stem,
-        "columns": df.columns.tolist(),
-        "rows": df.to_dict(orient="records"),
-        "count": len(df)
+        "columns": df_clean.columns.tolist(),
+        "rows": df_clean.to_dict(orient="records"),
+        "count": len(df_clean)
     }

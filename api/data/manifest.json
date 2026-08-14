@@ -1,0 +1,165 @@
+{
+  "generated_at": "2026-08-14T11:27:21.062041",
+  "provinces": {
+    "gorontalo": {
+      "name": "Gorontalo",
+      "years": {
+        "2021": {
+          "source_file": "2021_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "2022_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "2023_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "2024_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "sulawesi_selatan": {
+      "name": "Sulawesi Selatan",
+      "years": {
+        "2021": {
+          "source_file": "2021_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "2022_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "2023_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "2024_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "sulawesi_utara": {
+      "name": "Sulawesi Utara",
+      "years": {
+        "2021": {
+          "source_file": "2021_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "2022_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "2023_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "2024_updated.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    }
+  },
+  "files_count": 12
+}
