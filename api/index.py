@@ -77,15 +77,11 @@ DATA_DIR = resolve_data_dir()
 TEMPLATES_DIR = resolve_templates_dir()
 PUBLIC_DIR = resolve_public_dir()
 
-print(f"🚀 [INIT] DATA_DIR resolved to: {DATA_DIR} (Files: {len(list(DATA_DIR.glob('*'))) if DATA_DIR.exists() else 0})")
-print(f"🚀 [INIT] TEMPLATES_DIR resolved to: {TEMPLATES_DIR}")
-print(f"🚀 [INIT] PUBLIC_DIR resolved to: {PUBLIC_DIR}")
-
 # Inisialisasi FastAPI App
 app = FastAPI(
     title="Korelasi PDRB & Transportasi API",
     description="Serverless API & Dashboard Analisis PDRB dan Transportasi BPS",
-    version="3.1.0"
+    version="3.2.0"
 )
 
 # Mount static files jika direktori ada
@@ -112,25 +108,21 @@ def load_manifest() -> Dict[str, Any]:
         except Exception as e:
             print(f"⚠️ Error reading manifest: {e}")
 
-    # Fallback auto-discovery dari file parquet yang ada jika manifest.json tidak terbaca
+    # Fallback auto-discovery
     fallback_provinces: Dict[str, Any] = {}
     if DATA_DIR.exists():
         for p_file in DATA_DIR.glob("*.parquet"):
-            parts = p_file.stem.split("_")
-            if len(parts) >= 3:
-                # Format: {prov_key}_{year}_{sheet}
-                # e.g., sulawesi_selatan_2024_pdrb_triwulan
-                year_match = re.search(r"20\d{2}", p_file.stem)
-                if year_match:
-                    y = year_match.group(0)
-                    prov_key = p_file.stem[:p_file.stem.find(y)-1]
-                    prov_name = " ".join([w.capitalize() for w in prov_key.split("_")])
-                    if prov_key not in fallback_provinces:
-                        fallback_provinces[prov_key] = {"name": prov_name, "years": {}}
-                    if y not in fallback_provinces[prov_key]["years"]:
-                        fallback_provinces[prov_key]["years"][y] = {"sheets": []}
-                    sheet_name = p_file.stem[p_file.stem.find(y)+5:]
-                    fallback_provinces[prov_key]["years"][y]["sheets"].append(sheet_name)
+            year_match = re.search(r"20\d{2}", p_file.stem)
+            if year_match:
+                y = year_match.group(0)
+                prov_key = p_file.stem[:p_file.stem.find(y)-1]
+                prov_name = " ".join([w.capitalize() for w in prov_key.split("_")])
+                if prov_key not in fallback_provinces:
+                    fallback_provinces[prov_key] = {"name": prov_name, "years": {}}
+                if y not in fallback_provinces[prov_key]["years"]:
+                    fallback_provinces[prov_key]["years"][y] = {"sheets": []}
+                sheet_name = p_file.stem[p_file.stem.find(y)+5:]
+                fallback_provinces[prov_key]["years"][y]["sheets"].append(sheet_name)
 
     return {"provinces": fallback_provinces, "auto_discovered": True}
 
@@ -140,7 +132,6 @@ def get_parquet_df(file_stem: str) -> Optional[pd.DataFrame]:
     if file_stem in _parquet_cache:
         return _parquet_cache[file_stem]
 
-    # Cek kandidat path
     candidate_paths = [
         DATA_DIR / f"{file_stem}.parquet",
         resolve_data_dir() / f"{file_stem}.parquet",
@@ -157,7 +148,6 @@ def get_parquet_df(file_stem: str) -> Optional[pd.DataFrame]:
             except Exception as e:
                 print(f"❌ Error reading parquet {fp}: {e}")
 
-    print(f"⚠️ Parquet file not found: {file_stem}.parquet in candidates: {candidate_paths}")
     return None
 
 
@@ -187,7 +177,7 @@ async def health_check():
     return {
         "status": "ok",
         "service": "KorelasiPDRB-FastAPI",
-        "version": "3.1.0",
+        "version": "3.2.0",
         "data_dir": str(DATA_DIR),
         "data_dir_exists": DATA_DIR.exists(),
         "total_data_files": len(data_files),
@@ -206,35 +196,12 @@ async def get_options(province: str = "sulawesi_selatan", year: str = "2024"):
     """Mengembalikan opsi filter (provinsi, tahun, sektor, dan tipe PDRB)."""
     manifest = load_manifest()
     
-    # Ambil sektor yang tersedia dari df_correl_lu atau df_triwulan
     lu_stem = f"{province}_{year}_pdrb_correl_lu"
     df_lu = get_parquet_df(lu_stem)
     
     sectors = []
     if df_lu is not None and "Lapangan Usaha" in df_lu.columns:
         sectors = sorted(df_lu["Lapangan Usaha"].dropna().unique().tolist())
-    
-    # Fallback sectors standar jika parquet belum ter-load
-    if not sectors:
-        sectors = [
-            "Pertanian, Kehutanan, dan Perikanan",
-            "Pertambangan dan Penggalian",
-            "Industri Pengolahan",
-            "Pengadaan Listrik dan Gas",
-            "Pengadaan Air, Pengelolaan Sampah, Limbah, dan Daur Ulang",
-            "Konstruksi",
-            "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
-            "Transportasi dan Pergudangan",
-            "Penyediaan Akomodasi dan Makan Minum",
-            "Informasi dan Komunikasi",
-            "Jasa Keuangan dan Asuransi",
-            "Real Estat",
-            "Jasa Perusahaan",
-            "Administrasi Pemerintahan, Pertahanan dan Jaminan Sosial Wajib",
-            "Jasa Pendidikan",
-            "Jasa Kesehatan dan Kegiatan Sosial",
-            "Jasa lainnya"
-        ]
     
     return {
         "manifest": manifest,
@@ -326,11 +293,11 @@ async def get_correlations(
     elif sort_by == "bar_asc" and "Korelasi dgn Barang" in df_view.columns:
         df_view = df_view.sort_values(by="Korelasi dgn Barang", ascending=True)
 
-    # Convert NaN to None for clean JSON serialization
     df_view = df_view.replace({np.nan: None})
     rows = df_view.to_dict(orient="records")
     return {
         "type": type,
+        "label_col": label_col,
         "count": len(rows),
         "rows": rows
     }
@@ -341,12 +308,13 @@ async def get_dashboard_data(
     province: str = "sulawesi_selatan",
     year: str = "2024",
     sector: str = "Transportasi dan Pergudangan",
+    category: str = "lu",
     tipe_pdrb: str = "HK",
     transport_metric: str = "penumpang"
 ):
     """
     Endpoint agregasi lengkap: KPI, Data Triwulanan (raw, index 100, QoQ),
-    Regresi Linear OLS (X=PDRB, Y=Transport) dengan persamaan $y=mx+c$, $R^2$, $R$,
+    Regresi Linear OLS (X=PDRB Sektor/Pengeluaran, Y=Transport) dengan persamaan $y=mx+c$, $R^2$, $R$,
     dan ringkasan sektoral untuk visualisasi frontend.
     """
     stem_tri = f"{province}_{year}_pdrb_triwulan"
@@ -367,14 +335,17 @@ async def get_dashboard_data(
     lu_hk_cols = [c for c in df_tri.columns if c.startswith("LU (HK)")]
     lu_hb_cols = [c for c in df_tri.columns if c.startswith("LU (HB)")]
     total_lu_hk_col = next((c for c in lu_hk_cols if "produk domestik" in c.lower() or "pdrb" in c.lower()), None)
-    total_lu_hb_col = next((c for c in lu_hb_cols if "produk domestik" in c.lower() or "pdrb" in c.lower()), None)
 
-    # Cari kolom sektor yang dipilih
-    pdrb_prefix = "LU (HB)" if tipe_pdrb == "HB" else "LU (HK)"
-    matching_sector_cols = [c for c in df_tri.columns if sector.lower() in c.lower() and pdrb_prefix in c]
-    if not matching_sector_cols:
-        matching_sector_cols = [c for c in df_tri.columns if sector.lower() in c.lower()]
-    sector_col = matching_sector_cols[0] if matching_sector_cols else (total_lu_hk_col or df_tri.columns[1])
+    # Cari kolom target (Lapangan Usaha atau Pengeluaran)
+    clean_sec = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', sector, flags=re.IGNORECASE).strip().lower()
+    prefix = ("Peng (HB)" if tipe_pdrb == "HB" else "Peng (HK)") if category == "peng" else ("LU (HB)" if tipe_pdrb == "HB" else "LU (HK)")
+    
+    matching_cols = [c for c in df_tri.columns if clean_sec in c.lower() and (prefix in c if tipe_pdrb != 'all' else True)]
+    if not matching_cols:
+        matching_cols = [c for c in df_tri.columns if clean_sec in c.lower()]
+    
+    sector_col = matching_cols[0] if matching_cols else (total_lu_hk_col or df_tri.columns[1])
+    active_label = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', sector_col).strip()
 
     # 1. KPI Cards Calculation
     tot_p = float(df_tri[p_col].sum()) if p_col else 0
@@ -382,7 +353,6 @@ async def get_dashboard_data(
     tot_bar = float(df_tri[bar_col].sum()) if bar_col else 0
     tot_pdrb_hk = float(df_tri[total_lu_hk_col].sum()) if total_lu_hk_col else 0
 
-    # Pertumbuhan Q4 q-to-q
     def get_q4_growth(col):
         if col and col in df_tri and len(df_tri) > 1:
             q_last = float(df_tri[col].iloc[-1])
@@ -473,7 +443,7 @@ async def get_dashboard_data(
         "r_val": 0.0,
         "r_squared": 0.0,
         "equation": "y = 0x + 0",
-        "label_x": f"PDRB: {sector} ({tipe_pdrb})",
+        "label_x": f"{active_label} ({tipe_pdrb})",
         "label_y": label_y,
         "points": [],
         "trend_line": []
@@ -524,7 +494,8 @@ async def get_dashboard_data(
     return {
         "province": province,
         "year": year,
-        "active_sector": sector,
+        "active_sector": active_label,
+        "category": category,
         "tipe_pdrb": tipe_pdrb,
         "kpi": kpi,
         "triwulan_data": triwulan_data,

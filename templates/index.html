@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN with dark mode support -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -54,6 +54,10 @@
     }
     .light .custom-scrollbar::-webkit-scrollbar-thumb {
       background: #cbd5e1;
+    }
+    th.sortable:hover {
+      cursor: pointer;
+      color: #38bdf8 !important;
     }
   </style>
 </head>
@@ -230,54 +234,83 @@
 
       <!-- Section: Tabel Matriks Korelasi Resmi -->
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        <!-- Header & Category Switcher (Lapangan Usaha vs Pengeluaran) -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div>
-            <h3 class="text-lg font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <h3 id="txtCorrelTableHeading" class="text-lg font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-table text-sky-500 dark:text-sky-400"></i>
               2. Matriks Korelasi PDRB Menurut Lapangan Usaha vs Transportasi
             </h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pilih baris pada tabel untuk langsung menampilkan visualisasi time-series dan regresi linier di bawah.</p>
           </div>
 
-          <!-- Controls: Filter Mode, Sort By, Search -->
-          <div class="flex flex-wrap items-center gap-2">
-            <!-- Filter Korelasi -->
-            <select id="selFilterMode" onchange="loadCorrelations()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
-              <option value="all">Semua Baris</option>
-              <option value="6_core" selected>⭐ 6 Sektor Pilihan (G, F, C, H, I, E)</option>
-              <option value="top5_high">🔥 Top 5 Korelasi Tertinggi</option>
-              <option value="top5_low">❄️ Top 5 Korelasi Terendah</option>
-              <option value="strong_70">🎯 Korelasi Sangat Kuat (|r| ≥ 0.70)</option>
-              <option value="transport_only">✈️ Sektor Transportasi Saja</option>
-            </select>
-
-            <!-- Sorting -->
-            <select id="selSortBy" onchange="loadCorrelations()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
-              <option value="default">Urutan Asli BPS</option>
-              <option value="p_desc">Penumpang (Tinggi ➔ Rendah)</option>
-              <option value="p_asc">Penumpang (Rendah ➔ Tinggi)</option>
-              <option value="bag_desc">Bagasi (Tinggi ➔ Rendah)</option>
-              <option value="bar_desc">Barang (Tinggi ➔ Rendah)</option>
-            </select>
-
-            <!-- Search -->
-            <div class="relative">
-              <input type="text" id="txtSearchSector" oninput="loadCorrelations()" placeholder="Cari nama sektor..." class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 w-44">
-              <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-slate-400"></i>
-            </div>
+          <!-- Category Toggle: Lapangan Usaha vs Pengeluaran -->
+          <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700 shadow-inner">
+            <button onclick="setCorrelCategory('lu')" id="btnCatLU" class="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-sky-600 shadow transition flex items-center gap-1.5">
+              <i class="fa-solid fa-industry"></i> Lapangan Usaha (17 Sektor)
+            </button>
+            <button onclick="setCorrelCategory('peng')" id="btnCatPeng" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5">
+              <i class="fa-solid fa-bag-shopping"></i> Pengeluaran (7 Komponen)
+            </button>
           </div>
         </div>
 
-        <!-- Table Container -->
+        <!-- Filter Controls Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Filter Korelasi -->
+            <div class="relative">
+              <select id="selFilterMode" onchange="loadCorrelations()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-2 pr-7 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer appearance-none">
+                <option value="all">🔍 Semua Baris</option>
+                <option value="6_core" selected>⭐ 6 Sektor Pilihan (G, F, C, H, I, E)</option>
+                <option value="top5_high">🔥 Top 5 Korelasi Tertinggi (Positif Terkuat)</option>
+                <option value="top5_low">❄️ Top 5 Korelasi Terendah (Negatif Terkuat)</option>
+                <option value="strong_70">🎯 Korelasi Sangat Kuat (|r| ≥ 0.70)</option>
+                <option value="transport_only">✈️ Sektor Transportasi Saja</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
+            </div>
+
+            <!-- Sorting Dropdown (Terbesar / Terkecil) -->
+            <div class="relative">
+              <select id="selSortBy" onchange="loadCorrelations()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-2 pr-7 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer appearance-none">
+                <option value="default">⚡ Urutan Asli BPS</option>
+                <option value="p_desc">✈️ Penumpang (Tertinggi ➔ Terendah)</option>
+                <option value="p_asc">✈️ Penumpang (Terendah ➔ Tertinggi)</option>
+                <option value="bag_desc">🧳 Bagasi (Tertinggi ➔ Terendah)</option>
+                <option value="bag_asc">🧳 Bagasi (Terendah ➔ Tertinggi)</option>
+                <option value="bar_desc">📦 Barang (Tertinggi ➔ Terendah)</option>
+                <option value="bar_asc">📦 Barang (Terendah ➔ Tertinggi)</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
+            </div>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative">
+            <input type="text" id="txtSearchSector" oninput="loadCorrelations()" placeholder="Cari nama sektor..." class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 w-56">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-slate-400"></i>
+          </div>
+        </div>
+
+        <!-- Table Container with Clickable Headers for Sorting -->
         <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-80">
           <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-            <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+            <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 select-none">
               <tr>
-                <th class="px-4 py-3">Lapangan Usaha</th>
+                <th id="thLabelCol" class="px-4 py-3">Lapangan Usaha</th>
                 <th class="px-4 py-3">Tipe PDRB</th>
-                <th class="px-4 py-3 text-right">Korelasi dgn Penumpang</th>
-                <th class="px-4 py-3 text-right">Korelasi dgn Bagasi</th>
-                <th class="px-4 py-3 text-right">Korelasi dgn Barang</th>
+                <th onclick="toggleSortColumn('p')" class="sortable px-4 py-3 text-right" title="Klik untuk mengurutkan Penumpang">
+                  Korelasi dgn Penumpang <span id="sortIcon-p" class="ml-1 text-sky-400">↕</span>
+                </th>
+                <th onclick="toggleSortColumn('bag')" class="sortable px-4 py-3 text-right" title="Klik untuk mengurutkan Bagasi">
+                  Korelasi dgn Bagasi <span id="sortIcon-bag" class="ml-1 text-teal-400">↕</span>
+                </th>
+                <th onclick="toggleSortColumn('bar')" class="sortable px-4 py-3 text-right" title="Klik untuk mengurutkan Barang">
+                  Korelasi dgn Barang <span id="sortIcon-bar" class="ml-1 text-amber-400">↕</span>
+                </th>
               </tr>
             </thead>
             <tbody id="tblCorrelBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
@@ -290,7 +323,7 @@
       <!-- Dynamic Inspector Card -->
       <div class="bg-gradient-to-r from-sky-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-sky-200 dark:border-slate-700 rounded-xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div class="text-xs text-sky-600 dark:text-sky-400 uppercase font-bold tracking-wider mb-1">Sektor Aktif Terpilih:</div>
+          <div class="text-xs text-sky-600 dark:text-sky-400 uppercase font-bold tracking-wider mb-1">Item Aktif Terpilih:</div>
           <h4 id="inspectorSectorTitle" class="text-base md:text-lg font-heading font-bold text-slate-900 dark:text-white">-</h4>
         </div>
         <div class="flex flex-wrap items-center gap-2 text-xs" id="inspectorBadges">
@@ -462,6 +495,7 @@
     let currentYear = "2024";
     let currentTipePDRB = "HK";
     let currentSector = "Transportasi dan Pergudangan";
+    let currentCategory = "lu"; // "lu" (Lapangan Usaha) atau "peng" (Pengeluaran)
     let currentScaleMode = "idx100";
     let currentRegMetric = "penumpang";
     let activeDashboardData = null;
@@ -551,7 +585,7 @@
       if (provData && provData.years) {
         const years = Object.keys(provData.years).sort().reverse();
         selYear.innerHTML = "";
-        years.forEach((y, i) => {
+        years.forEach((y) => {
           const opt = document.createElement("option");
           opt.value = y;
           opt.textContent = `📅 ${y}`;
@@ -570,7 +604,6 @@
       }
     }
 
-    // Separate Event Handlers to avoid Year dropdown reset
     function onProvinceChange() {
       currentProvince = document.getElementById("selProvince").value;
       populateYears(true);
@@ -587,6 +620,74 @@
       refreshData();
     }
 
+    // Toggle Category: Lapangan Usaha (LU) vs Pengeluaran (Peng)
+    function setCorrelCategory(cat) {
+      currentCategory = cat;
+      const btnLU = document.getElementById("btnCatLU");
+      const btnPeng = document.getElementById("btnCatPeng");
+      const heading = document.getElementById("txtCorrelTableHeading");
+      const thLabel = document.getElementById("thLabelCol");
+      const filterModeSel = document.getElementById("selFilterMode");
+
+      if (cat === 'lu') {
+        btnLU.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-sky-600 shadow transition flex items-center gap-1.5";
+        btnPeng.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5";
+        heading.innerHTML = `<i class="fa-solid fa-table text-sky-500 dark:text-sky-400"></i> 2. Matriks Korelasi PDRB Menurut Lapangan Usaha vs Transportasi`;
+        thLabel.textContent = "Lapangan Usaha";
+        
+        // Show 6 Sektor option for LU
+        filterModeSel.innerHTML = `
+          <option value="all">🔍 Semua Baris</option>
+          <option value="6_core" selected>⭐ 6 Sektor Pilihan (G, F, C, H, I, E)</option>
+          <option value="top5_high">🔥 Top 5 Korelasi Tertinggi (Positif Terkuat)</option>
+          <option value="top5_low">❄️ Top 5 Korelasi Terendah (Negatif Terkuat)</option>
+          <option value="strong_70">🎯 Korelasi Sangat Kuat (|r| ≥ 0.70)</option>
+          <option value="transport_only">✈️ Sektor Transportasi Saja</option>
+        `;
+        currentSector = "Transportasi dan Pergudangan";
+      } else {
+        btnPeng.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-sky-600 shadow transition flex items-center gap-1.5";
+        btnLU.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5";
+        heading.innerHTML = `<i class="fa-solid fa-table text-sky-500 dark:text-sky-400"></i> 3. Matriks Korelasi PDRB Menurut Pengeluaran vs Transportasi`;
+        thLabel.textContent = "Komponen Pengeluaran";
+        
+        filterModeSel.innerHTML = `
+          <option value="all" selected>🔍 Semua Komponen Pengeluaran</option>
+          <option value="top5_high">🔥 Top 5 Korelasi Tertinggi (Positif Terkuat)</option>
+          <option value="top5_low">❄️ Top 5 Korelasi Terendah (Negatif Terkuat)</option>
+          <option value="strong_70">🎯 Korelasi Sangat Kuat (|r| ≥ 0.70)</option>
+        `;
+        currentSector = "Pengeluaran Konsumsi Rumah Tangga";
+      }
+
+      loadCorrelations();
+      loadSectorData();
+    }
+
+    // Toggle Sorting via Column Click
+    function toggleSortColumn(metricKey) {
+      const selSortBy = document.getElementById("selSortBy");
+      const currentVal = selSortBy.value;
+
+      if (metricKey === 'p') {
+        selSortBy.value = (currentVal === 'p_desc') ? 'p_asc' : 'p_desc';
+      } else if (metricKey === 'bag') {
+        selSortBy.value = (currentVal === 'bag_desc') ? 'bag_asc' : 'bag_desc';
+      } else if (metricKey === 'bar') {
+        selSortBy.value = (currentVal === 'bar_desc') ? 'bar_asc' : 'bar_desc';
+      }
+
+      updateSortIcons();
+      loadCorrelations();
+    }
+
+    function updateSortIcons() {
+      const currentVal = document.getElementById("selSortBy").value;
+      document.getElementById("sortIcon-p").textContent = currentVal === 'p_desc' ? '▼' : (currentVal === 'p_asc' ? '▲' : '↕');
+      document.getElementById("sortIcon-bag").textContent = currentVal === 'bag_desc' ? '▼' : (currentVal === 'bag_asc' ? '▲' : '↕');
+      document.getElementById("sortIcon-bar").textContent = currentVal === 'bar_desc' ? '▼' : (currentVal === 'bar_asc' ? '▲' : '↕');
+    }
+
     async function refreshData() {
       const provData = currentManifest.provinces?.[currentProvince];
       document.getElementById("heroProvName").textContent = provData ? provData.name : currentProvince;
@@ -599,12 +700,13 @@
     }
 
     async function loadCorrelations() {
+      updateSortIcons();
       const filterMode = document.getElementById("selFilterMode").value;
       const sortBy = document.getElementById("selSortBy").value;
       const search = document.getElementById("txtSearchSector").value;
 
       try {
-        const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=lu&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${currentTipePDRB}&search=${encodeURIComponent(search)}`;
+        const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=${currentCategory}&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${currentTipePDRB}&search=${encodeURIComponent(search)}`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -616,11 +718,14 @@
           return;
         }
 
+        const labelKey = data.label_col || (currentCategory === 'lu' ? "Lapangan Usaha" : "Komponen Pengeluaran");
+
         data.rows.forEach((r) => {
+          const rowLabel = r[labelKey] || r["Lapangan Usaha"] || r["Komponen Pengeluaran"];
+          const isSelected = rowLabel === currentSector;
           const tr = document.createElement("tr");
-          const isSelected = r["Lapangan Usaha"] === currentSector;
           tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer transition border-b border-slate-200 dark:border-slate-800/50 " + (isSelected ? "bg-sky-100 dark:bg-sky-950/40 border-sky-500 font-semibold" : "");
-          tr.onclick = () => selectSector(r["Lapangan Usaha"], r["Tipe PDRB"]?.includes("HB") ? "HB" : "HK");
+          tr.onclick = () => selectSector(rowLabel, r["Tipe PDRB"]?.includes("HB") ? "HB" : "HK");
 
           const pVal = r["Korelasi dgn Penumpang"] !== null ? Number(r["Korelasi dgn Penumpang"]) : NaN;
           const bagVal = r["Korelasi dgn Bagasi"] !== null ? Number(r["Korelasi dgn Bagasi"]) : NaN;
@@ -629,7 +734,7 @@
           tr.innerHTML = `
             <td class="px-4 py-2.5 text-slate-800 dark:text-slate-200 flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-sky-500' : 'bg-slate-400 dark:bg-slate-600'}"></span>
-              ${r["Lapangan Usaha"]}
+              ${rowLabel}
             </td>
             <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400 font-sans">${r["Tipe PDRB"] || '-'}</td>
             <td class="px-4 py-2.5 text-right ${pVal >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (pVal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300')}">${isNaN(pVal) ? '-' : pVal.toFixed(4)}</td>
@@ -656,7 +761,7 @@
 
     async function loadSectorData() {
       try {
-        const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&tipe_pdrb=${currentTipePDRB}&transport_metric=${currentRegMetric}`;
+        const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&category=${currentCategory}&tipe_pdrb=${currentTipePDRB}&transport_metric=${currentRegMetric}`;
         const res = await fetch(url);
         const data = await res.json();
         activeDashboardData = data;
@@ -982,7 +1087,6 @@
       document.getElementById(`content-${tabId}`).classList.remove("hidden");
       document.getElementById(`nav-${tabId}`).className = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60";
 
-      // Trigger resize for Plotly charts
       window.dispatchEvent(new Event('resize'));
     }
   </script>
