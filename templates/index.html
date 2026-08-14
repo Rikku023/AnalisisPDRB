@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Analisis PDRB & Transportasi | BPS Analytics</title>
+  <link rel="icon" type="image/svg+xml" href="/public/favicon.svg">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              900: '#0c4a6e',
+            },
+            dark: {
+              bg: '#0b1120',
+              card: '#1e293b',
+              border: '#334155',
+              hover: '#283548'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    body {
+      background-color: #0b1120;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+    }
+    .hero-glow {
+      background: radial-gradient(circle at 50% -20%, rgba(56, 189, 248, 0.15) 0%, rgba(11, 17, 32, 0) 70%);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col hero-glow">
+
+  <!-- Top Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <i class="fa-solid fa-chart-line text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-heading font-bold text-lg text-white leading-tight">Korelasi PDRB & Transportasi</h1>
+          <p class="text-xs text-sky-400 font-medium">Executive Analytics Suite v3.0</p>
+        </div>
+      </div>
+
+      <!-- Header Controls -->
+      <div class="flex items-center gap-3">
+        <!-- Province Selector -->
+        <div class="relative">
+          <select id="selProvince" onchange="onFilterChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none cursor-pointer">
+            <!-- Populated dynamically -->
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-slate-400 pointer-events-none"></i>
+        </div>
+
+        <!-- Year Selector -->
+        <div class="relative">
+          <select id="selYear" onchange="onFilterChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none cursor-pointer">
+            <!-- Populated dynamically -->
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-slate-400 pointer-events-none"></i>
+        </div>
+
+        <!-- Tipe PDRB -->
+        <div class="relative">
+          <select id="selTipePDRB" onchange="onFilterChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none cursor-pointer">
+            <option value="HK">Harga Konstan (HK Riil)</option>
+            <option value="HB">Harga Berlaku (HB Nominal)</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-slate-400 pointer-events-none"></i>
+        </div>
+
+        <button onclick="refreshData()" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition" title="Muat Ulang Data">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Hero Header Banner -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-sky-950 p-6 md:p-8 border border-slate-700/80 shadow-2xl">
+      <div class="relative z-10 max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-semibold uppercase tracking-wider mb-3">
+          <i class="fa-solid fa-satellite-dish"></i> Badan Pusat Statistik Dataset
+        </div>
+        <h2 class="text-2xl md:text-3xl font-heading font-extrabold text-white tracking-tight leading-tight">
+          Analisis Dampak Transportasi Udara terhadap Pertumbuhan Ekonomi Regional
+        </h2>
+        <p class="mt-2 text-slate-300 text-sm md:text-base leading-relaxed">
+          Korelasi dinamis dan regresi linear antara pergerakan volume penumpang, bagasi, dan kargo udara dengan output PDRB sektoral di <span id="heroProvName" class="text-sky-400 font-semibold">-</span> (<span id="heroYear" class="text-sky-400 font-semibold">-</span>).
+        </p>
+      </div>
+      <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-gradient-to-l from-sky-400 to-transparent pointer-events-none"></div>
+    </div>
+
+    <!-- 5 KPI Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      
+      <!-- KPI 1: Penumpang -->
+      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Penumpang</span>
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+            <i class="fa-solid fa-plane-departure text-sm"></i>
+          </div>
+        </div>
+        <div class="my-2">
+          <div id="kpiPenumpangVal" class="text-2xl font-heading font-bold text-white">-</div>
+          <div class="text-xs text-slate-400">Orang / Tahun</div>
+        </div>
+        <div id="kpiPenumpangGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+      </div>
+
+      <!-- KPI 2: Bagasi -->
+      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Bagasi</span>
+          <div class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
+            <i class="fa-solid fa-suitcase-rolling text-sm"></i>
+          </div>
+        </div>
+        <div class="my-2">
+          <div id="kpiBagasiVal" class="text-2xl font-heading font-bold text-white">-</div>
+          <div class="text-xs text-slate-400">Kilogram (Kg)</div>
+        </div>
+        <div id="kpiBagasiGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+      </div>
+
+      <!-- KPI 3: Barang/Kargo -->
+      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Barang (Kargo)</span>
+          <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+            <i class="fa-solid fa-boxes-stacked text-sm"></i>
+          </div>
+        </div>
+        <div class="my-2">
+          <div id="kpiBarangVal" class="text-2xl font-heading font-bold text-white">-</div>
+          <div class="text-xs text-slate-400">Kilogram (Kg)</div>
+        </div>
+        <div id="kpiBarangGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+      </div>
+
+      <!-- KPI 4: PDRB Riil HK -->
+      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">PDRB Riil (HK 2010)</span>
+          <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center">
+            <i class="fa-solid fa-landmark text-sm"></i>
+          </div>
+        </div>
+        <div class="my-2">
+          <div id="kpiPdrbVal" class="text-2xl font-heading font-bold text-white">-</div>
+          <div class="text-xs text-slate-400">Total 4 Triwulan</div>
+        </div>
+        <div id="kpiPdrbGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+      </div>
+
+      <!-- KPI 5: Sektor Max -->
+      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sektor Terkorelasi Max</span>
+          <div class="w-8 h-8 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
+            <i class="fa-solid fa-link text-sm"></i>
+          </div>
+        </div>
+        <div class="my-2">
+          <div id="kpiSectorMaxName" class="text-sm font-heading font-bold text-white line-clamp-2" title="-">-</div>
+        </div>
+        <div id="kpiSectorMaxVal" class="text-xs font-semibold text-sky-400">r = -</div>
+      </div>
+
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="border-b border-slate-800">
+      <nav class="flex space-x-2" aria-label="Tabs">
+        <button onclick="switchTab('tab1')" id="nav-tab1" class="tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-400 bg-slate-800/60">
+          <i class="fa-solid fa-table-cells mr-2"></i> Matriks Korelasi & Grafik Interaktif
+        </button>
+        <button onclick="switchTab('tab2')" id="nav-tab2" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30">
+          <i class="fa-solid fa-chart-area mr-2"></i> Tren Makro & Sektoral
+        </button>
+        <button onclick="switchTab('tab3')" id="nav-tab3" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30">
+          <i class="fa-solid fa-database mr-2"></i> Data Lengkap & Ekspor
+        </button>
+      </nav>
+    </div>
+
+    <!-- TAB 1: MATRIKS KORELASI & LINE CHARTS + REGRESI -->
+    <div id="content-tab1" class="space-y-6">
+
+      <!-- Section: Tabel Matriks Korelasi Resmi -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-heading font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-table text-sky-400"></i>
+              2. Matriks Korelasi PDRB Menurut Lapangan Usaha vs Transportasi
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Pilih baris pada tabel untuk langsung menampilkan visualisasi time-series dan regresi linier di bawah.</p>
+          </div>
+
+          <!-- Controls: Filter Mode, Sort By, Search -->
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Filter Korelasi -->
+            <select id="selFilterMode" onchange="loadCorrelations()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+              <option value="all">Semua Baris</option>
+              <option value="6_core" selected>⭐ 6 Sektor Pilihan (G, F, C, H, I, E)</option>
+              <option value="top5_high">🔥 Top 5 Korelasi Tertinggi</option>
+              <option value="top5_low">❄️ Top 5 Korelasi Terendah</option>
+              <option value="strong_70">🎯 Korelasi Sangat Kuat (|r| ≥ 0.70)</option>
+              <option value="transport_only">✈️ Sektor Transportasi Saja</option>
+            </select>
+
+            <!-- Sorting -->
+            <select id="selSortBy" onchange="loadCorrelations()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+              <option value="default">Urutan Asli BPS</option>
+              <option value="p_desc">Penumpang (Tinggi ➔ Rendah)</option>
+              <option value="p_asc">Penumpang (Rendah ➔ Tinggi)</option>
+              <option value="bag_desc">Bagasi (Tinggi ➔ Rendah)</option>
+              <option value="bar_desc">Barang (Tinggi ➔ Rendah)</option>
+            </select>
+
+            <!-- Search -->
+            <div class="relative">
+              <input type="text" id="txtSearchSector" oninput="loadCorrelations()" placeholder="Cari nama sektor..." class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 w-44">
+              <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-slate-400"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl max-h-80">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-800">
+              <tr>
+                <th class="px-4 py-3">Lapangan Usaha</th>
+                <th class="px-4 py-3">Tipe PDRB</th>
+                <th class="px-4 py-3 text-right">Korelasi dgn Penumpang</th>
+                <th class="px-4 py-3 text-right">Korelasi dgn Bagasi</th>
+                <th class="px-4 py-3 text-right">Korelasi dgn Barang</th>
+              </tr>
+            </thead>
+            <tbody id="tblCorrelBody" class="divide-y divide-slate-800/60 font-mono">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Dynamic Inspector Card -->
+      <div class="bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="text-xs text-sky-400 uppercase font-bold tracking-wider mb-1">Sektor Aktif Terpilih:</div>
+          <h4 id="inspectorSectorTitle" class="text-base md:text-lg font-heading font-bold text-white">-</h4>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-xs" id="inspectorBadges">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Controls for Charts -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+        <!-- Scale Mode for Time Series -->
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-slate-400">📐 Mode Skala Time-Series:</span>
+          <div class="inline-flex rounded-lg bg-slate-800 p-1 border border-slate-700">
+            <button onclick="setScaleMode('idx100')" id="btnScaleIdx" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition">Indeks Basis 100</button>
+            <button onclick="setScaleMode('qoq')" id="btnScaleQoq" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">Growth QoQ (%)</button>
+            <button onclick="setScaleMode('abs')" id="btnScaleAbs" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">Nilai Absolut</button>
+          </div>
+        </div>
+
+        <!-- Transport Metric for Regression -->
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-slate-400">🎯 Sumbu Y Regresi (Transportasi):</span>
+          <select id="selRegMetric" onchange="onRegMetricChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+            <option value="penumpang">✈️ Penumpang (Orang)</option>
+            <option value="bagasi">🧳 Bagasi (Kg)</option>
+            <option value="barang">📦 Barang/Kargo (Kg)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 2 Charts Grid: Left Time-Series Line, Right OLS Regression -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Multi-Axis Time Series Chart -->
+        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+              <i class="fa-solid fa-wave-square text-sky-400"></i>
+              Grafik Runtun Waktu Triwulanan (Q1 s.d. Q4)
+            </h4>
+            <span class="text-[11px] text-slate-400" id="chartTimeSpanLabel">2024</span>
+          </div>
+          <div id="chartTimeSeries" class="w-full h-80"></div>
+        </div>
+
+        <!-- Right: OLS Scatter & Linear Regression -->
+        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-heading font-bold text-sm text-white flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-indigo-400"></i>
+              Plot Sebaran & Garis Regresi Linear (OLS)
+            </h4>
+            <span class="text-[11px] text-sky-400 font-mono" id="chartRegRVal">r = -</span>
+          </div>
+          <div id="chartRegression" class="w-full h-80"></div>
+          
+          <!-- Excel-style Stats Summary Box -->
+          <div class="mt-3 bg-slate-950 border border-slate-800 rounded-lg p-2.5 grid grid-cols-2 gap-2 text-center text-xs">
+            <div>
+              <div class="text-[11px] text-slate-400">Koefisien Korelasi (R):</div>
+              <div id="regSummaryR" class="font-mono font-bold text-emerald-400 text-sm">-</div>
+            </div>
+            <div>
+              <div class="text-[11px] text-slate-400">Koefisien Determinasi (R²):</div>
+              <div id="regSummaryR2" class="font-mono font-bold text-sky-400 text-sm">-</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 2: TREN MAKRO & STRUKTUR SEKTORAL -->
+    <div id="content-tab2" class="hidden space-y-6">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Top 10 Sektor Bar Chart -->
+        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h4 class="font-heading font-bold text-sm text-white mb-3">
+            <i class="fa-solid fa-ranking-star text-amber-400 mr-2"></i>
+            Top 10 Sektor Lapangan Usaha Terbesar
+          </h4>
+          <div id="chartTopSectors" class="w-full h-80"></div>
+        </div>
+
+        <!-- Transport Pie Distribution -->
+        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h4 class="font-heading font-bold text-sm text-white mb-3">
+            <i class="fa-solid fa-chart-pie text-teal-400 mr-2"></i>
+            Distribusi Total Muatan Transportasi
+          </h4>
+          <div id="chartTransportPie" class="w-full h-80"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 3: DATA LENGKAP & EKSPOR -->
+    <div id="content-tab3" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h4 class="font-heading font-bold text-base text-white">
+            <i class="fa-solid fa-table-list text-sky-400 mr-2"></i>
+            Tabel Data Triwulanan Terintegrasi
+          </h4>
+          <button onclick="exportCSV()" class="bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <i class="fa-solid fa-download"></i> Unduh Data (.CSV)
+          </button>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl max-h-96">
+          <table id="tblRawData" class="w-full text-left text-xs text-slate-300">
+            <!-- Populated via JS -->
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-6 mt-12 bg-slate-950 text-slate-500 text-xs text-center">
+    <p>Dashboard Analisis PDRB & Transportasi Provinsi • Powered by FastAPI & Parquet Serverless Engine</p>
+    <p class="mt-1">Dataset Resmi Badan Pusat Statistik (BPS)</p>
+  </footer>
+
+  <!-- Core Dashboard Logic -->
+  <script>
+    // State global
+    let currentManifest = {};
+    let currentProvince = "sulawesi_selatan";
+    let currentYear = "2024";
+    let currentTipePDRB = "HK";
+    let currentSector = "Transportasi dan Pergudangan";
+    let currentScaleMode = "idx100";
+    let currentRegMetric = "penumpang";
+    let activeDashboardData = null;
+
+    // Format helper Indonesia
+    function formatNumberID(num, decimals = 0) {
+      if (num === null || num === undefined || isNaN(num)) return "-";
+      return Number(num).toLocaleString('id-ID', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    // Init App
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadInitialOptions();
+      await refreshData();
+    });
+
+    async function loadInitialOptions() {
+      try {
+        const res = await fetch("/api/manifest");
+        currentManifest = await res.json();
+        
+        const selProv = document.getElementById("selProvince");
+        selProv.innerHTML = "";
+        
+        for (const [key, val] of Object.entries(currentManifest.provinces || {})) {
+          const opt = document.createElement("option");
+          opt.value = key;
+          opt.textContent = `📍 ${val.name}`;
+          if (key === currentProvince) opt.selected = true;
+          selProv.appendChild(opt);
+        }
+
+        populateYears();
+      } catch (err) {
+        console.error("Error loading manifest:", err);
+      }
+    }
+
+    function populateYears() {
+      const selYear = document.getElementById("selYear");
+      selYear.innerHTML = "";
+      const provData = currentManifest.provinces?.[currentProvince];
+      if (provData && provData.years) {
+        const years = Object.keys(provData.years).sort().reverse();
+        years.forEach(y => {
+          const opt = document.createElement("option");
+          opt.value = y;
+          opt.textContent = `📅 ${y}`;
+          if (y === currentYear) opt.selected = true;
+          selYear.appendChild(opt);
+        });
+      }
+    }
+
+    function onFilterChange() {
+      currentProvince = document.getElementById("selProvince").value;
+      populateYears();
+      currentYear = document.getElementById("selYear").value;
+      currentTipePDRB = document.getElementById("selTipePDRB").value;
+      refreshData();
+    }
+
+    async function refreshData() {
+      // Update Hero Titles
+      const provData = currentManifest.provinces?.[currentProvince];
+      document.getElementById("heroProvName").textContent = provData ? provData.name : currentProvince;
+      document.getElementById("heroYear").textContent = currentYear;
+      document.getElementById("chartTimeSpanLabel").textContent = `${provData?.name || ''} ${currentYear}`;
+
+      await loadCorrelations();
+      await loadSectorData();
+    }
+
+    async function loadCorrelations() {
+      const filterMode = document.getElementById("selFilterMode").value;
+      const sortBy = document.getElementById("selSortBy").value;
+      const search = document.getElementById("txtSearchSector").value;
+
+      try {
+        const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=lu&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${currentTipePDRB}&search=${encodeURIComponent(search)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const tbody = document.getElementById("tblCorrelBody");
+        tbody.innerHTML = "";
+
+        if (!data.rows || data.rows.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-500">Tidak ada baris korelasi yang cocok.</td></tr>`;
+          return;
+        }
+
+        data.rows.forEach((r, idx) => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-800/80 cursor-pointer transition border-b border-slate-800/50 " + (r["Lapangan Usaha"] === currentSector ? "bg-sky-950/40 border-sky-500/50 font-semibold" : "");
+          tr.onclick = () => selectSector(r["Lapangan Usaha"], r["Tipe PDRB"]?.includes("HB") ? "HB" : "HK");
+
+          const pVal = Number(r["Korelasi dgn Penumpang"]);
+          const bagVal = Number(r["Korelasi dgn Bagasi"]);
+          const barVal = Number(r["Korelasi dgn Barang"]);
+
+          tr.innerHTML = `
+            <td class="px-4 py-2.5 text-slate-200 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full ${r["Lapangan Usaha"] === currentSector ? 'bg-sky-400' : 'bg-slate-600'}"></span>
+              ${r["Lapangan Usaha"]}
+            </td>
+            <td class="px-4 py-2.5 text-slate-400">${r["Tipe PDRB"] || '-'}</td>
+            <td class="px-4 py-2.5 text-right ${pVal >= 0.7 ? 'text-emerald-400' : (pVal < 0 ? 'text-rose-400' : 'text-slate-300')}">${isNaN(pVal) ? '-' : pVal.toFixed(4)}</td>
+            <td class="px-4 py-2.5 text-right ${bagVal >= 0.7 ? 'text-emerald-400' : (bagVal < 0 ? 'text-rose-400' : 'text-slate-300')}">${isNaN(bagVal) ? '-' : bagVal.toFixed(4)}</td>
+            <td class="px-4 py-2.5 text-right ${barVal >= 0.7 ? 'text-emerald-400' : (barVal < 0 ? 'text-rose-400' : 'text-slate-300')}">${isNaN(barVal) ? '-' : barVal.toFixed(4)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (err) {
+        console.error("Error loading correlations:", err);
+      }
+    }
+
+    function selectSector(sectorName, tipe) {
+      currentSector = sectorName;
+      if (tipe) currentTipePDRB = tipe;
+      document.getElementById("selTipePDRB").value = currentTipePDRB;
+      loadCorrelations();
+      loadSectorData();
+    }
+
+    async function loadSectorData() {
+      try {
+        const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&tipe_pdrb=${currentTipePDRB}&transport_metric=${currentRegMetric}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        activeDashboardData = data;
+
+        // 1. Update KPI
+        document.getElementById("kpiPenumpangVal").textContent = formatNumberID(data.kpi.penumpang_total, 0);
+        document.getElementById("kpiPenumpangGrowth").textContent = `Q4 Growth: ${(data.kpi.penumpang_q4_growth >= 0 ? '+' : '')}${data.kpi.penumpang_q4_growth.toFixed(1)}%`;
+        
+        document.getElementById("kpiBagasiVal").textContent = formatNumberID(data.kpi.bagasi_total, 0);
+        document.getElementById("kpiBagasiGrowth").textContent = `Q4 Growth: ${(data.kpi.bagasi_q4_growth >= 0 ? '+' : '')}${data.kpi.bagasi_q4_growth.toFixed(1)}%`;
+
+        document.getElementById("kpiBarangVal").textContent = formatNumberID(data.kpi.barang_total, 0);
+        document.getElementById("kpiBarangGrowth").textContent = `Q4 Growth: ${(data.kpi.barang_q4_growth >= 0 ? '+' : '')}${data.kpi.barang_q4_growth.toFixed(1)}%`;
+
+        document.getElementById("kpiPdrbVal").textContent = formatNumberID(data.kpi.pdrb_hk_total, 2);
+        document.getElementById("kpiPdrbGrowth").textContent = `Q4 Growth: ${(data.kpi.pdrb_hk_q4_growth >= 0 ? '+' : '')}${data.kpi.pdrb_hk_q4_growth.toFixed(2)}%`;
+
+        document.getElementById("kpiSectorMaxName").textContent = data.kpi.max_correl_sector || '-';
+        document.getElementById("kpiSectorMaxName").title = data.kpi.max_correl_sector || '';
+        document.getElementById("kpiSectorMaxVal").textContent = `r = ${Number(data.kpi.max_correl_val || 0).toFixed(3)} (${data.kpi.max_correl_type || ''})`;
+
+        // 2. Update Inspector Card
+        document.getElementById("inspectorSectorTitle").innerHTML = `${data.active_sector} <span class="text-xs text-sky-400 font-normal">(${data.tipe_pdrb})</span>`;
+        
+        const rVal = data.regression.r_val;
+        let badgeColor = "bg-emerald-950 text-emerald-300 border-emerald-700";
+        let badgeDesc = "Sangat Kuat Positif 🚀";
+        if (rVal < 0) {
+          badgeColor = "bg-rose-950 text-rose-300 border-rose-700";
+          badgeDesc = "Kuat Negatif ⚠️";
+        } else if (rVal < 0.5) {
+          badgeColor = "bg-sky-950 text-sky-300 border-sky-700";
+          badgeDesc = "Moderat Positif 📈";
+        }
+
+        document.getElementById("inspectorBadges").innerHTML = `
+          <span class="px-2.5 py-1 rounded border font-mono ${badgeColor}">${badgeDesc} (r = ${rVal.toFixed(4)})</span>
+          <span class="px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-300">R² = ${data.regression.r_squared.toFixed(4)}</span>
+          <span class="px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-300 font-mono">${data.regression.equation}</span>
+        `;
+
+        // 3. Render Charts
+        renderTimeSeriesChart(data);
+        renderRegressionChart(data);
+        renderMacroCharts(data);
+        renderRawTable(data);
+
+      } catch (err) {
+        console.error("Error loading sector data:", err);
+      }
+    }
+
+    function setScaleMode(mode) {
+      currentScaleMode = mode;
+      document.getElementById("btnScaleIdx").className = mode === 'idx100' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition";
+      document.getElementById("btnScaleQoq").className = mode === 'qoq' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition";
+      document.getElementById("btnScaleAbs").className = mode === 'abs' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition";
+      
+      if (activeDashboardData) renderTimeSeriesChart(activeDashboardData);
+    }
+
+    function onRegMetricChange() {
+      currentRegMetric = document.getElementById("selRegMetric").value;
+      loadSectorData();
+    }
+
+    function renderTimeSeriesChart(data) {
+      const tw = data.triwulan_data.map(d => d.triwulan);
+      const isIdx = currentScaleMode === 'idx100';
+      const isQoq = currentScaleMode === 'qoq';
+
+      const pdrbVals = data.triwulan_data.map(d => isIdx ? d.pdrb_idx : (isQoq ? d.pdrb_qoq : d.pdrb_raw));
+      const pVals = data.triwulan_data.map(d => isIdx ? d.penumpang_idx : (isQoq ? d.penumpang_qoq : d.penumpang_raw));
+      const bagVals = data.triwulan_data.map(d => isIdx ? d.bagasi_idx : (isQoq ? d.bagasi_qoq : d.bagasi_raw));
+      const barVals = data.triwulan_data.map(d => isIdx ? d.barang_idx : (isQoq ? d.barang_qoq : d.barang_raw));
+
+      const traces = [
+        {
+          x: tw,
+          y: pdrbVals,
+          name: `PDRB: ${data.active_sector}`,
+          mode: 'lines+markers',
+          line: { color: '#38bdf8', width: 3.5 },
+          marker: { size: 8, symbol: 'circle' }
+        },
+        {
+          x: tw,
+          y: pVals,
+          name: '✈️ Penumpang (Orang)',
+          mode: 'lines+markers',
+          line: { color: '#10b981', width: 3 },
+          marker: { size: 8, symbol: 'diamond' }
+        },
+        {
+          x: tw,
+          y: bagVals,
+          name: '🧳 Bagasi (Kg)',
+          mode: 'lines+markers',
+          line: { color: '#06b6d4', width: 2.5, dash: 'dot' },
+          marker: { size: 7, symbol: 'square' }
+        },
+        {
+          x: tw,
+          y: barVals,
+          name: '📦 Barang/Kargo (Kg)',
+          mode: 'lines+markers',
+          line: { color: '#f59e0b', width: 2.5, dash: 'dashdot' },
+          marker: { size: 7, symbol: 'triangle-up' }
+        }
+      ];
+
+      const yTitle = isIdx ? "Indeks Pertumbuhan (Base Q1 = 100)" : (isQoq ? "Pertumbuhan Kuartalan (%)" : "Volume Nilai");
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#94a3b8', family: 'Inter' },
+        margin: { l: 45, r: 25, t: 20, b: 45 },
+        hovermode: 'x unified',
+        xaxis: { gridcolor: '#1e293b' },
+        yaxis: { title: yTitle, gridcolor: '#1e293b' },
+        legend: { orientation: 'h', y: -0.25, x: 0.5, xanchor: 'center' }
+      };
+
+      Plotly.newPlot('chartTimeSeries', traces, layout, { responsive: true, displayModeBar: false });
+    }
+
+    function renderRegressionChart(data) {
+      const reg = data.regression;
+      document.getElementById("chartRegRVal").textContent = `r = ${reg.r_val.toFixed(4)}`;
+      document.getElementById("regSummaryR").textContent = reg.r_val.toFixed(4);
+      document.getElementById("regSummaryR2").textContent = `${reg.r_squared.toFixed(4)} (${(reg.r_squared * 100).toFixed(1)}%)`;
+
+      const pts = reg.points;
+      const trend = reg.trend_line;
+
+      const traces = [
+        {
+          x: trend.map(p => p.x),
+          y: trend.map(p => p.y),
+          mode: 'lines',
+          name: 'Garis Regresi OLS',
+          line: { color: '#818cf8', width: 3 }
+        },
+        {
+          x: pts.map(p => p.x),
+          y: pts.map(p => p.y),
+          text: pts.map(p => p.triwulan),
+          mode: 'markers+text',
+          textposition: 'top right',
+          textfont: { size: 10, color: '#cbd5e1' },
+          marker: { size: 11, color: '#38bdf8', line: { color: '#ffffff', width: 1.5 } }
+        }
+      ];
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#94a3b8', family: 'Inter' },
+        margin: { l: 55, r: 25, t: 20, b: 45 },
+        xaxis: { title: `PDRB: ${data.active_sector} (Sumbu X)`, gridcolor: '#1e293b' },
+        yaxis: { title: `${reg.label_y} (Sumbu Y)`, gridcolor: '#1e293b' },
+        showlegend: false,
+        annotations: [{
+          xref: 'paper',
+          yref: 'paper',
+          x: 0.05,
+          y: 0.95,
+          text: `<b>${reg.equation}</b><br><span style="color:#38bdf8;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:#34d399;">R = ${reg.r_val.toFixed(4)}</span>`,
+          showarrow: false,
+          bgcolor: 'rgba(15, 23, 42, 0.9)',
+          bordercolor: '#3b82f6',
+          borderwidth: 1,
+          font: { size: 11, color: '#f8fafc' }
+        }]
+      };
+
+      Plotly.newPlot('chartRegression', traces, layout, { responsive: true, displayModeBar: false });
+    }
+
+    function renderMacroCharts(data) {
+      // Top 10 Sectors Horizontal Bar
+      const sectors = data.sectors_summary || [];
+      const traceBar = [{
+        type: 'bar',
+        x: sectors.map(s => s.total_output).reverse(),
+        y: sectors.map(s => s.sector.length > 25 ? s.sector.substring(0, 22) + '...' : s.sector).reverse(),
+        orientation: 'h',
+        marker: { color: '#0ea5e9' }
+      }];
+      const layoutBar = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#94a3b8', family: 'Inter' },
+        margin: { l: 150, r: 20, t: 10, b: 40 },
+        xaxis: { gridcolor: '#1e293b' }
+      };
+      Plotly.newPlot('chartTopSectors', traceBar, layoutBar, { responsive: true, displayModeBar: false });
+
+      // Transport Pie Chart
+      const tracePie = [{
+        values: [data.kpi.penumpang_total, data.kpi.bagasi_total, data.kpi.barang_total],
+        labels: ['Penumpang (Orang)', 'Bagasi (Kg)', 'Barang/Kargo (Kg)'],
+        type: 'pie',
+        hole: 0.45,
+        marker: { colors: ['#38bdf8', '#10b981', '#f59e0b'] }
+      }];
+      const layoutPie = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#94a3b8', family: 'Inter' },
+        margin: { l: 20, r: 20, t: 10, b: 20 },
+        legend: { orientation: 'h', y: -0.15 }
+      };
+      Plotly.newPlot('chartTransportPie', tracePie, layoutPie, { responsive: true, displayModeBar: false });
+    }
+
+    function renderRawTable(data) {
+      const tbl = document.getElementById("tblRawData");
+      if (!data.triwulan_data || data.triwulan_data.length === 0) return;
+
+      let html = `
+        <thead class="bg-slate-950 font-heading uppercase text-[11px] text-slate-400 border-b border-slate-800">
+          <tr>
+            <th class="px-4 py-3">Triwulan</th>
+            <th class="px-4 py-3 text-right">Nilai PDRB (${data.active_sector})</th>
+            <th class="px-4 py-3 text-right">Penumpang (Orang)</th>
+            <th class="px-4 py-3 text-right">Bagasi (Kg)</th>
+            <th class="px-4 py-3 text-right">Barang (Kg)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800 font-mono">
+      `;
+
+      data.triwulan_data.forEach(d => {
+        html += `
+          <tr class="hover:bg-slate-800/60">
+            <td class="px-4 py-2.5 text-slate-200 font-sans font-semibold">${d.triwulan}</td>
+            <td class="px-4 py-2.5 text-right text-sky-400">${formatNumberID(d.pdrb_raw, 2)}</td>
+            <td class="px-4 py-2.5 text-right text-emerald-400">${formatNumberID(d.penumpang_raw, 0)}</td>
+            <td class="px-4 py-2.5 text-right text-teal-400">${formatNumberID(d.bagasi_raw, 0)}</td>
+            <td class="px-4 py-2.5 text-right text-amber-400">${formatNumberID(d.barang_raw, 0)}</td>
+          </tr>
+        `;
+      });
+      html += `</tbody>`;
+      tbl.innerHTML = html;
+    }
+
+    function switchTab(tabId) {
+      document.getElementById("content-tab1").classList.add("hidden");
+      document.getElementById("content-tab2").classList.add("hidden");
+      document.getElementById("content-tab3").classList.add("hidden");
+
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.className = "tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30";
+      });
+
+      document.getElementById(`content-${tabId}`).classList.remove("hidden");
+      document.getElementById(`nav-${tabId}`).className = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-400 bg-slate-800/60";
+
+      // Trigger resize for Plotly charts
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    function exportCSV() {
+      if (!activeDashboardData || !activeDashboardData.triwulan_data) return;
+      let csv = "Triwulan,PDRB,Penumpang,Bagasi,Barang\n";
+      activeDashboardData.triwulan_data.forEach(d => {
+        csv += `"${d.triwulan}",${d.pdrb_raw},${d.penumpang_raw},${d.bagasi_raw},${d.barang_raw}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Data_PDRB_${currentProvince}_${currentYear}.csv`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
