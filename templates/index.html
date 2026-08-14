@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS CDN with dark mode support -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -21,22 +21,6 @@
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
             heading: ['Plus Jakarta Sans', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              500: '#0ea5e9',
-              600: '#0284c7',
-              700: '#0369a1',
-              900: '#0c4a6e',
-            },
-            dark: {
-              bg: '#0b1120',
-              card: '#1e293b',
-              border: '#334155',
-              hover: '#283548'
-            }
           }
         }
       }
@@ -51,69 +35,78 @@
 
   <style>
     body {
-      background-color: #0b1120;
-      color: #f8fafc;
       font-family: 'Inter', sans-serif;
-    }
-    .hero-glow {
-      background: radial-gradient(circle at 50% -20%, rgba(56, 189, 248, 0.15) 0%, rgba(11, 17, 32, 0) 70%);
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: rgba(15, 23, 42, 0.6);
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #334155;
+      background: #475569;
       border-radius: 4px;
+    }
+    .light .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .light .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col hero-glow">
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 dark:bg-slate-950 dark:text-slate-100">
 
   <!-- Top Navbar -->
-  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+  <header class="border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
           <i class="fa-solid fa-chart-line text-white text-lg"></i>
         </div>
         <div>
-          <h1 class="font-heading font-bold text-lg text-white leading-tight">Korelasi PDRB & Transportasi</h1>
-          <p class="text-xs text-sky-400 font-medium">Executive Analytics Suite v3.0</p>
+          <h1 class="font-heading font-bold text-lg text-slate-900 dark:text-white leading-tight">Korelasi PDRB & Transportasi</h1>
+          <p class="text-xs text-sky-600 dark:text-sky-400 font-medium">BPS Regional Analytics Suite v3.2</p>
         </div>
       </div>
 
       <!-- Header Controls -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 sm:gap-3">
         <!-- Province Selector -->
         <div class="relative">
-          <select id="selProvince" onchange="onFilterChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none cursor-pointer">
+          <select id="selProvince" onchange="onProvinceChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
             <!-- Populated dynamically -->
           </select>
-          <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-slate-400 pointer-events-none"></i>
+          <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
         </div>
 
         <!-- Year Selector -->
         <div class="relative">
-          <select id="selYear" onchange="onFilterChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none cursor-pointer">
+          <select id="selYear" onchange="onYearChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
             <!-- Populated dynamically -->
           </select>
-          <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-slate-400 pointer-events-none"></i>
+          <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
         </div>
 
-        <!-- Tipe PDRB -->
+        <!-- Tipe PDRB (Semua, HK, HB) -->
         <div class="relative">
-          <select id="selTipePDRB" onchange="onFilterChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none cursor-pointer">
-            <option value="HK">Harga Konstan (HK Riil)</option>
+          <select id="selTipePDRB" onchange="onTipePDRBChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
+            <option value="all">🌐 Semua Tipe (HB & HK)</option>
+            <option value="HK" selected>Harga Konstan (HK Riil)</option>
             <option value="HB">Harga Berlaku (HB Nominal)</option>
           </select>
-          <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-xs text-slate-400 pointer-events-none"></i>
+          <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
         </div>
 
-        <button onclick="refreshData()" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition" title="Muat Ulang Data">
+        <!-- Theme Switcher Button -->
+        <button id="btnThemeToggle" onclick="toggleTheme()" class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Ubah Tema Terang / Gelap">
+          <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+
+        <!-- Refresh Button -->
+        <button onclick="refreshData()" class="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition" title="Muat Ulang Data">
           <i class="fa-solid fa-arrows-rotate"></i>
         </button>
       </div>
@@ -124,110 +117,109 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <!-- Hero Header Banner -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-sky-950 p-6 md:p-8 border border-slate-700/80 shadow-2xl">
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-sky-900 via-slate-900 to-indigo-950 p-6 md:p-8 border border-slate-700/80 shadow-2xl">
       <div class="relative z-10 max-w-3xl">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-semibold uppercase tracking-wider mb-3">
-          <i class="fa-solid fa-satellite-dish"></i> Badan Pusat Statistik Dataset
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-semibold uppercase tracking-wider mb-3">
+          <i class="fa-solid fa-satellite-dish"></i> Dataset Resmi BPS
         </div>
         <h2 class="text-2xl md:text-3xl font-heading font-extrabold text-white tracking-tight leading-tight">
-          Analisis Dampak Transportasi Udara terhadap Pertumbuhan Ekonomi Regional
+          Analisis Dampak Transportasi Udara terhadap Output PDRB Regional
         </h2>
-        <p class="mt-2 text-slate-300 text-sm md:text-base leading-relaxed">
-          Korelasi dinamis dan regresi linear antara pergerakan volume penumpang, bagasi, dan kargo udara dengan output PDRB sektoral di <span id="heroProvName" class="text-sky-400 font-semibold">-</span> (<span id="heroYear" class="text-sky-400 font-semibold">-</span>).
+        <p class="mt-2 text-slate-200 text-sm md:text-base leading-relaxed">
+          Korelasi dinamis dan regresi linear antara pergerakan volume penumpang, bagasi, dan kargo udara dengan output PDRB sektoral di <span id="heroProvName" class="text-sky-300 font-bold">-</span> (<span id="heroYear" class="text-sky-300 font-bold">-</span>).
         </p>
       </div>
-      <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-gradient-to-l from-sky-400 to-transparent pointer-events-none"></div>
     </div>
 
     <!-- 5 KPI Cards Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       
       <!-- KPI 1: Penumpang -->
-      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-sky-500 rounded-xl p-4 flex flex-col justify-between transition shadow-md">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Penumpang</span>
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Penumpang</span>
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 flex items-center justify-center">
             <i class="fa-solid fa-plane-departure text-sm"></i>
           </div>
         </div>
         <div class="my-2">
-          <div id="kpiPenumpangVal" class="text-2xl font-heading font-bold text-white">-</div>
-          <div class="text-xs text-slate-400">Orang / Tahun</div>
+          <div id="kpiPenumpangVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Orang / Tahun</div>
         </div>
-        <div id="kpiPenumpangGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiPenumpangGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 2: Bagasi -->
-      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-teal-500 rounded-xl p-4 flex flex-col justify-between transition shadow-md">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Bagasi</span>
-          <div class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Bagasi</span>
+          <div class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
             <i class="fa-solid fa-suitcase-rolling text-sm"></i>
           </div>
         </div>
         <div class="my-2">
-          <div id="kpiBagasiVal" class="text-2xl font-heading font-bold text-white">-</div>
-          <div class="text-xs text-slate-400">Kilogram (Kg)</div>
+          <div id="kpiBagasiVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Kilogram (Kg)</div>
         </div>
-        <div id="kpiBagasiGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiBagasiGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 3: Barang/Kargo -->
-      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 rounded-xl p-4 flex flex-col justify-between transition shadow-md">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Barang (Kargo)</span>
-          <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Barang (Kargo)</span>
+          <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
             <i class="fa-solid fa-boxes-stacked text-sm"></i>
           </div>
         </div>
         <div class="my-2">
-          <div id="kpiBarangVal" class="text-2xl font-heading font-bold text-white">-</div>
-          <div class="text-xs text-slate-400">Kilogram (Kg)</div>
+          <div id="kpiBarangVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Kilogram (Kg)</div>
         </div>
-        <div id="kpiBarangGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiBarangGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 4: PDRB Riil HK -->
-      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-sky-500 rounded-xl p-4 flex flex-col justify-between transition shadow-md">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">PDRB Riil (HK 2010)</span>
-          <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">PDRB Riil (HK 2010)</span>
+          <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
             <i class="fa-solid fa-landmark text-sm"></i>
           </div>
         </div>
         <div class="my-2">
-          <div id="kpiPdrbVal" class="text-2xl font-heading font-bold text-white">-</div>
-          <div class="text-xs text-slate-400">Total 4 Triwulan</div>
+          <div id="kpiPdrbVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Total 4 Triwulan</div>
         </div>
-        <div id="kpiPdrbGrowth" class="text-xs font-medium text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiPdrbGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 5: Sektor Max -->
-      <div class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between transition shadow-lg">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-pink-500 rounded-xl p-4 flex flex-col justify-between transition shadow-md">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sektor Terkorelasi Max</span>
-          <div class="w-8 h-8 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sektor Terkorelasi Max</span>
+          <div class="w-8 h-8 rounded-lg bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center">
             <i class="fa-solid fa-link text-sm"></i>
           </div>
         </div>
         <div class="my-2">
-          <div id="kpiSectorMaxName" class="text-sm font-heading font-bold text-white line-clamp-2" title="-">-</div>
+          <div id="kpiSectorMaxName" class="text-sm font-heading font-bold text-slate-900 dark:text-white line-clamp-2" title="-">-</div>
         </div>
-        <div id="kpiSectorMaxVal" class="text-xs font-semibold text-sky-400">r = -</div>
+        <div id="kpiSectorMaxVal" class="text-xs font-semibold text-sky-600 dark:text-sky-400">r = -</div>
       </div>
 
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="border-b border-slate-800">
+    <div class="border-b border-slate-200 dark:border-slate-800">
       <nav class="flex space-x-2" aria-label="Tabs">
-        <button onclick="switchTab('tab1')" id="nav-tab1" class="tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-400 bg-slate-800/60">
+        <button onclick="switchTab('tab1')" id="nav-tab1" class="tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60">
           <i class="fa-solid fa-table-cells mr-2"></i> Matriks Korelasi & Grafik Interaktif
         </button>
-        <button onclick="switchTab('tab2')" id="nav-tab2" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30">
+        <button onclick="switchTab('tab2')" id="nav-tab2" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30">
           <i class="fa-solid fa-chart-area mr-2"></i> Tren Makro & Sektoral
         </button>
-        <button onclick="switchTab('tab3')" id="nav-tab3" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30">
+        <button onclick="switchTab('tab3')" id="nav-tab3" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30">
           <i class="fa-solid fa-database mr-2"></i> Data Lengkap & Ekspor
         </button>
       </nav>
@@ -237,20 +229,20 @@
     <div id="content-tab1" class="space-y-6">
 
       <!-- Section: Tabel Matriks Korelasi Resmi -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 class="text-lg font-heading font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-table text-sky-400"></i>
+            <h3 class="text-lg font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-table text-sky-500 dark:text-sky-400"></i>
               2. Matriks Korelasi PDRB Menurut Lapangan Usaha vs Transportasi
             </h3>
-            <p class="text-xs text-slate-400 mt-1">Pilih baris pada tabel untuk langsung menampilkan visualisasi time-series dan regresi linier di bawah.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pilih baris pada tabel untuk langsung menampilkan visualisasi time-series dan regresi linier di bawah.</p>
           </div>
 
           <!-- Controls: Filter Mode, Sort By, Search -->
           <div class="flex flex-wrap items-center gap-2">
             <!-- Filter Korelasi -->
-            <select id="selFilterMode" onchange="loadCorrelations()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+            <select id="selFilterMode" onchange="loadCorrelations()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
               <option value="all">Semua Baris</option>
               <option value="6_core" selected>⭐ 6 Sektor Pilihan (G, F, C, H, I, E)</option>
               <option value="top5_high">🔥 Top 5 Korelasi Tertinggi</option>
@@ -260,7 +252,7 @@
             </select>
 
             <!-- Sorting -->
-            <select id="selSortBy" onchange="loadCorrelations()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+            <select id="selSortBy" onchange="loadCorrelations()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
               <option value="default">Urutan Asli BPS</option>
               <option value="p_desc">Penumpang (Tinggi ➔ Rendah)</option>
               <option value="p_asc">Penumpang (Rendah ➔ Tinggi)</option>
@@ -270,16 +262,16 @@
 
             <!-- Search -->
             <div class="relative">
-              <input type="text" id="txtSearchSector" oninput="loadCorrelations()" placeholder="Cari nama sektor..." class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 w-44">
+              <input type="text" id="txtSearchSector" oninput="loadCorrelations()" placeholder="Cari nama sektor..." class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 outline-none focus:ring-1 focus:ring-sky-500 w-44">
               <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-slate-400"></i>
             </div>
           </div>
         </div>
 
         <!-- Table Container -->
-        <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl max-h-80">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-950 text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-800">
+        <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-80">
+          <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+            <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th class="px-4 py-3">Lapangan Usaha</th>
                 <th class="px-4 py-3">Tipe PDRB</th>
@@ -288,7 +280,7 @@
                 <th class="px-4 py-3 text-right">Korelasi dgn Barang</th>
               </tr>
             </thead>
-            <tbody id="tblCorrelBody" class="divide-y divide-slate-800/60 font-mono">
+            <tbody id="tblCorrelBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
               <!-- Rendered via JS -->
             </tbody>
           </table>
@@ -296,10 +288,10 @@
       </div>
 
       <!-- Dynamic Inspector Card -->
-      <div class="bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="bg-gradient-to-r from-sky-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-sky-200 dark:border-slate-700 rounded-xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div class="text-xs text-sky-400 uppercase font-bold tracking-wider mb-1">Sektor Aktif Terpilih:</div>
-          <h4 id="inspectorSectorTitle" class="text-base md:text-lg font-heading font-bold text-white">-</h4>
+          <div class="text-xs text-sky-600 dark:text-sky-400 uppercase font-bold tracking-wider mb-1">Sektor Aktif Terpilih:</div>
+          <h4 id="inspectorSectorTitle" class="text-base md:text-lg font-heading font-bold text-slate-900 dark:text-white">-</h4>
         </div>
         <div class="flex flex-wrap items-center gap-2 text-xs" id="inspectorBadges">
           <!-- Rendered via JS -->
@@ -307,21 +299,21 @@
       </div>
 
       <!-- Controls for Charts -->
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
         <!-- Scale Mode for Time Series -->
         <div class="flex items-center gap-2">
-          <span class="font-semibold text-slate-400">📐 Mode Skala Time-Series:</span>
-          <div class="inline-flex rounded-lg bg-slate-800 p-1 border border-slate-700">
+          <span class="font-semibold text-slate-600 dark:text-slate-400">📐 Mode Skala Time-Series:</span>
+          <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700">
             <button onclick="setScaleMode('idx100')" id="btnScaleIdx" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition">Indeks Basis 100</button>
-            <button onclick="setScaleMode('qoq')" id="btnScaleQoq" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">Growth QoQ (%)</button>
-            <button onclick="setScaleMode('abs')" id="btnScaleAbs" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">Nilai Absolut</button>
+            <button onclick="setScaleMode('qoq')" id="btnScaleQoq" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition">Growth QoQ (%)</button>
+            <button onclick="setScaleMode('abs')" id="btnScaleAbs" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition">Nilai Absolut</button>
           </div>
         </div>
 
         <!-- Transport Metric for Regression -->
         <div class="flex items-center gap-2">
-          <span class="font-semibold text-slate-400">🎯 Sumbu Y Regresi (Transportasi):</span>
-          <select id="selRegMetric" onchange="onRegMetricChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+          <span class="font-semibold text-slate-600 dark:text-slate-400">🎯 Sumbu Y Regresi (Transportasi):</span>
+          <select id="selRegMetric" onchange="onRegMetricChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
             <option value="penumpang">✈️ Penumpang (Orang)</option>
             <option value="bagasi">🧳 Bagasi (Kg)</option>
             <option value="barang">📦 Barang/Kargo (Kg)</option>
@@ -333,37 +325,37 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- Left: Multi-Axis Time Series Chart -->
-        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+        <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
-            <h4 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-              <i class="fa-solid fa-wave-square text-sky-400"></i>
+            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-wave-square text-sky-500 dark:text-sky-400"></i>
               Grafik Runtun Waktu Triwulanan (Q1 s.d. Q4)
             </h4>
-            <span class="text-[11px] text-slate-400" id="chartTimeSpanLabel">2024</span>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400" id="chartTimeSpanLabel">2024</span>
           </div>
           <div id="chartTimeSeries" class="w-full h-80"></div>
         </div>
 
         <!-- Right: OLS Scatter & Linear Regression -->
-        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+        <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
-            <h4 class="font-heading font-bold text-sm text-white flex items-center gap-2">
-              <i class="fa-solid fa-chart-line text-indigo-400"></i>
+            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-indigo-500 dark:text-indigo-400"></i>
               Plot Sebaran & Garis Regresi Linear (OLS)
             </h4>
-            <span class="text-[11px] text-sky-400 font-mono" id="chartRegRVal">r = -</span>
+            <span class="text-[11px] text-sky-600 dark:text-sky-400 font-mono" id="chartRegRVal">r = -</span>
           </div>
           <div id="chartRegression" class="w-full h-80"></div>
           
           <!-- Excel-style Stats Summary Box -->
-          <div class="mt-3 bg-slate-950 border border-slate-800 rounded-lg p-2.5 grid grid-cols-2 gap-2 text-center text-xs">
+          <div class="mt-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 grid grid-cols-2 gap-2 text-center text-xs">
             <div>
-              <div class="text-[11px] text-slate-400">Koefisien Korelasi (R):</div>
-              <div id="regSummaryR" class="font-mono font-bold text-emerald-400 text-sm">-</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">Koefisien Korelasi (R):</div>
+              <div id="regSummaryR" class="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">-</div>
             </div>
             <div>
-              <div class="text-[11px] text-slate-400">Koefisien Determinasi (R²):</div>
-              <div id="regSummaryR2" class="font-mono font-bold text-sky-400 text-sm">-</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">Koefisien Determinasi (R²):</div>
+              <div id="regSummaryR2" class="font-mono font-bold text-sky-600 dark:text-sky-400 text-sm">-</div>
             </div>
           </div>
         </div>
@@ -374,44 +366,81 @@
 
     <!-- TAB 2: TREN MAKRO & STRUKTUR SEKTORAL -->
     <div id="content-tab2" class="hidden space-y-6">
-      
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Top 10 Sektor Bar Chart -->
-        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <h4 class="font-heading font-bold text-sm text-white mb-3">
-            <i class="fa-solid fa-ranking-star text-amber-400 mr-2"></i>
+        <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white mb-3">
+            <i class="fa-solid fa-ranking-star text-amber-500 mr-2"></i>
             Top 10 Sektor Lapangan Usaha Terbesar
           </h4>
           <div id="chartTopSectors" class="w-full h-80"></div>
         </div>
 
         <!-- Transport Pie Distribution -->
-        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <h4 class="font-heading font-bold text-sm text-white mb-3">
-            <i class="fa-solid fa-chart-pie text-teal-400 mr-2"></i>
+        <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white mb-3">
+            <i class="fa-solid fa-chart-pie text-teal-500 mr-2"></i>
             Distribusi Total Muatan Transportasi
           </h4>
           <div id="chartTransportPie" class="w-full h-80"></div>
         </div>
       </div>
-
     </div>
 
-    <!-- TAB 3: DATA LENGKAP & EKSPOR -->
+    <!-- TAB 3: DATA LENGKAP & EKSPOR (SEMUA TABEL BPS) -->
     <div id="content-tab3" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div class="flex items-center justify-between">
-          <h4 class="font-heading font-bold text-base text-white">
-            <i class="fa-solid fa-table-list text-sky-400 mr-2"></i>
-            Tabel Data Triwulanan Terintegrasi
-          </h4>
-          <button onclick="exportCSV()" class="bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition flex items-center gap-2">
-            <i class="fa-solid fa-download"></i> Unduh Data (.CSV)
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+        
+        <!-- Tab 3 Header & Table Selector -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <h4 class="font-heading font-bold text-base md:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-database text-sky-500"></i>
+              Koleksi Tabel Data Terintegrasi BPS
+            </h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pilih tabel di bawah untuk melihat seluruh data mentah, triwulanan, atau matriks korelasi.</p>
+          </div>
+          
+          <button onclick="exportCurrentTableCSV()" class="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-lg shadow-sky-600/20">
+            <i class="fa-solid fa-download"></i> Unduh Tabel Aktif (.CSV)
           </button>
         </div>
-        <div class="overflow-x-auto custom-scrollbar border border-slate-800 rounded-xl max-h-96">
-          <table id="tblRawData" class="w-full text-left text-xs text-slate-300">
-            <!-- Populated via JS -->
+
+        <!-- Table View Selector Pills -->
+        <div class="flex flex-wrap gap-2">
+          <button onclick="switchDataTable('pdrb_triwulan')" id="btnTbl-pdrb_triwulan" class="tbl-tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white shadow transition">
+            📊 1. Data Triwulanan PDRB & Transportasi
+          </button>
+          <button onclick="switchDataTable('pdrb_correl_lu')" id="btnTbl-pdrb_correl_lu" class="tbl-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            📋 2. Matriks Korelasi Lapangan Usaha
+          </button>
+          <button onclick="switchDataTable('pdrb_correl_peng')" id="btnTbl-pdrb_correl_peng" class="tbl-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            📋 3. Matriks Korelasi Pengeluaran
+          </button>
+          <button onclick="switchDataTable('penumpang')" id="btnTbl-penumpang" class="tbl-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            ✈️ Bulanan Penumpang
+          </button>
+          <button onclick="switchDataTable('bagasi')" id="btnTbl-bagasi" class="tbl-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            🧳 Bulanan Bagasi
+          </button>
+          <button onclick="switchDataTable('barang')" id="btnTbl-barang" class="tbl-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            📦 Bulanan Barang
+          </button>
+          <button onclick="switchDataTable('raw')" id="btnTbl-raw" class="tbl-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            📄 Raw Data Asli
+          </button>
+        </div>
+
+        <!-- Table Information & Search -->
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <span id="txtTableInfo">Menampilkan tabel...</span>
+          <input type="text" id="txtSearchTab3" oninput="filterTab3Table()" placeholder="Cari dalam tabel..." class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-sky-500 w-56">
+        </div>
+
+        <!-- Scrollable Table Container -->
+        <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-[500px]">
+          <table id="tblDynamicRaw" class="w-full text-left text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
+            <!-- Populated dynamically via JS -->
           </table>
         </div>
       </div>
@@ -420,7 +449,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-slate-800 py-6 mt-12 bg-slate-950 text-slate-500 text-xs text-center">
+  <footer class="border-t border-slate-200 dark:border-slate-800 py-6 mt-12 bg-white dark:bg-slate-950 text-slate-500 text-xs text-center transition-colors">
     <p>Dashboard Analisis PDRB & Transportasi Provinsi • Powered by FastAPI & Parquet Serverless Engine</p>
     <p class="mt-1">Dataset Resmi Badan Pusat Statistik (BPS)</p>
   </footer>
@@ -436,6 +465,9 @@
     let currentScaleMode = "idx100";
     let currentRegMetric = "penumpang";
     let activeDashboardData = null;
+    let currentTab3Sheet = "pdrb_triwulan";
+    let activeTab3RawData = null;
+    let isDarkMode = true;
 
     // Format helper Indonesia
     function formatNumberID(num, decimals = 0) {
@@ -445,11 +477,48 @@
 
     // Init App
     document.addEventListener("DOMContentLoaded", async () => {
-      await loadInitialOptions();
+      initTheme();
+      await loadInitialManifest();
       await refreshData();
     });
 
-    async function loadInitialOptions() {
+    // Theme Management (Light / Dark)
+    function initTheme() {
+      const saved = localStorage.getItem('pdrb_theme');
+      if (saved === 'light') {
+        isDarkMode = false;
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+      } else {
+        isDarkMode = true;
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        document.getElementById('themeIcon').className = 'fa-solid fa-moon';
+      }
+    }
+
+    function toggleTheme() {
+      isDarkMode = !isDarkMode;
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        document.getElementById('themeIcon').className = 'fa-solid fa-moon';
+        localStorage.setItem('pdrb_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+        localStorage.setItem('pdrb_theme', 'light');
+      }
+      if (activeDashboardData) {
+        renderTimeSeriesChart(activeDashboardData);
+        renderRegressionChart(activeDashboardData);
+        renderMacroCharts(activeDashboardData);
+      }
+    }
+
+    async function loadInitialManifest() {
       try {
         const res = await fetch("/api/manifest");
         currentManifest = await res.json();
@@ -457,46 +526,68 @@
         const selProv = document.getElementById("selProvince");
         selProv.innerHTML = "";
         
-        for (const [key, val] of Object.entries(currentManifest.provinces || {})) {
-          const opt = document.createElement("option");
-          opt.value = key;
-          opt.textContent = `📍 ${val.name}`;
-          if (key === currentProvince) opt.selected = true;
-          selProv.appendChild(opt);
+        const provEntries = Object.entries(currentManifest.provinces || {});
+        if (provEntries.length > 0) {
+          if (!currentManifest.provinces[currentProvince]) {
+            currentProvince = provEntries[0][0];
+          }
+          for (const [key, val] of provEntries) {
+            const opt = document.createElement("option");
+            opt.value = key;
+            opt.textContent = `📍 ${val.name}`;
+            if (key === currentProvince) opt.selected = true;
+            selProv.appendChild(opt);
+          }
         }
-
-        populateYears();
+        populateYears(true);
       } catch (err) {
         console.error("Error loading manifest:", err);
       }
     }
 
-    function populateYears() {
+    function populateYears(resetToFirst = false) {
       const selYear = document.getElementById("selYear");
-      selYear.innerHTML = "";
       const provData = currentManifest.provinces?.[currentProvince];
       if (provData && provData.years) {
         const years = Object.keys(provData.years).sort().reverse();
-        years.forEach(y => {
+        selYear.innerHTML = "";
+        years.forEach((y, i) => {
           const opt = document.createElement("option");
           opt.value = y;
           opt.textContent = `📅 ${y}`;
-          if (y === currentYear) opt.selected = true;
           selYear.appendChild(opt);
         });
+
+        if (resetToFirst && years.length > 0) {
+          currentYear = years[0];
+          selYear.value = currentYear;
+        } else if (years.includes(currentYear)) {
+          selYear.value = currentYear;
+        } else if (years.length > 0) {
+          currentYear = years[0];
+          selYear.value = currentYear;
+        }
       }
     }
 
-    function onFilterChange() {
+    // Separate Event Handlers to avoid Year dropdown reset
+    function onProvinceChange() {
       currentProvince = document.getElementById("selProvince").value;
-      populateYears();
+      populateYears(true);
+      refreshData();
+    }
+
+    function onYearChange() {
       currentYear = document.getElementById("selYear").value;
+      refreshData();
+    }
+
+    function onTipePDRBChange() {
       currentTipePDRB = document.getElementById("selTipePDRB").value;
       refreshData();
     }
 
     async function refreshData() {
-      // Update Hero Titles
       const provData = currentManifest.provinces?.[currentProvince];
       document.getElementById("heroProvName").textContent = provData ? provData.name : currentProvince;
       document.getElementById("heroYear").textContent = currentYear;
@@ -504,6 +595,7 @@
 
       await loadCorrelations();
       await loadSectorData();
+      await loadTab3Table(currentTab3Sheet);
     }
 
     async function loadCorrelations() {
@@ -524,24 +616,25 @@
           return;
         }
 
-        data.rows.forEach((r, idx) => {
+        data.rows.forEach((r) => {
           const tr = document.createElement("tr");
-          tr.className = "hover:bg-slate-800/80 cursor-pointer transition border-b border-slate-800/50 " + (r["Lapangan Usaha"] === currentSector ? "bg-sky-950/40 border-sky-500/50 font-semibold" : "");
+          const isSelected = r["Lapangan Usaha"] === currentSector;
+          tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer transition border-b border-slate-200 dark:border-slate-800/50 " + (isSelected ? "bg-sky-100 dark:bg-sky-950/40 border-sky-500 font-semibold" : "");
           tr.onclick = () => selectSector(r["Lapangan Usaha"], r["Tipe PDRB"]?.includes("HB") ? "HB" : "HK");
 
-          const pVal = Number(r["Korelasi dgn Penumpang"]);
-          const bagVal = Number(r["Korelasi dgn Bagasi"]);
-          const barVal = Number(r["Korelasi dgn Barang"]);
+          const pVal = r["Korelasi dgn Penumpang"] !== null ? Number(r["Korelasi dgn Penumpang"]) : NaN;
+          const bagVal = r["Korelasi dgn Bagasi"] !== null ? Number(r["Korelasi dgn Bagasi"]) : NaN;
+          const barVal = r["Korelasi dgn Barang"] !== null ? Number(r["Korelasi dgn Barang"]) : NaN;
 
           tr.innerHTML = `
-            <td class="px-4 py-2.5 text-slate-200 flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full ${r["Lapangan Usaha"] === currentSector ? 'bg-sky-400' : 'bg-slate-600'}"></span>
+            <td class="px-4 py-2.5 text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-sky-500' : 'bg-slate-400 dark:bg-slate-600'}"></span>
               ${r["Lapangan Usaha"]}
             </td>
-            <td class="px-4 py-2.5 text-slate-400">${r["Tipe PDRB"] || '-'}</td>
-            <td class="px-4 py-2.5 text-right ${pVal >= 0.7 ? 'text-emerald-400' : (pVal < 0 ? 'text-rose-400' : 'text-slate-300')}">${isNaN(pVal) ? '-' : pVal.toFixed(4)}</td>
-            <td class="px-4 py-2.5 text-right ${bagVal >= 0.7 ? 'text-emerald-400' : (bagVal < 0 ? 'text-rose-400' : 'text-slate-300')}">${isNaN(bagVal) ? '-' : bagVal.toFixed(4)}</td>
-            <td class="px-4 py-2.5 text-right ${barVal >= 0.7 ? 'text-emerald-400' : (barVal < 0 ? 'text-rose-400' : 'text-slate-300')}">${isNaN(barVal) ? '-' : barVal.toFixed(4)}</td>
+            <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400 font-sans">${r["Tipe PDRB"] || '-'}</td>
+            <td class="px-4 py-2.5 text-right ${pVal >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (pVal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300')}">${isNaN(pVal) ? '-' : pVal.toFixed(4)}</td>
+            <td class="px-4 py-2.5 text-right ${bagVal >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (bagVal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300')}">${isNaN(bagVal) ? '-' : bagVal.toFixed(4)}</td>
+            <td class="px-4 py-2.5 text-right ${barVal >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (barVal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300')}">${isNaN(barVal) ? '-' : barVal.toFixed(4)}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -553,8 +646,10 @@
 
     function selectSector(sectorName, tipe) {
       currentSector = sectorName;
-      if (tipe) currentTipePDRB = tipe;
-      document.getElementById("selTipePDRB").value = currentTipePDRB;
+      if (tipe && currentTipePDRB !== 'all') {
+        currentTipePDRB = tipe;
+        document.getElementById("selTipePDRB").value = currentTipePDRB;
+      }
       loadCorrelations();
       loadSectorData();
     }
@@ -584,30 +679,29 @@
         document.getElementById("kpiSectorMaxVal").textContent = `r = ${Number(data.kpi.max_correl_val || 0).toFixed(3)} (${data.kpi.max_correl_type || ''})`;
 
         // 2. Update Inspector Card
-        document.getElementById("inspectorSectorTitle").innerHTML = `${data.active_sector} <span class="text-xs text-sky-400 font-normal">(${data.tipe_pdrb})</span>`;
+        document.getElementById("inspectorSectorTitle").innerHTML = `${data.active_sector} <span class="text-xs text-sky-600 dark:text-sky-400 font-normal">(${data.tipe_pdrb})</span>`;
         
         const rVal = data.regression.r_val;
-        let badgeColor = "bg-emerald-950 text-emerald-300 border-emerald-700";
+        let badgeColor = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
         let badgeDesc = "Sangat Kuat Positif 🚀";
         if (rVal < 0) {
-          badgeColor = "bg-rose-950 text-rose-300 border-rose-700";
+          badgeColor = "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-300 dark:border-rose-700";
           badgeDesc = "Kuat Negatif ⚠️";
         } else if (rVal < 0.5) {
-          badgeColor = "bg-sky-950 text-sky-300 border-sky-700";
+          badgeColor = "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-300 dark:border-sky-700";
           badgeDesc = "Moderat Positif 📈";
         }
 
         document.getElementById("inspectorBadges").innerHTML = `
-          <span class="px-2.5 py-1 rounded border font-mono ${badgeColor}">${badgeDesc} (r = ${rVal.toFixed(4)})</span>
-          <span class="px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-300">R² = ${data.regression.r_squared.toFixed(4)}</span>
-          <span class="px-2.5 py-1 rounded border border-slate-700 bg-slate-800 text-slate-300 font-mono">${data.regression.equation}</span>
+          <span class="px-2.5 py-1 rounded border font-mono font-semibold ${badgeColor}">${badgeDesc} (r = ${rVal.toFixed(4)})</span>
+          <span class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">R² = ${data.regression.r_squared.toFixed(4)}</span>
+          <span class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">${data.regression.equation}</span>
         `;
 
         // 3. Render Charts
         renderTimeSeriesChart(data);
         renderRegressionChart(data);
         renderMacroCharts(data);
-        renderRawTable(data);
 
       } catch (err) {
         console.error("Error loading sector data:", err);
@@ -616,9 +710,9 @@
 
     function setScaleMode(mode) {
       currentScaleMode = mode;
-      document.getElementById("btnScaleIdx").className = mode === 'idx100' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition";
-      document.getElementById("btnScaleQoq").className = mode === 'qoq' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition";
-      document.getElementById("btnScaleAbs").className = mode === 'abs' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition";
+      document.getElementById("btnScaleIdx").className = mode === 'idx100' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition";
+      document.getElementById("btnScaleQoq").className = mode === 'qoq' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition";
+      document.getElementById("btnScaleAbs").className = mode === 'abs' ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition" : "px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition";
       
       if (activeDashboardData) renderTimeSeriesChart(activeDashboardData);
     }
@@ -644,7 +738,7 @@
           y: pdrbVals,
           name: `PDRB: ${data.active_sector}`,
           mode: 'lines+markers',
-          line: { color: '#38bdf8', width: 3.5 },
+          line: { color: '#0ea5e9', width: 3.5 },
           marker: { size: 8, symbol: 'circle' }
         },
         {
@@ -674,15 +768,17 @@
       ];
 
       const yTitle = isIdx ? "Indeks Pertumbuhan (Base Q1 = 100)" : (isQoq ? "Pertumbuhan Kuartalan (%)" : "Volume Nilai");
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
 
       const layout = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#94a3b8', family: 'Inter' },
+        font: { color: textColor, family: 'Inter' },
         margin: { l: 45, r: 25, t: 20, b: 45 },
         hovermode: 'x unified',
-        xaxis: { gridcolor: '#1e293b' },
-        yaxis: { title: yTitle, gridcolor: '#1e293b' },
+        xaxis: { gridcolor: gridColor },
+        yaxis: { title: yTitle, gridcolor: gridColor },
         legend: { orientation: 'h', y: -0.25, x: 0.5, xanchor: 'center' }
       };
 
@@ -697,6 +793,8 @@
 
       const pts = reg.points;
       const trend = reg.trend_line;
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
 
       const traces = [
         {
@@ -712,30 +810,30 @@
           text: pts.map(p => p.triwulan),
           mode: 'markers+text',
           textposition: 'top right',
-          textfont: { size: 10, color: '#cbd5e1' },
-          marker: { size: 11, color: '#38bdf8', line: { color: '#ffffff', width: 1.5 } }
+          textfont: { size: 10, color: isDarkMode ? '#cbd5e1' : '#334155' },
+          marker: { size: 11, color: '#38bdf8', line: { color: isDarkMode ? '#ffffff' : '#0f172a', width: 1.5 } }
         }
       ];
 
       const layout = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#94a3b8', family: 'Inter' },
+        font: { color: textColor, family: 'Inter' },
         margin: { l: 55, r: 25, t: 20, b: 45 },
-        xaxis: { title: `PDRB: ${data.active_sector} (Sumbu X)`, gridcolor: '#1e293b' },
-        yaxis: { title: `${reg.label_y} (Sumbu Y)`, gridcolor: '#1e293b' },
+        xaxis: { title: `PDRB: ${data.active_sector} (Sumbu X)`, gridcolor: gridColor },
+        yaxis: { title: `${reg.label_y} (Sumbu Y)`, gridcolor: gridColor },
         showlegend: false,
         annotations: [{
           xref: 'paper',
           yref: 'paper',
           x: 0.05,
           y: 0.95,
-          text: `<b>${reg.equation}</b><br><span style="color:#38bdf8;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:#34d399;">R = ${reg.r_val.toFixed(4)}</span>`,
+          text: `<b>${reg.equation}</b><br><span style="color:#0ea5e9;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:#10b981;">R = ${reg.r_val.toFixed(4)}</span>`,
           showarrow: false,
-          bgcolor: 'rgba(15, 23, 42, 0.9)',
-          bordercolor: '#3b82f6',
+          bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+          bordercolor: '#0ea5e9',
           borderwidth: 1,
-          font: { size: 11, color: '#f8fafc' }
+          font: { size: 11, color: isDarkMode ? '#f8fafc' : '#0f172a' }
         }]
       };
 
@@ -743,6 +841,9 @@
     }
 
     function renderMacroCharts(data) {
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+
       // Top 10 Sectors Horizontal Bar
       const sectors = data.sectors_summary || [];
       const traceBar = [{
@@ -755,9 +856,9 @@
       const layoutBar = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#94a3b8', family: 'Inter' },
+        font: { color: textColor, family: 'Inter' },
         margin: { l: 150, r: 20, t: 10, b: 40 },
-        xaxis: { gridcolor: '#1e293b' }
+        xaxis: { gridcolor: gridColor }
       };
       Plotly.newPlot('chartTopSectors', traceBar, layoutBar, { responsive: true, displayModeBar: false });
 
@@ -771,43 +872,102 @@
       }];
       const layoutPie = {
         paper_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#94a3b8', family: 'Inter' },
+        font: { color: textColor, family: 'Inter' },
         margin: { l: 20, r: 20, t: 10, b: 20 },
         legend: { orientation: 'h', y: -0.15 }
       };
       Plotly.newPlot('chartTransportPie', tracePie, layoutPie, { responsive: true, displayModeBar: false });
     }
 
-    function renderRawTable(data) {
-      const tbl = document.getElementById("tblRawData");
-      if (!data.triwulan_data || data.triwulan_data.length === 0) return;
+    // =================================================================================
+    // TAB 3: SEMUA KOLEKSI TABEL DATA LENGKAP & EKSPOR
+    // =================================================================================
 
-      let html = `
-        <thead class="bg-slate-950 font-heading uppercase text-[11px] text-slate-400 border-b border-slate-800">
-          <tr>
-            <th class="px-4 py-3">Triwulan</th>
-            <th class="px-4 py-3 text-right">Nilai PDRB (${data.active_sector})</th>
-            <th class="px-4 py-3 text-right">Penumpang (Orang)</th>
-            <th class="px-4 py-3 text-right">Bagasi (Kg)</th>
-            <th class="px-4 py-3 text-right">Barang (Kg)</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-800 font-mono">
-      `;
-
-      data.triwulan_data.forEach(d => {
-        html += `
-          <tr class="hover:bg-slate-800/60">
-            <td class="px-4 py-2.5 text-slate-200 font-sans font-semibold">${d.triwulan}</td>
-            <td class="px-4 py-2.5 text-right text-sky-400">${formatNumberID(d.pdrb_raw, 2)}</td>
-            <td class="px-4 py-2.5 text-right text-emerald-400">${formatNumberID(d.penumpang_raw, 0)}</td>
-            <td class="px-4 py-2.5 text-right text-teal-400">${formatNumberID(d.bagasi_raw, 0)}</td>
-            <td class="px-4 py-2.5 text-right text-amber-400">${formatNumberID(d.barang_raw, 0)}</td>
-          </tr>
-        `;
+    async function switchDataTable(sheetKey) {
+      currentTab3Sheet = sheetKey;
+      document.querySelectorAll('.tbl-tab-btn').forEach(btn => {
+        btn.className = "tbl-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition";
       });
-      html += `</tbody>`;
-      tbl.innerHTML = html;
+      const activeBtn = document.getElementById(`btnTbl-${sheetKey}`);
+      if (activeBtn) {
+        activeBtn.className = "tbl-tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white shadow transition";
+      }
+      await loadTab3Table(sheetKey);
+    }
+
+    async function loadTab3Table(sheetKey) {
+      const tbl = document.getElementById("tblDynamicRaw");
+      const info = document.getElementById("txtTableInfo");
+      info.textContent = `Memuat ${sheetKey}...`;
+
+      try {
+        const url = `/api/raw_sheet?province=${currentProvince}&year=${currentYear}&sheet=${sheetKey}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        activeTab3RawData = data;
+
+        if (!data.rows || data.rows.length === 0) {
+          tbl.innerHTML = `<tr><td class="text-center py-8 text-slate-500">Tabel ${sheetKey} tidak memiliki baris data.</td></tr>`;
+          info.textContent = `Tabel ${sheetKey} (0 baris)`;
+          return;
+        }
+
+        info.textContent = `Menampilkan ${data.count} baris data pada tabel ${sheetKey.toUpperCase()}`;
+
+        let thead = `<thead class="bg-slate-100 dark:bg-slate-950 font-heading uppercase text-[11px] text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10"><tr>`;
+        data.columns.forEach(col => {
+          thead += `<th class="px-4 py-3">${col}</th>`;
+        });
+        thead += `</tr></thead>`;
+
+        let tbody = `<tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono text-xs">`;
+        data.rows.forEach(row => {
+          tbody += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/60">`;
+          data.columns.forEach(col => {
+            const val = row[col];
+            const isNum = typeof val === 'number';
+            const formatted = isNum ? (Number.isInteger(val) ? formatNumberID(val, 0) : formatNumberID(val, 4)) : (val || '-');
+            tbody += `<td class="px-4 py-2.5 ${isNum ? 'text-right' : 'text-slate-800 dark:text-slate-200 font-sans'}">${formatted}</td>`;
+          });
+          tbody += `</tr>`;
+        });
+        tbody += `</tbody>`;
+
+        tbl.innerHTML = thead + tbody;
+
+      } catch (err) {
+        console.error("Error loading Tab 3 table:", err);
+        tbl.innerHTML = `<tr><td class="text-center py-8 text-rose-500">Gagal memuat tabel ${sheetKey}.</td></tr>`;
+      }
+    }
+
+    function filterTab3Table() {
+      const q = document.getElementById("txtSearchTab3").value.toLowerCase();
+      const rows = document.querySelectorAll("#tblDynamicRaw tbody tr");
+      rows.forEach(r => {
+        const text = r.textContent.toLowerCase();
+        r.style.display = text.includes(q) ? "" : "none";
+      });
+    }
+
+    function exportCurrentTableCSV() {
+      if (!activeTab3RawData || !activeTab3RawData.rows || activeTab3RawData.rows.length === 0) return;
+      const cols = activeTab3RawData.columns;
+      let csv = cols.map(c => `"${c.replace(/"/g, '""')}"`).join(",") + "\n";
+      
+      activeTab3RawData.rows.forEach(row => {
+        const line = cols.map(col => {
+          const v = row[col];
+          return v === null || v === undefined ? '""' : `"${String(v).replace(/"/g, '""')}"`;
+        }).join(",");
+        csv += line + "\n";
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Tabel_${currentTab3Sheet}_${currentProvince}_${currentYear}.csv`;
+      link.click();
     }
 
     function switchTab(tabId) {
@@ -816,27 +976,14 @@
       document.getElementById("content-tab3").classList.add("hidden");
 
       document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.className = "tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30";
+        btn.className = "tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30";
       });
 
       document.getElementById(`content-${tabId}`).classList.remove("hidden");
-      document.getElementById(`nav-${tabId}`).className = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-400 bg-slate-800/60";
+      document.getElementById(`nav-${tabId}`).className = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60";
 
       // Trigger resize for Plotly charts
       window.dispatchEvent(new Event('resize'));
-    }
-
-    function exportCSV() {
-      if (!activeDashboardData || !activeDashboardData.triwulan_data) return;
-      let csv = "Triwulan,PDRB,Penumpang,Bagasi,Barang\n";
-      activeDashboardData.triwulan_data.forEach(d => {
-        csv += `"${d.triwulan}",${d.pdrb_raw},${d.penumpang_raw},${d.bagasi_raw},${d.barang_raw}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `Data_PDRB_${currentProvince}_${currentYear}.csv`;
-      link.click();
     }
   </script>
 </body>
