@@ -332,51 +332,59 @@
       </div>
 
       <!-- Controls for Charts -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
         
-        <!-- PDRB Price Type Toggle: HK vs HB -->
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-coins text-amber-500"></i>
-            <span>Tipe PDRB:</span>
-          </span>
-          <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700 shadow-inner">
-            <button onclick="setPdrbPriceType('HK')" id="btnPdrbHK" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1.5" title="PDRB Harga Konstan 2010 (Output Riil)">
-              <i class="fa-solid fa-gem text-[10px]"></i>
-              <span>Harga Konstan (HK)</span>
-            </button>
-            <button onclick="setPdrbPriceType('HB')" id="btnPdrbHB" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5" title="PDRB Harga Berlaku (Output Nominal)">
-              <i class="fa-solid fa-tag text-[10px]"></i>
-              <span>Harga Berlaku (HB)</span>
-            </button>
+        <!-- Left (Col 7): Controls for Time-Series Chart -->
+        <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-md">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-ruler-combined text-indigo-500"></i>
+              <span>Skala Time-Series:</span>
+            </span>
+            <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700">
+              <button onclick="setScaleMode('idx100')" id="btnScaleIdx" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition">Indeks Basis 100</button>
+              <button onclick="setScaleMode('qoq')" id="btnScaleQoq" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition">Growth QoQ (%)</button>
+              <button onclick="setScaleMode('abs')" id="btnScaleAbs" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition">Nilai Absolut</button>
+            </div>
+          </div>
+          <span class="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline"><i class="fa-solid fa-chart-line mr-1"></i>Multi-Axis Plot</span>
+        </div>
+
+        <!-- Right (Col 5): Controls for OLS Regression Chart (Tipe PDRB & Sumbu Y) -->
+        <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-md">
+          
+          <!-- PDRB Price Type Toggle: HK vs HB -->
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-coins text-amber-500"></i>
+              <span>Tipe PDRB:</span>
+            </span>
+            <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-300 dark:border-slate-700 shadow-inner">
+              <button onclick="setPdrbPriceType('HK')" id="btnPdrbHK" class="px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1" title="PDRB Harga Konstan (Riil)">
+                <i class="fa-solid fa-gem text-[10px]"></i>
+                <span>HK</span>
+              </button>
+              <button onclick="setPdrbPriceType('HB')" id="btnPdrbHB" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1" title="PDRB Harga Berlaku (Nominal)">
+                <i class="fa-solid fa-tag text-[10px]"></i>
+                <span>HB</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Transport Metric for Regression -->
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-bullseye text-pink-500"></i>
+              <span>Sumbu Y:</span>
+            </span>
+            <select id="selRegMetric" onchange="onRegMetricChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+              <option value="penumpang">✈️ Penumpang</option>
+              <option value="bagasi">🧳 Bagasi</option>
+              <option value="barang">📦 Barang</option>
+            </select>
           </div>
         </div>
 
-        <!-- Scale Mode for Time Series -->
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-ruler-combined text-indigo-500"></i>
-            <span>Skala Time-Series:</span>
-          </span>
-          <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700">
-            <button onclick="setScaleMode('idx100')" id="btnScaleIdx" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition">Indeks Basis 100</button>
-            <button onclick="setScaleMode('qoq')" id="btnScaleQoq" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition">Growth QoQ (%)</button>
-            <button onclick="setScaleMode('abs')" id="btnScaleAbs" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition">Nilai Absolut</button>
-          </div>
-        </div>
-
-        <!-- Transport Metric for Regression -->
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-bullseye text-pink-500"></i>
-            <span>Sumbu Y Regresi:</span>
-          </span>
-          <select id="selRegMetric" onchange="onRegMetricChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
-            <option value="penumpang">✈️ Penumpang (Orang)</option>
-            <option value="bagasi">🧳 Bagasi (Kg)</option>
-            <option value="barang">📦 Barang/Kargo (Kg)</option>
-          </select>
-        </div>
       </div>
 
       <!-- 2 Charts Grid: Left Time-Series Line, Right OLS Regression -->
@@ -399,12 +407,13 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
             <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-chart-line text-indigo-500 dark:text-indigo-400"></i>
-              Plot Sebaran & Garis Regresi Linear (OLS)
+              Plot Sebaran & Garis Regresi (OLS)
             </h4>
             <div class="flex items-center gap-2">
-              <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-300 dark:border-slate-700 text-[11px]">
-                <button onclick="setPdrbPriceType('HK')" id="btnRegToggleHK" class="px-2.5 py-0.5 rounded-md font-bold text-white bg-sky-600 shadow transition" title="Tampilkan Regresi Harga Konstan (HK)">HK</button>
-                <button onclick="setPdrbPriceType('HB')" id="btnRegToggleHB" class="px-2.5 py-0.5 rounded-md font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition" title="Tampilkan Regresi Harga Berlaku (HB)">HB</button>
+              <!-- Quick Toggle: Per-Triwulan vs Pertahun -->
+              <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-300 dark:border-slate-700 text-[11px] shadow-inner">
+                <button onclick="setRegPeriod('quarter')" id="btnRegPeriodQuarter" class="px-2.5 py-0.5 rounded-md font-bold text-white bg-sky-600 shadow transition" title="Regresi Kuartalan (Triwulan I - IV)">Per Triwulan</button>
+                <button onclick="setRegPeriod('annual')" id="btnRegPeriodAnnual" class="px-2.5 py-0.5 rounded-md font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition" title="Regresi Tahunan Multi-Tahun (2021-2024)">Per Tahun</button>
               </div>
               <span class="text-[11px] text-sky-600 dark:text-sky-400 font-mono font-bold" id="chartRegRVal">r = -</span>
             </div>
@@ -529,6 +538,7 @@
     let currentCategory = "lu"; // "lu" (Lapangan Usaha) atau "peng" (Pengeluaran)
     let currentScaleMode = "idx100";
     let currentRegMetric = "penumpang";
+    let currentRegPeriod = "quarter"; // "quarter" (Per Triwulan) atau "annual" (Per Tahun)
     let activeDashboardData = null;
     let currentTab3Sheet = "pdrb_triwulan";
     let activeTab3RawData = null;
@@ -671,23 +681,35 @@
       const isHK = currentTipePDRB !== 'HB';
       const btnHK = document.getElementById("btnPdrbHK");
       const btnHB = document.getElementById("btnPdrbHB");
-      const btnRegHK = document.getElementById("btnRegToggleHK");
-      const btnRegHB = document.getElementById("btnRegToggleHB");
 
       if (btnHK && btnHB) {
         btnHK.className = isHK 
-          ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1.5" 
-          : "px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5";
+          ? "px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1" 
+          : "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1";
         btnHB.className = !isHK 
-          ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1.5" 
-          : "px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5";
+          ? "px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1" 
+          : "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1";
       }
+    }
 
-      if (btnRegHK && btnRegHB) {
-        btnRegHK.className = isHK 
+    function setRegPeriod(period) {
+      currentRegPeriod = period;
+      updateRegPeriodButtons();
+      if (activeDashboardData) {
+        renderRegressionChart(activeDashboardData);
+      }
+    }
+
+    function updateRegPeriodButtons() {
+      const isQ = currentRegPeriod === 'quarter';
+      const btnQ = document.getElementById("btnRegPeriodQuarter");
+      const btnA = document.getElementById("btnRegPeriodAnnual");
+
+      if (btnQ && btnA) {
+        btnQ.className = isQ 
           ? "px-2.5 py-0.5 rounded-md font-bold text-white bg-sky-600 shadow transition" 
           : "px-2.5 py-0.5 rounded-md font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition";
-        btnRegHB.className = !isHK 
+        btnA.className = !isQ 
           ? "px-2.5 py-0.5 rounded-md font-bold text-white bg-sky-600 shadow transition" 
           : "px-2.5 py-0.5 rounded-md font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition";
       }
@@ -768,6 +790,7 @@
       document.getElementById("chartTimeSpanLabel").textContent = `${provData?.name || ''} ${currentYear}`;
 
       updatePdrbTypeButtons();
+      updateRegPeriodButtons();
       await loadCorrelations();
       await loadSectorData();
       await loadTab3Table(currentTab3Sheet);
@@ -933,7 +956,7 @@
           name: `PDRB (${isHK ? 'HK Konstan' : 'HB Berlaku'}): ${data.active_sector}`,
           mode: 'lines+markers',
           line: { color: isHK ? '#0ea5e9' : '#a855f7', width: 3.5 },
-          marker: { size: 8, symbol: isHK ? 'circle' : 'square' }
+          marker: { size: 8, symbol: 'circle' }
         },
         {
           x: tw,
@@ -988,16 +1011,21 @@
     }
 
     function renderRegressionChart(data) {
-      const reg = data.regression;
+      const isAnnual = currentRegPeriod === 'annual';
+      const reg = isAnnual 
+        ? (data.regression_annual || data.regression) 
+        : data.regression;
+
       const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
+      const periodLabel = isAnnual ? 'Tahunan (2021-2024)' : `Triwulanan (${currentYear})`;
       const themeColor = data.tipe_pdrb === 'HB' ? '#a855f7' : '#38bdf8';
 
-      document.getElementById("chartRegRVal").textContent = `r = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb})`;
-      document.getElementById("regSummaryR").textContent = `${reg.r_val.toFixed(4)} (${data.tipe_pdrb})`;
+      document.getElementById("chartRegRVal").textContent = `r = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
+      document.getElementById("regSummaryR").textContent = `${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
       document.getElementById("regSummaryR2").textContent = `${reg.r_squared.toFixed(4)} (${(reg.r_squared * 100).toFixed(1)}%)`;
 
-      const pts = reg.points;
-      const trend = reg.trend_line;
+      const pts = reg.points || [];
+      const trend = reg.trend_line || [];
       const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
       const textColor = isDarkMode ? '#94a3b8' : '#475569';
 
@@ -1006,13 +1034,13 @@
           x: trend.map(p => p.x),
           y: trend.map(p => p.y),
           mode: 'lines',
-          name: `Garis Regresi OLS (${data.tipe_pdrb})`,
+          name: `Garis Regresi OLS (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`,
           line: { color: data.tipe_pdrb === 'HB' ? '#c084fc' : '#818cf8', width: 3 }
         },
         {
           x: pts.map(p => p.x),
           y: pts.map(p => p.y),
-          text: pts.map(p => p.triwulan),
+          text: pts.map(p => p.triwulan || p.label),
           mode: 'markers+text',
           textposition: 'top right',
           textfont: { size: 10, color: isDarkMode ? '#cbd5e1' : '#334155' },
@@ -1025,7 +1053,7 @@
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: textColor, family: 'Inter' },
         margin: { l: 55, r: 25, t: 20, b: 45 },
-        xaxis: { title: `PDRB: ${data.active_sector} [${tipeLabel}] (Sumbu X)`, gridcolor: gridColor },
+        xaxis: { title: `PDRB: ${data.active_sector} [${tipeLabel}] - ${periodLabel} (Sumbu X)`, gridcolor: gridColor },
         yaxis: { title: `${reg.label_y} (Sumbu Y)`, gridcolor: gridColor },
         showlegend: false,
         annotations: [{

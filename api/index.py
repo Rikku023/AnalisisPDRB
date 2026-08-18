@@ -523,6 +523,90 @@ async def get_dashboard_data(
     reg_hk = compute_regression(pdrb_hk_series, y_raw_series, f"{active_label} (HK)", label_y)
     reg_hb = compute_regression(pdrb_hb_series, y_raw_series, f"{active_label} (HB)", label_y)
 
+    # 3b. Regresi Multi-Tahun (Tahunan: 2021 s.d. 2024)
+    prov_manifest = load_manifest()
+    prov_info = prov_manifest.get("provinces", {}).get(province, {})
+    available_years = sorted(list(prov_info.get("years", {}).keys())) if (prov_info and prov_info.get("years")) else ["2021", "2022", "2023", "2024"]
+
+    annual_pts_hk = []
+    annual_pts_hb = []
+    for yr in available_years:
+        df_yr = get_parquet_df(f"{province}_{yr}_pdrb_triwulan")
+        if df_yr is not None:
+            m_hk = [c for c in df_yr.columns if clean_sec in c.lower() and prefix_hk.lower() in c.lower()]
+            m_hb = [c for c in df_yr.columns if clean_sec in c.lower() and prefix_hb.lower() in c.lower()]
+            yr_p = next((c for c in df_yr.columns if "penumpang" in c.lower()), None)
+            yr_bag = next((c for c in df_yr.columns if "bagasi" in c.lower()), None)
+            yr_bar = next((c for c in df_yr.columns if "barang" in c.lower()), None)
+
+            if transport_metric == "bagasi" and yr_bag:
+                y_col = yr_bag
+            elif transport_metric == "barang" and yr_bar:
+                y_col = yr_bar
+            else:
+                y_col = yr_p
+
+            if y_col and y_col in df_yr:
+                tot_y = float(df_yr[y_col].sum())
+                if m_hk and m_hk[0] in df_yr:
+                    tot_x_hk = float(df_yr[m_hk[0]].sum())
+                    annual_pts_hk.append({"label": yr, "x": tot_x_hk, "y": tot_y})
+                if m_hb and m_hb[0] in df_yr:
+                    tot_x_hb = float(df_yr[m_hb[0]].sum())
+                    annual_pts_hb.append({"label": yr, "x": tot_x_hb, "y": tot_y})
+
+    def compute_regression_from_pts(pts: List[Dict[str, Any]], label_x_str: str, label_y_str: str) -> Dict[str, Any]:
+        res = {
+            "slope": 0.0,
+            "intercept": 0.0,
+            "r_val": 0.0,
+            "r_squared": 0.0,
+            "equation": "y = 0x + 0",
+            "label_x": label_x_str,
+            "label_y": label_y_str,
+            "points": [],
+            "trend_line": []
+        }
+        if len(pts) >= 2:
+            x_arr = np.array([p["x"] for p in pts], dtype=float)
+            y_arr = np.array([p["y"] for p in pts], dtype=float)
+            valid_m = ~(np.isnan(x_arr) | np.isnan(y_arr))
+            xc = x_arr[valid_m]
+            yc = y_arr[valid_m]
+            lbls = [pts[k]["label"] for k in range(len(pts)) if valid_m[k]]
+
+            if len(xc) >= 2:
+                slope, intercept = np.polyfit(xc, yc, 1)
+                r_mat = np.corrcoef(xc, yc)
+                r_val = float(r_mat[0, 1]) if not np.isnan(r_mat[0, 1]) else 0.0
+                r_sq = float(r_val ** 2)
+
+                sign_c = "+" if intercept >= 0 else "-"
+                slope_str = f"{slope:.3e}" if abs(slope) < 0.0001 else f"{slope:.4f}"
+                eq_str = f"y = {slope_str}x {sign_c} {abs(intercept):,.2f}"
+
+                points = [{"triwulan": lbls[k], "label": lbls[k], "x": float(xc[k]), "y": float(yc[k])} for k in range(len(xc))]
+                x_min, x_max = float(xc.min()), float(xc.max())
+                trend_line = [
+                    {"x": x_min, "y": float(slope * x_min + intercept)},
+                    {"x": x_max, "y": float(slope * x_max + intercept)}
+                ]
+                res.update({
+                    "slope": float(slope),
+                    "intercept": float(intercept),
+                    "r_val": r_val,
+                    "r_squared": r_sq,
+                    "equation": eq_str,
+                    "points": points,
+                    "trend_line": trend_line
+                })
+        return res
+
+    annual_pts_active = annual_pts_hb if actual_tipe == "HB" else annual_pts_hk
+    reg_annual = compute_regression_from_pts(annual_pts_active, f"{active_label} ({actual_tipe}) - Tahunan", label_y)
+    reg_annual_hk = compute_regression_from_pts(annual_pts_hk, f"{active_label} (HK) - Tahunan", label_y)
+    reg_annual_hb = compute_regression_from_pts(annual_pts_hb, f"{active_label} (HB) - Tahunan", label_y)
+
     # 4. Sektor Lapangan Usaha Top 10 Summary
     target_lu_cols = lu_hb_cols if actual_tipe == "HB" else lu_hk_cols
     sectors_summary = []
@@ -550,6 +634,9 @@ async def get_dashboard_data(
         "regression": reg_result,
         "regression_hk": reg_hk,
         "regression_hb": reg_hb,
+        "regression_annual": reg_annual,
+        "regression_annual_hk": reg_annual_hk,
+        "regression_annual_hb": reg_annual_hb,
         "sectors_summary": sectors_summary[:10],
         "all_sectors_summary": sectors_summary
     }
