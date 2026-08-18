@@ -313,8 +313,8 @@ async def get_dashboard_data(
     transport_metric: str = "penumpang"
 ):
     """
-    Endpoint agregasi lengkap: KPI, Data Triwulanan (raw, index 100, QoQ),
-    Regresi Linear OLS (X=PDRB Sektor/Pengeluaran, Y=Transport) dengan persamaan $y=mx+c$, $R^2$, $R$,
+    Endpoint agregasi lengkap: KPI, Data Triwulanan (raw, index 100, QoQ untuk HK & HB),
+    Regresi Linear OLS (X=PDRB Sektor/Pengeluaran HK atau HB, Y=Transport) dengan persamaan $y=mx+c$, $R^2$, $R$,
     dan ringkasan sektoral untuk visualisasi frontend.
     """
     stem_tri = f"{province}_{year}_pdrb_triwulan"
@@ -336,15 +336,32 @@ async def get_dashboard_data(
     lu_hb_cols = [c for c in df_tri.columns if c.startswith("LU (HB)")]
     total_lu_hk_col = next((c for c in lu_hk_cols if "produk domestik" in c.lower() or "pdrb" in c.lower()), None)
 
-    # Cari kolom target (Lapangan Usaha atau Pengeluaran)
+    # Cari kolom target (Lapangan Usaha atau Pengeluaran) untuk HK dan HB
     clean_sec = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', sector, flags=re.IGNORECASE).strip().lower()
-    prefix = ("Peng (HB)" if tipe_pdrb == "HB" else "Peng (HK)") if category == "peng" else ("LU (HB)" if tipe_pdrb == "HB" else "LU (HK)")
-    
-    matching_cols = [c for c in df_tri.columns if clean_sec in c.lower() and (prefix in c if tipe_pdrb != 'all' else True)]
-    if not matching_cols:
-        matching_cols = [c for c in df_tri.columns if clean_sec in c.lower()]
-    
-    sector_col = matching_cols[0] if matching_cols else (total_lu_hk_col or df_tri.columns[1])
+    prefix_hk = "Peng (HK)" if category == "peng" else "LU (HK)"
+    prefix_hb = "Peng (HB)" if category == "peng" else "LU (HB)"
+
+    matching_hk = [c for c in df_tri.columns if clean_sec in c.lower() and prefix_hk.lower() in c.lower()]
+    matching_hb = [c for c in df_tri.columns if clean_sec in c.lower() and prefix_hb.lower() in c.lower()]
+
+    col_hk = matching_hk[0] if matching_hk else None
+    col_hb = matching_hb[0] if matching_hb else None
+
+    # Tentukan kolom PDRB aktif berdasarkan request (default HK jika tidak spesifik HB)
+    chosen_type = "HB" if str(tipe_pdrb).upper() == "HB" else "HK"
+    if chosen_type == "HB" and col_hb:
+        sector_col = col_hb
+        actual_tipe = "HB"
+    elif col_hk:
+        sector_col = col_hk
+        actual_tipe = "HK"
+    elif col_hb:
+        sector_col = col_hb
+        actual_tipe = "HB"
+    else:
+        sector_col = total_lu_hk_col or df_tri.columns[1]
+        actual_tipe = "HK"
+
     active_label = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', sector_col).strip()
 
     # 1. KPI Cards Calculation
@@ -397,29 +414,52 @@ async def get_dashboard_data(
         return [0.0 if pd.isna(v) else float(v) for v in pct]
 
     pdrb_series = df_tri[sector_col].astype(float)
+    pdrb_hk_series = df_tri[col_hk].astype(float) if col_hk else pdrb_series
+    pdrb_hb_series = df_tri[col_hb].astype(float) if col_hb else pdrb_series
+
     p_series = df_tri[p_col].astype(float) if p_col else pd.Series([0]*len(df_tri))
     bag_series = df_tri[bag_col].astype(float) if bag_col else pd.Series([0]*len(df_tri))
     bar_series = df_tri[bar_col].astype(float) if bar_col else pd.Series([0]*len(df_tri))
+
+    pdrb_idx = calc_idx100(pdrb_series)
+    pdrb_qoq = calc_qoq(pdrb_series)
+    pdrb_hk_idx = calc_idx100(pdrb_hk_series)
+    pdrb_hk_qoq = calc_qoq(pdrb_hk_series)
+    pdrb_hb_idx = calc_idx100(pdrb_hb_series)
+    pdrb_hb_qoq = calc_qoq(pdrb_hb_series)
+
+    p_idx = calc_idx100(p_series)
+    p_qoq = calc_qoq(p_series)
+    bag_idx = calc_idx100(bag_series)
+    bag_qoq = calc_qoq(bag_series)
+    bar_idx = calc_idx100(bar_series)
+    bar_qoq = calc_qoq(bar_series)
 
     triwulan_data = []
     for i, tw in enumerate(triwulan_labels):
         triwulan_data.append({
             "triwulan": tw,
             "pdrb_raw": float(pdrb_series.iloc[i]),
-            "pdrb_idx": float(calc_idx100(pdrb_series)[i]),
-            "pdrb_qoq": float(calc_qoq(pdrb_series)[i]),
+            "pdrb_idx": float(pdrb_idx[i]),
+            "pdrb_qoq": float(pdrb_qoq[i]),
+            "pdrb_hk_raw": float(pdrb_hk_series.iloc[i]),
+            "pdrb_hk_idx": float(pdrb_hk_idx[i]),
+            "pdrb_hk_qoq": float(pdrb_hk_qoq[i]),
+            "pdrb_hb_raw": float(pdrb_hb_series.iloc[i]),
+            "pdrb_hb_idx": float(pdrb_hb_idx[i]),
+            "pdrb_hb_qoq": float(pdrb_hb_qoq[i]),
             "penumpang_raw": float(p_series.iloc[i]),
-            "penumpang_idx": float(calc_idx100(p_series)[i]),
-            "penumpang_qoq": float(calc_qoq(p_series)[i]),
+            "penumpang_idx": float(p_idx[i]),
+            "penumpang_qoq": float(p_qoq[i]),
             "bagasi_raw": float(bag_series.iloc[i]),
-            "bagasi_idx": float(calc_idx100(bag_series)[i]),
-            "bagasi_qoq": float(calc_qoq(bag_series)[i]),
+            "bagasi_idx": float(bag_idx[i]),
+            "bagasi_qoq": float(bag_qoq[i]),
             "barang_raw": float(bar_series.iloc[i]),
-            "barang_idx": float(calc_idx100(bar_series)[i]),
-            "barang_qoq": float(calc_qoq(bar_series)[i]),
+            "barang_idx": float(bar_idx[i]),
+            "barang_qoq": float(bar_qoq[i]),
         })
 
-    # 3. OLS Linear Regression (Sumbu X = PDRB, Sumbu Y = Transport Metric)
+    # 3. OLS Linear Regression Helper
     if transport_metric == "bagasi" and bag_col:
         y_raw_series = bag_series
         label_y = "Bagasi (Kg)"
@@ -430,55 +470,61 @@ async def get_dashboard_data(
         y_raw_series = p_series
         label_y = "Penumpang (Orang)"
 
-    x_vals = pdrb_series.values
-    y_vals = y_raw_series.values
-    valid_m = ~(np.isnan(x_vals) | np.isnan(y_vals))
-    x_clean = x_vals[valid_m]
-    y_clean = y_vals[valid_m]
-    tw_clean = [triwulan_labels[k] for k in range(len(triwulan_labels)) if valid_m[k]]
+    def compute_regression(x_s: pd.Series, y_s: pd.Series, label_x_str: str, label_y_str: str) -> Dict[str, Any]:
+        x_vals = x_s.values.astype(float)
+        y_vals = y_s.values.astype(float)
+        valid_m = ~(np.isnan(x_vals) | np.isnan(y_vals))
+        x_clean = x_vals[valid_m]
+        y_clean = y_vals[valid_m]
+        tw_clean = [triwulan_labels[k] for k in range(len(triwulan_labels)) if valid_m[k]]
 
-    reg_result = {
-        "slope": 0.0,
-        "intercept": 0.0,
-        "r_val": 0.0,
-        "r_squared": 0.0,
-        "equation": "y = 0x + 0",
-        "label_x": f"{active_label} ({tipe_pdrb})",
-        "label_y": label_y,
-        "points": [],
-        "trend_line": []
-    }
+        res = {
+            "slope": 0.0,
+            "intercept": 0.0,
+            "r_val": 0.0,
+            "r_squared": 0.0,
+            "equation": "y = 0x + 0",
+            "label_x": label_x_str,
+            "label_y": label_y_str,
+            "points": [],
+            "trend_line": []
+        }
 
-    if len(x_clean) >= 2:
-        slope, intercept = np.polyfit(x_clean, y_clean, 1)
-        r_matrix = np.corrcoef(x_clean, y_clean)
-        r_val = float(r_matrix[0, 1])
-        r_squared = float(r_val ** 2)
+        if len(x_clean) >= 2:
+            slope, intercept = np.polyfit(x_clean, y_clean, 1)
+            r_matrix = np.corrcoef(x_clean, y_clean)
+            r_val = float(r_matrix[0, 1]) if not np.isnan(r_matrix[0, 1]) else 0.0
+            r_squared = float(r_val ** 2)
 
-        sign_c = "+" if intercept >= 0 else "-"
-        slope_str = f"{slope:.3e}" if abs(slope) < 0.0001 else f"{slope:.4f}"
-        eq_str = f"y = {slope_str}x {sign_c} {abs(intercept):,.2f}"
+            sign_c = "+" if intercept >= 0 else "-"
+            slope_str = f"{slope:.3e}" if abs(slope) < 0.0001 else f"{slope:.4f}"
+            eq_str = f"y = {slope_str}x {sign_c} {abs(intercept):,.2f}"
 
-        points = [{"triwulan": tw_clean[k], "x": float(x_clean[k]), "y": float(y_clean[k])} for k in range(len(x_clean))]
+            points = [{"triwulan": tw_clean[k], "x": float(x_clean[k]), "y": float(y_clean[k])} for k in range(len(x_clean))]
 
-        x_min, x_max = float(x_clean.min()), float(x_clean.max())
-        trend_line = [
-            {"x": x_min, "y": float(slope * x_min + intercept)},
-            {"x": x_max, "y": float(slope * x_max + intercept)}
-        ]
+            x_min, x_max = float(x_clean.min()), float(x_clean.max())
+            trend_line = [
+                {"x": x_min, "y": float(slope * x_min + intercept)},
+                {"x": x_max, "y": float(slope * x_max + intercept)}
+            ]
 
-        reg_result.update({
-            "slope": float(slope),
-            "intercept": float(intercept),
-            "r_val": r_val,
-            "r_squared": r_squared,
-            "equation": eq_str,
-            "points": points,
-            "trend_line": trend_line
-        })
+            res.update({
+                "slope": float(slope),
+                "intercept": float(intercept),
+                "r_val": r_val,
+                "r_squared": r_squared,
+                "equation": eq_str,
+                "points": points,
+                "trend_line": trend_line
+            })
+        return res
+
+    reg_result = compute_regression(pdrb_series, y_raw_series, f"{active_label} ({actual_tipe})", label_y)
+    reg_hk = compute_regression(pdrb_hk_series, y_raw_series, f"{active_label} (HK)", label_y)
+    reg_hb = compute_regression(pdrb_hb_series, y_raw_series, f"{active_label} (HB)", label_y)
 
     # 4. Sektor Lapangan Usaha Top 10 Summary
-    target_lu_cols = lu_hk_cols if tipe_pdrb == "HK" else lu_hb_cols
+    target_lu_cols = lu_hb_cols if actual_tipe == "HB" else lu_hk_cols
     sectors_summary = []
     for col in target_lu_cols:
         clean_name = re.sub(r"^LU\s*\([A-Z]+\)\s*-\s*", "", col)
@@ -496,10 +542,14 @@ async def get_dashboard_data(
         "year": year,
         "active_sector": active_label,
         "category": category,
-        "tipe_pdrb": tipe_pdrb,
+        "tipe_pdrb": actual_tipe,
+        "has_hk": col_hk is not None,
+        "has_hb": col_hb is not None,
         "kpi": kpi,
         "triwulan_data": triwulan_data,
         "regression": reg_result,
+        "regression_hk": reg_hk,
+        "regression_hb": reg_hb,
         "sectors_summary": sectors_summary[:10],
         "all_sectors_summary": sectors_summary
     }

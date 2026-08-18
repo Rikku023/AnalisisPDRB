@@ -332,10 +332,32 @@
       </div>
 
       <!-- Controls for Charts -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs">
+        
+        <!-- PDRB Price Type Toggle: HK vs HB -->
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-coins text-amber-500"></i>
+            <span>Tipe PDRB:</span>
+          </span>
+          <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700 shadow-inner">
+            <button onclick="setPdrbPriceType('HK')" id="btnPdrbHK" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1.5" title="PDRB Harga Konstan 2010 (Output Riil)">
+              <i class="fa-solid fa-gem text-[10px]"></i>
+              <span>Harga Konstan (HK)</span>
+            </button>
+            <button onclick="setPdrbPriceType('HB')" id="btnPdrbHB" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5" title="PDRB Harga Berlaku (Output Nominal)">
+              <i class="fa-solid fa-tag text-[10px]"></i>
+              <span>Harga Berlaku (HB)</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Scale Mode for Time Series -->
         <div class="flex items-center gap-2">
-          <span class="font-semibold text-slate-600 dark:text-slate-400">📐 Mode Skala Time-Series:</span>
+          <span class="font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-ruler-combined text-indigo-500"></i>
+            <span>Skala Time-Series:</span>
+          </span>
           <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700">
             <button onclick="setScaleMode('idx100')" id="btnScaleIdx" class="px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 transition">Indeks Basis 100</button>
             <button onclick="setScaleMode('qoq')" id="btnScaleQoq" class="px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition">Growth QoQ (%)</button>
@@ -345,7 +367,10 @@
 
         <!-- Transport Metric for Regression -->
         <div class="flex items-center gap-2">
-          <span class="font-semibold text-slate-600 dark:text-slate-400">🎯 Sumbu Y Regresi (Transportasi):</span>
+          <span class="font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-bullseye text-pink-500"></i>
+            <span>Sumbu Y Regresi:</span>
+          </span>
           <select id="selRegMetric" onchange="onRegMetricChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
             <option value="penumpang">✈️ Penumpang (Orang)</option>
             <option value="bagasi">🧳 Bagasi (Kg)</option>
@@ -371,12 +396,18 @@
 
         <!-- Right: OLS Scatter & Linear Regression -->
         <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
             <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-chart-line text-indigo-500 dark:text-indigo-400"></i>
               Plot Sebaran & Garis Regresi Linear (OLS)
             </h4>
-            <span class="text-[11px] text-sky-600 dark:text-sky-400 font-mono" id="chartRegRVal">r = -</span>
+            <div class="flex items-center gap-2">
+              <div class="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-300 dark:border-slate-700 text-[11px]">
+                <button onclick="setPdrbPriceType('HK')" id="btnRegToggleHK" class="px-2.5 py-0.5 rounded-md font-bold text-white bg-sky-600 shadow transition" title="Tampilkan Regresi Harga Konstan (HK)">HK</button>
+                <button onclick="setPdrbPriceType('HB')" id="btnRegToggleHB" class="px-2.5 py-0.5 rounded-md font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition" title="Tampilkan Regresi Harga Berlaku (HB)">HB</button>
+              </div>
+              <span class="text-[11px] text-sky-600 dark:text-sky-400 font-mono font-bold" id="chartRegRVal">r = -</span>
+            </div>
           </div>
           <div id="chartRegression" class="w-full h-80"></div>
           
@@ -616,8 +647,50 @@
     }
 
     function onTipePDRBChange() {
-      currentTipePDRB = document.getElementById("selTipePDRB").value;
+      const val = document.getElementById("selTipePDRB").value;
+      if (val === 'all') {
+        currentTipePDRB = 'HK';
+      } else {
+        currentTipePDRB = val;
+      }
+      updatePdrbTypeButtons();
       refreshData();
+    }
+
+    function setPdrbPriceType(type) {
+      currentTipePDRB = type;
+      const sel = document.getElementById("selTipePDRB");
+      if (sel && sel.value !== 'all') {
+        sel.value = type;
+      }
+      updatePdrbTypeButtons();
+      loadSectorData();
+    }
+
+    function updatePdrbTypeButtons() {
+      const isHK = currentTipePDRB !== 'HB';
+      const btnHK = document.getElementById("btnPdrbHK");
+      const btnHB = document.getElementById("btnPdrbHB");
+      const btnRegHK = document.getElementById("btnRegToggleHK");
+      const btnRegHB = document.getElementById("btnRegToggleHB");
+
+      if (btnHK && btnHB) {
+        btnHK.className = isHK 
+          ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1.5" 
+          : "px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5";
+        btnHB.className = !isHK 
+          ? "px-3 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1.5" 
+          : "px-3 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5";
+      }
+
+      if (btnRegHK && btnRegHB) {
+        btnRegHK.className = isHK 
+          ? "px-2.5 py-0.5 rounded-md font-bold text-white bg-sky-600 shadow transition" 
+          : "px-2.5 py-0.5 rounded-md font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition";
+        btnRegHB.className = !isHK 
+          ? "px-2.5 py-0.5 rounded-md font-bold text-white bg-sky-600 shadow transition" 
+          : "px-2.5 py-0.5 rounded-md font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition";
+      }
     }
 
     // Toggle Category: Lapangan Usaha (LU) vs Pengeluaran (Peng)
@@ -694,6 +767,7 @@
       document.getElementById("heroYear").textContent = currentYear;
       document.getElementById("chartTimeSpanLabel").textContent = `${provData?.name || ''} ${currentYear}`;
 
+      updatePdrbTypeButtons();
       await loadCorrelations();
       await loadSectorData();
       await loadTab3Table(currentTab3Sheet);
@@ -704,9 +778,10 @@
       const filterMode = document.getElementById("selFilterMode").value;
       const sortBy = document.getElementById("selSortBy").value;
       const search = document.getElementById("txtSearchSector").value;
+      const tableTipeFilter = document.getElementById("selTipePDRB").value;
 
       try {
-        const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=${currentCategory}&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${currentTipePDRB}&search=${encodeURIComponent(search)}`;
+        const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=${currentCategory}&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${tableTipeFilter}&search=${encodeURIComponent(search)}`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -722,10 +797,11 @@
 
         data.rows.forEach((r) => {
           const rowLabel = r[labelKey] || r["Lapangan Usaha"] || r["Komponen Pengeluaran"];
+          const rowTipe = r["Tipe PDRB"] || "";
           const isSelected = rowLabel === currentSector;
           const tr = document.createElement("tr");
           tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer transition border-b border-slate-200 dark:border-slate-800/50 " + (isSelected ? "bg-sky-100 dark:bg-sky-950/40 border-sky-500 font-semibold" : "");
-          tr.onclick = () => selectSector(rowLabel, r["Tipe PDRB"]?.includes("HB") ? "HB" : "HK");
+          tr.onclick = () => selectSector(rowLabel, rowTipe.includes("HB") ? "HB" : "HK");
 
           const pVal = r["Korelasi dgn Penumpang"] !== null ? Number(r["Korelasi dgn Penumpang"]) : NaN;
           const bagVal = r["Korelasi dgn Bagasi"] !== null ? Number(r["Korelasi dgn Bagasi"]) : NaN;
@@ -736,7 +812,9 @@
               <span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-sky-500' : 'bg-slate-400 dark:bg-slate-600'}"></span>
               ${rowLabel}
             </td>
-            <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400 font-sans">${r["Tipe PDRB"] || '-'}</td>
+            <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400 font-sans">
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${rowTipe.includes('HB') ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'}">${rowTipe || '-'}</span>
+            </td>
             <td class="px-4 py-2.5 text-right ${pVal >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (pVal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300')}">${isNaN(pVal) ? '-' : pVal.toFixed(4)}</td>
             <td class="px-4 py-2.5 text-right ${bagVal >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (bagVal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300')}">${isNaN(bagVal) ? '-' : bagVal.toFixed(4)}</td>
             <td class="px-4 py-2.5 text-right ${barVal >= 0.7 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (barVal < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300')}">${isNaN(barVal) ? '-' : barVal.toFixed(4)}</td>
@@ -751,9 +829,13 @@
 
     function selectSector(sectorName, tipe) {
       currentSector = sectorName;
-      if (tipe && currentTipePDRB !== 'all') {
-        currentTipePDRB = tipe;
-        document.getElementById("selTipePDRB").value = currentTipePDRB;
+      if (tipe) {
+        currentTipePDRB = tipe.includes("HB") ? "HB" : "HK";
+        const sel = document.getElementById("selTipePDRB");
+        if (sel && sel.value !== 'all') {
+          sel.value = currentTipePDRB;
+        }
+        updatePdrbTypeButtons();
       }
       loadCorrelations();
       loadSectorData();
@@ -784,7 +866,10 @@
         document.getElementById("kpiSectorMaxVal").textContent = `r = ${Number(data.kpi.max_correl_val || 0).toFixed(3)} (${data.kpi.max_correl_type || ''})`;
 
         // 2. Update Inspector Card
-        document.getElementById("inspectorSectorTitle").innerHTML = `${data.active_sector} <span class="text-xs text-sky-600 dark:text-sky-400 font-normal">(${data.tipe_pdrb})</span>`;
+        const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
+        const tipeBadgeClass = data.tipe_pdrb === 'HB' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30';
+        
+        document.getElementById("inspectorSectorTitle").innerHTML = `${data.active_sector} <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${tipeBadgeClass}">${tipeLabel}</span>`;
         
         const rVal = data.regression.r_val;
         let badgeColor = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
@@ -832,19 +917,31 @@
       const isIdx = currentScaleMode === 'idx100';
       const isQoq = currentScaleMode === 'qoq';
 
-      const pdrbVals = data.triwulan_data.map(d => isIdx ? d.pdrb_idx : (isQoq ? d.pdrb_qoq : d.pdrb_raw));
+      const pdrbHkVals = data.triwulan_data.map(d => isIdx ? d.pdrb_hk_idx : (isQoq ? d.pdrb_hk_qoq : d.pdrb_hk_raw));
+      const pdrbHbVals = data.triwulan_data.map(d => isIdx ? d.pdrb_hb_idx : (isQoq ? d.pdrb_hb_qoq : d.pdrb_hb_raw));
+
       const pVals = data.triwulan_data.map(d => isIdx ? d.penumpang_idx : (isQoq ? d.penumpang_qoq : d.penumpang_raw));
       const bagVals = data.triwulan_data.map(d => isIdx ? d.bagasi_idx : (isQoq ? d.bagasi_qoq : d.bagasi_raw));
       const barVals = data.triwulan_data.map(d => isIdx ? d.barang_idx : (isQoq ? d.barang_qoq : d.barang_raw));
 
+      const isHK = data.tipe_pdrb !== 'HB';
+
       const traces = [
         {
           x: tw,
-          y: pdrbVals,
-          name: `PDRB: ${data.active_sector}`,
+          y: isHK ? pdrbHkVals : pdrbHbVals,
+          name: `PDRB (${isHK ? 'HK Konstan' : 'HB Berlaku'}): ${data.active_sector}`,
           mode: 'lines+markers',
-          line: { color: '#0ea5e9', width: 3.5 },
-          marker: { size: 8, symbol: 'circle' }
+          line: { color: isHK ? '#0ea5e9' : '#a855f7', width: 3.5 },
+          marker: { size: 8, symbol: isHK ? 'circle' : 'square' }
+        },
+        {
+          x: tw,
+          y: isHK ? pdrbHbVals : pdrbHkVals,
+          name: `PDRB (${isHK ? 'HB Berlaku' : 'HK Konstan'}): ${data.active_sector}`,
+          mode: 'lines+markers',
+          line: { color: isHK ? '#a855f7' : '#0ea5e9', width: 2.5, dash: 'dot' },
+          marker: { size: 6, symbol: isHK ? 'square' : 'circle' }
         },
         {
           x: tw,
@@ -859,7 +956,7 @@
           y: bagVals,
           name: '🧳 Bagasi (Kg)',
           mode: 'lines+markers',
-          line: { color: '#06b6d4', width: 2.5, dash: 'dot' },
+          line: { color: '#06b6d4', width: 2.5, dash: 'dash' },
           marker: { size: 7, symbol: 'square' }
         },
         {
@@ -892,8 +989,11 @@
 
     function renderRegressionChart(data) {
       const reg = data.regression;
-      document.getElementById("chartRegRVal").textContent = `r = ${reg.r_val.toFixed(4)}`;
-      document.getElementById("regSummaryR").textContent = reg.r_val.toFixed(4);
+      const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
+      const themeColor = data.tipe_pdrb === 'HB' ? '#a855f7' : '#38bdf8';
+
+      document.getElementById("chartRegRVal").textContent = `r = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb})`;
+      document.getElementById("regSummaryR").textContent = `${reg.r_val.toFixed(4)} (${data.tipe_pdrb})`;
       document.getElementById("regSummaryR2").textContent = `${reg.r_squared.toFixed(4)} (${(reg.r_squared * 100).toFixed(1)}%)`;
 
       const pts = reg.points;
@@ -906,8 +1006,8 @@
           x: trend.map(p => p.x),
           y: trend.map(p => p.y),
           mode: 'lines',
-          name: 'Garis Regresi OLS',
-          line: { color: '#818cf8', width: 3 }
+          name: `Garis Regresi OLS (${data.tipe_pdrb})`,
+          line: { color: data.tipe_pdrb === 'HB' ? '#c084fc' : '#818cf8', width: 3 }
         },
         {
           x: pts.map(p => p.x),
@@ -916,7 +1016,7 @@
           mode: 'markers+text',
           textposition: 'top right',
           textfont: { size: 10, color: isDarkMode ? '#cbd5e1' : '#334155' },
-          marker: { size: 11, color: '#38bdf8', line: { color: isDarkMode ? '#ffffff' : '#0f172a', width: 1.5 } }
+          marker: { size: 11, color: themeColor, line: { color: isDarkMode ? '#ffffff' : '#0f172a', width: 1.5 } }
         }
       ];
 
@@ -925,7 +1025,7 @@
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: textColor, family: 'Inter' },
         margin: { l: 55, r: 25, t: 20, b: 45 },
-        xaxis: { title: `PDRB: ${data.active_sector} (Sumbu X)`, gridcolor: gridColor },
+        xaxis: { title: `PDRB: ${data.active_sector} [${tipeLabel}] (Sumbu X)`, gridcolor: gridColor },
         yaxis: { title: `${reg.label_y} (Sumbu Y)`, gridcolor: gridColor },
         showlegend: false,
         annotations: [{
@@ -933,10 +1033,10 @@
           yref: 'paper',
           x: 0.05,
           y: 0.95,
-          text: `<b>${reg.equation}</b><br><span style="color:#0ea5e9;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:#10b981;">R = ${reg.r_val.toFixed(4)}</span>`,
+          text: `<b>${reg.equation}</b><br><span style="color:#0ea5e9;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:#10b981;">R = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb})</span>`,
           showarrow: false,
           bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-          bordercolor: '#0ea5e9',
+          bordercolor: themeColor,
           borderwidth: 1,
           font: { size: 11, color: isDarkMode ? '#f8fafc' : '#0f172a' }
         }]

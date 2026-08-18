@@ -26,3 +26,12 @@ Thumbs.db
 
 # Vercel CLI
 .vercel/
+
+# Graphify generated output & cache
+graphify-out/
+
+# (Opsional) AI agent rules jika tidak ingin dipublikasikan
+.agents/
+
+# Program python
+py/
