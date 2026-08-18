@@ -150,7 +150,7 @@
           <div id="kpiPenumpangVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
           <div class="text-xs text-slate-500 dark:text-slate-400">Orang / Tahun</div>
         </div>
-        <div id="kpiPenumpangGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiPenumpangGrowth" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 2: Bagasi -->
@@ -165,7 +165,7 @@
           <div id="kpiBagasiVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
           <div class="text-xs text-slate-500 dark:text-slate-400">Kilogram (Kg)</div>
         </div>
-        <div id="kpiBagasiGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiBagasiGrowth" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 3: Barang/Kargo -->
@@ -180,7 +180,7 @@
           <div id="kpiBarangVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
           <div class="text-xs text-slate-500 dark:text-slate-400">Kilogram (Kg)</div>
         </div>
-        <div id="kpiBarangGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiBarangGrowth" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 4: PDRB Riil HK -->
@@ -195,7 +195,7 @@
           <div id="kpiPdrbVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white">-</div>
           <div class="text-xs text-slate-500 dark:text-slate-400">Total 4 Triwulan</div>
         </div>
-        <div id="kpiPdrbGrowth" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Q4 Growth: -</div>
+        <div id="kpiPdrbGrowth" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Q4 Growth: -</div>
       </div>
 
       <!-- KPI 5: Sektor Max -->
@@ -550,6 +550,26 @@
       return Number(num).toLocaleString('id-ID', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
 
+    // Helper pewarnaan dinamis untuk indikator pertumbuhan: hijau untuk positif/nol, merah untuk negatif
+    function updateKpiGrowth(elemId, val, decimals = 1) {
+      const el = document.getElementById(elemId);
+      if (!el) return;
+      if (val === null || val === undefined || isNaN(val)) {
+        el.textContent = "Q4 Growth: -";
+        el.className = "text-xs font-semibold text-slate-500 dark:text-slate-400";
+        return;
+      }
+      const num = Number(val);
+      const isPos = num >= 0;
+      const sign = isPos ? '+' : '';
+      el.textContent = `Q4 Growth: ${sign}${num.toFixed(decimals)}%`;
+      if (isPos) {
+        el.className = "text-xs font-semibold text-emerald-600 dark:text-emerald-400";
+      } else {
+        el.className = "text-xs font-semibold text-rose-600 dark:text-rose-400 font-bold";
+      }
+    }
+
     // Init App
     document.addEventListener("DOMContentLoaded", async () => {
       initTheme();
@@ -873,20 +893,25 @@
 
         // 1. Update KPI
         document.getElementById("kpiPenumpangVal").textContent = formatNumberID(data.kpi.penumpang_total, 0);
-        document.getElementById("kpiPenumpangGrowth").textContent = `Q4 Growth: ${(data.kpi.penumpang_q4_growth >= 0 ? '+' : '')}${data.kpi.penumpang_q4_growth.toFixed(1)}%`;
+        updateKpiGrowth("kpiPenumpangGrowth", data.kpi.penumpang_q4_growth, 1);
         
         document.getElementById("kpiBagasiVal").textContent = formatNumberID(data.kpi.bagasi_total, 0);
-        document.getElementById("kpiBagasiGrowth").textContent = `Q4 Growth: ${(data.kpi.bagasi_q4_growth >= 0 ? '+' : '')}${data.kpi.bagasi_q4_growth.toFixed(1)}%`;
+        updateKpiGrowth("kpiBagasiGrowth", data.kpi.bagasi_q4_growth, 1);
 
         document.getElementById("kpiBarangVal").textContent = formatNumberID(data.kpi.barang_total, 0);
-        document.getElementById("kpiBarangGrowth").textContent = `Q4 Growth: ${(data.kpi.barang_q4_growth >= 0 ? '+' : '')}${data.kpi.barang_q4_growth.toFixed(1)}%`;
+        updateKpiGrowth("kpiBarangGrowth", data.kpi.barang_q4_growth, 1);
 
         document.getElementById("kpiPdrbVal").textContent = formatNumberID(data.kpi.pdrb_hk_total, 2);
-        document.getElementById("kpiPdrbGrowth").textContent = `Q4 Growth: ${(data.kpi.pdrb_hk_q4_growth >= 0 ? '+' : '')}${data.kpi.pdrb_hk_q4_growth.toFixed(2)}%`;
+        updateKpiGrowth("kpiPdrbGrowth", data.kpi.pdrb_hk_q4_growth, 2);
 
         document.getElementById("kpiSectorMaxName").textContent = data.kpi.max_correl_sector || '-';
         document.getElementById("kpiSectorMaxName").title = data.kpi.max_correl_sector || '';
-        document.getElementById("kpiSectorMaxVal").textContent = `r = ${Number(data.kpi.max_correl_val || 0).toFixed(3)} (${data.kpi.max_correl_type || ''})`;
+        const maxR = Number(data.kpi.max_correl_val || 0);
+        const kpiMaxEl = document.getElementById("kpiSectorMaxVal");
+        if (kpiMaxEl) {
+          kpiMaxEl.textContent = `r = ${maxR.toFixed(3)} (${data.kpi.max_correl_type || ''})`;
+          kpiMaxEl.className = `text-xs font-semibold ${maxR < 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-sky-600 dark:text-sky-400'}`;
+        }
 
         // 2. Update Inspector Card
         const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
@@ -1016,12 +1041,22 @@
         ? (data.regression_annual || data.regression) 
         : data.regression;
 
+      const isNeg = reg.r_val < 0;
+      const regColorClass = isNeg ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400';
+      const rColorHex = isNeg ? '#f43f5e' : '#10b981';
+
       const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
       const periodLabel = isAnnual ? 'Tahunan (2021-2024)' : `Triwulanan (${currentYear})`;
       const themeColor = data.tipe_pdrb === 'HB' ? '#a855f7' : '#38bdf8';
 
       document.getElementById("chartRegRVal").textContent = `r = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
-      document.getElementById("regSummaryR").textContent = `${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
+      
+      const regSummaryEl = document.getElementById("regSummaryR");
+      if (regSummaryEl) {
+        regSummaryEl.textContent = `${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
+        regSummaryEl.className = `font-mono font-bold text-sm ${regColorClass}`;
+      }
+
       document.getElementById("regSummaryR2").textContent = `${reg.r_squared.toFixed(4)} (${(reg.r_squared * 100).toFixed(1)}%)`;
 
       const pts = reg.points || [];
@@ -1061,7 +1096,7 @@
           yref: 'paper',
           x: 0.05,
           y: 0.95,
-          text: `<b>${reg.equation}</b><br><span style="color:#0ea5e9;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:#10b981;">R = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb})</span>`,
+          text: `<b>${reg.equation}</b><br><span style="color:#0ea5e9;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:${rColorHex};">R = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb})</span>`,
           showarrow: false,
           bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
           bordercolor: themeColor,
