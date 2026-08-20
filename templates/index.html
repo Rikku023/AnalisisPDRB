@@ -94,12 +94,17 @@
           <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
         </div>
 
-        <!-- Tipe PDRB (Semua, HK, HB) -->
+        <!-- Mode Analisis: Growth Rate / Absolut -->
         <div class="relative">
-          <select id="selTipePDRB" onchange="onTipePDRBChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
-            <option value="all">🌐 Semua Tipe (HB & HK)</option>
-            <option value="HK" selected>Harga Konstan (HK Riil)</option>
-            <option value="HB">Harga Berlaku (HB Nominal)</option>
+          <select id="selAnalysisMode" onchange="onAnalysisModeChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
+            <optgroup label="📈 Laju Pertumbuhan (Rekomendasi)">
+              <option value="growth_yoy" selected>Pertumbuhan YoY (%) — Harga Konstan (Riil)</option>
+              <option value="growth_qoq">Pertumbuhan QoQ (%) — Harga Konstan (Riil)</option>
+            </optgroup>
+            <optgroup label="📊 Nilai Absolut / Level">
+              <option value="abs_hk">Nilai Riil (Harga Konstan)</option>
+              <option value="abs_hb">Nilai Nominal (Harga Berlaku)</option>
+            </optgroup>
           </select>
           <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
         </div>
@@ -331,6 +336,9 @@
         </div>
       </div>
 
+      <!-- Data Warning Banner (hidden by default, shown by JS when data_warning exists) -->
+      <div id="dataWarningBanner" class="hidden"></div>
+
       <!-- Controls for Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
         
@@ -533,7 +541,7 @@
     let currentManifest = {};
     let currentProvince = "sulawesi_selatan";
     let currentYear = "2024";
-    let currentTipePDRB = "HK";
+    let currentAnalysisMode = "growth_yoy"; // "growth_yoy" | "growth_qoq" | "abs_hk" | "abs_hb"
     let currentSector = "Transportasi dan Pergudangan";
     let currentCategory = "lu"; // "lu" (Lapangan Usaha) atau "peng" (Pengeluaran)
     let currentScaleMode = "idx100";
@@ -543,6 +551,28 @@
     let currentTab3Sheet = "pdrb_triwulan";
     let activeTab3RawData = null;
     let isDarkMode = true;
+
+    // Helper: apakah mode pertumbuhan aktif
+    function isGrowthMode() {
+      return currentAnalysisMode.startsWith('growth_');
+    }
+
+    // Helper: dapatkan tipe PDRB backend dari analysis mode
+    function getBackendTipePdrb() {
+      if (currentAnalysisMode === 'abs_hb') return 'HB';
+      return 'HK'; // growth modes dan abs_hk semua pakai HK
+    }
+
+    // Helper: label mode analisis untuk UI
+    function getAnalysisModeLabel() {
+      const labels = {
+        'growth_yoy': 'Pertumbuhan YoY (%)',
+        'growth_qoq': 'Pertumbuhan QoQ (%)',
+        'abs_hk': 'Nilai Riil (Harga Konstan)',
+        'abs_hb': 'Nilai Nominal (Harga Berlaku)'
+      };
+      return labels[currentAnalysisMode] || currentAnalysisMode;
+    }
 
     // Format helper Indonesia
     function formatNumberID(num, decimals = 0) {
@@ -676,39 +706,50 @@
       refreshData();
     }
 
-    function onTipePDRBChange() {
-      const val = document.getElementById("selTipePDRB").value;
-      if (val === 'all') {
-        currentTipePDRB = 'HK';
-      } else {
-        currentTipePDRB = val;
-      }
+    function onAnalysisModeChange() {
+      currentAnalysisMode = document.getElementById("selAnalysisMode").value;
       updatePdrbTypeButtons();
       refreshData();
     }
 
+    // Backward-compat alias
+    function onTipePDRBChange() { onAnalysisModeChange(); }
+
     function setPdrbPriceType(type) {
-      currentTipePDRB = type;
-      const sel = document.getElementById("selTipePDRB");
-      if (sel && sel.value !== 'all') {
-        sel.value = type;
+      // Saat user klik HK/HB di panel regresi
+      if (type === 'HB') {
+        currentAnalysisMode = 'abs_hb';
+      } else {
+        currentAnalysisMode = 'abs_hk';
       }
+      document.getElementById("selAnalysisMode").value = currentAnalysisMode;
       updatePdrbTypeButtons();
       loadSectorData();
     }
 
     function updatePdrbTypeButtons() {
-      const isHK = currentTipePDRB !== 'HB';
+      const isHK = getBackendTipePdrb() !== 'HB';
+      const growth = isGrowthMode();
       const btnHK = document.getElementById("btnPdrbHK");
       const btnHB = document.getElementById("btnPdrbHB");
 
       if (btnHK && btnHB) {
-        btnHK.className = isHK 
-          ? "px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1" 
-          : "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1";
-        btnHB.className = !isHK 
-          ? "px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1" 
-          : "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1";
+        if (growth) {
+          // Disable HK/HB toggle saat mode growth (selalu HK)
+          btnHK.className = "px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-emerald-600 shadow transition flex items-center gap-1 cursor-not-allowed opacity-80";
+          btnHK.title = "Mode Growth selalu menggunakan Harga Konstan (Riil)";
+          btnHB.className = "px-2.5 py-1 rounded-md text-xs font-medium text-slate-500 dark:text-slate-500 transition flex items-center gap-1 cursor-not-allowed opacity-50";
+          btnHB.title = "Tidak tersedia pada mode Growth";
+        } else {
+          btnHK.title = "PDRB Harga Konstan (Riil)";
+          btnHB.title = "PDRB Harga Berlaku (Nominal)";
+          btnHK.className = isHK 
+            ? "px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1" 
+            : "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1";
+          btnHB.className = !isHK 
+            ? "px-2.5 py-1 rounded-md text-xs font-semibold text-white bg-sky-600 shadow transition flex items-center gap-1" 
+            : "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1";
+        }
       }
     }
 
@@ -821,10 +862,17 @@
       const filterMode = document.getElementById("selFilterMode").value;
       const sortBy = document.getElementById("selSortBy").value;
       const search = document.getElementById("txtSearchSector").value;
-      const tableTipeFilter = document.getElementById("selTipePDRB").value;
+
+      const catLabel = currentCategory === 'lu' ? "Lapangan Usaha" : "Pengeluaran";
+      const numLabel = currentCategory === 'lu' ? "2" : "3";
+      const modeSuffix = isGrowthMode() ? ` (Laju ${getAnalysisModeLabel()})` : ` (${getAnalysisModeLabel()})`;
+      const heading = document.getElementById("txtCorrelTableHeading");
+      if (heading) {
+        heading.innerHTML = `<i class="fa-solid fa-table text-sky-500 dark:text-sky-400"></i> ${numLabel}. Matriks Korelasi PDRB Menurut ${catLabel} vs Transportasi <span class="text-xs font-normal text-sky-600 dark:text-sky-400">${modeSuffix}</span>`;
+      }
 
       try {
-        const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=${currentCategory}&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${tableTipeFilter}&search=${encodeURIComponent(search)}`;
+        const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=${currentCategory}&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${getBackendTipePdrb()}&search=${encodeURIComponent(search)}&analysis_mode=${currentAnalysisMode}`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -844,7 +892,7 @@
           const isSelected = rowLabel === currentSector;
           const tr = document.createElement("tr");
           tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer transition border-b border-slate-200 dark:border-slate-800/50 " + (isSelected ? "bg-sky-100 dark:bg-sky-950/40 border-sky-500 font-semibold" : "");
-          tr.onclick = () => selectSector(rowLabel, rowTipe.includes("HB") ? "HB" : "HK");
+          tr.onclick = () => selectSector(rowLabel, isGrowthMode() ? null : (rowTipe.includes("HB") ? "HB" : "HK"));
 
           const pVal = r["Korelasi dgn Penumpang"] !== null ? Number(r["Korelasi dgn Penumpang"]) : NaN;
           const bagVal = r["Korelasi dgn Bagasi"] !== null ? Number(r["Korelasi dgn Bagasi"]) : NaN;
@@ -872,12 +920,9 @@
 
     function selectSector(sectorName, tipe) {
       currentSector = sectorName;
-      if (tipe) {
-        currentTipePDRB = tipe.includes("HB") ? "HB" : "HK";
-        const sel = document.getElementById("selTipePDRB");
-        if (sel && sel.value !== 'all') {
-          sel.value = currentTipePDRB;
-        }
+      if (tipe && !isGrowthMode()) {
+        currentAnalysisMode = tipe.includes("HB") ? "abs_hb" : "abs_hk";
+        document.getElementById("selAnalysisMode").value = currentAnalysisMode;
         updatePdrbTypeButtons();
       }
       loadCorrelations();
@@ -886,7 +931,7 @@
 
     async function loadSectorData() {
       try {
-        const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&category=${currentCategory}&tipe_pdrb=${currentTipePDRB}&transport_metric=${currentRegMetric}`;
+        const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&category=${currentCategory}&tipe_pdrb=${getBackendTipePdrb()}&transport_metric=${currentRegMetric}&analysis_mode=${currentAnalysisMode}`;
         const res = await fetch(url);
         const data = await res.json();
         activeDashboardData = data;
@@ -917,9 +962,17 @@
         const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
         const tipeBadgeClass = data.tipe_pdrb === 'HB' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30';
         
-        document.getElementById("inspectorSectorTitle").innerHTML = `${data.active_sector} <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${tipeBadgeClass}">${tipeLabel}</span>`;
+        // Mode analisis badge
+        const growthActive = isGrowthMode();
+        const modeBadge = growthActive 
+          ? `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">🔄 ${getAnalysisModeLabel()}</span>` 
+          : `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${tipeBadgeClass}">${tipeLabel}</span>`;
+
+        document.getElementById("inspectorSectorTitle").innerHTML = `${data.active_sector} ${modeBadge}`;
         
         const rVal = data.regression.r_val;
+        const pVal = data.regression.p_value;
+        const nPts = data.regression.n_points || 0;
         let badgeColor = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
         let badgeDesc = "Sangat Kuat Positif 🚀";
         if (rVal < 0) {
@@ -930,11 +983,32 @@
           badgeDesc = "Moderat Positif 📈";
         }
 
+        // p-value significance badge
+        const pSig = pVal !== undefined && pVal !== null && pVal < 0.05;
+        const pBadge = pVal !== undefined && pVal !== null 
+          ? `<span class="px-2.5 py-1 rounded border ${pSig ? 'border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-amber-500/30 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400'} font-mono">${pSig ? '✅' : '⚠️'} p = ${pVal < 0.001 ? pVal.toExponential(2) : pVal.toFixed(4)}</span>` 
+          : '';
+
+        // N datapoints badge
+        const nBadge = nPts > 0 ? `<span class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">N = ${nPts}</span>` : '';
+
         document.getElementById("inspectorBadges").innerHTML = `
           <span class="px-2.5 py-1 rounded border font-mono font-semibold ${badgeColor}">${badgeDesc} (r = ${rVal.toFixed(4)})</span>
           <span class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">R² = ${data.regression.r_squared.toFixed(4)}</span>
+          ${pBadge}
+          ${nBadge}
           <span class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">${data.regression.equation}</span>
         `;
+
+        // Data warning banner (e.g., tahun 2021 pada YoY)
+        const warningBanner = document.getElementById('dataWarningBanner');
+        if (data.data_warning && warningBanner) {
+          warningBanner.innerHTML = `<div class="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 rounded-lg text-amber-800 dark:text-amber-300 text-xs font-medium"><i class="fa-solid fa-triangle-exclamation text-amber-500"></i> ${data.data_warning}</div>`;
+          warningBanner.classList.remove('hidden');
+        } else if (warningBanner) {
+          warningBanner.classList.add('hidden');
+          warningBanner.innerHTML = '';
+        }
 
         // 3. Render Charts
         renderTimeSeriesChart(data);
@@ -964,45 +1038,59 @@
       const tw = data.triwulan_data.map(d => d.triwulan);
       const isIdx = currentScaleMode === 'idx100';
       const isQoq = currentScaleMode === 'qoq';
+      const isAbs = currentScaleMode === 'abs';
+      const growth = isGrowthMode();
+      const hasGrowthData = data.growth_ts_available && data.triwulan_data.length > 0 && data.triwulan_data[0].pdrb_growth !== undefined;
 
-      const pdrbHkVals = data.triwulan_data.map(d => isIdx ? d.pdrb_hk_idx : (isQoq ? d.pdrb_hk_qoq : d.pdrb_hk_raw));
-      const pdrbHbVals = data.triwulan_data.map(d => isIdx ? d.pdrb_hb_idx : (isQoq ? d.pdrb_hb_qoq : d.pdrb_hb_raw));
+      // Jika mode growth + skala absolut, tampilkan data pertumbuhan (%)
+      const showGrowthLines = growth && isAbs && hasGrowthData;
 
-      const pVals = data.triwulan_data.map(d => isIdx ? d.penumpang_idx : (isQoq ? d.penumpang_qoq : d.penumpang_raw));
-      const bagVals = data.triwulan_data.map(d => isIdx ? d.bagasi_idx : (isQoq ? d.bagasi_qoq : d.bagasi_raw));
-      const barVals = data.triwulan_data.map(d => isIdx ? d.barang_idx : (isQoq ? d.barang_qoq : d.barang_raw));
+      const pdrbHkVals = showGrowthLines ? data.triwulan_data.map(d => d.pdrb_growth || 0) : data.triwulan_data.map(d => isIdx ? d.pdrb_hk_idx : (isQoq ? d.pdrb_hk_qoq : d.pdrb_hk_raw));
+      const pdrbHbVals = showGrowthLines ? data.triwulan_data.map(d => d.pdrb_growth || 0) : data.triwulan_data.map(d => isIdx ? d.pdrb_hb_idx : (isQoq ? d.pdrb_hb_qoq : d.pdrb_hb_raw));
+
+      const pVals = showGrowthLines ? data.triwulan_data.map(d => d.penumpang_growth || 0) : data.triwulan_data.map(d => isIdx ? d.penumpang_idx : (isQoq ? d.penumpang_qoq : d.penumpang_raw));
+      const bagVals = showGrowthLines ? data.triwulan_data.map(d => d.bagasi_growth || 0) : data.triwulan_data.map(d => isIdx ? d.bagasi_idx : (isQoq ? d.bagasi_qoq : d.bagasi_raw));
+      const barVals = showGrowthLines ? data.triwulan_data.map(d => d.barang_growth || 0) : data.triwulan_data.map(d => isIdx ? d.barang_idx : (isQoq ? d.barang_qoq : d.barang_raw));
 
       const isHK = data.tipe_pdrb !== 'HB';
+      const growthLabel = currentAnalysisMode === 'growth_yoy' ? 'YoY' : 'QoQ';
 
       const traces = [
         {
           x: tw,
-          y: isHK ? pdrbHkVals : pdrbHbVals,
-          name: `PDRB (${isHK ? 'HK Konstan' : 'HB Berlaku'}): ${data.active_sector}`,
+          y: isHK || showGrowthLines ? pdrbHkVals : pdrbHbVals,
+          name: showGrowthLines ? `Pertumbuhan PDRB ${growthLabel} (%): ${data.active_sector}` : `PDRB (${isHK ? 'HK Konstan' : 'HB Berlaku'}): ${data.active_sector}`,
           mode: 'lines+markers',
-          line: { color: isHK ? '#0ea5e9' : '#a855f7', width: 3.5 },
+          line: { color: showGrowthLines ? '#10b981' : (isHK ? '#0ea5e9' : '#a855f7'), width: 3.5 },
           marker: { size: 8, symbol: 'circle' }
-        },
-        {
+        }
+      ];
+
+      // Hanya tampilkan trace HB/HK kedua jika bukan mode growth
+      if (!showGrowthLines) {
+        traces.push({
           x: tw,
           y: isHK ? pdrbHbVals : pdrbHkVals,
           name: `PDRB (${isHK ? 'HB Berlaku' : 'HK Konstan'}): ${data.active_sector}`,
           mode: 'lines+markers',
           line: { color: isHK ? '#a855f7' : '#0ea5e9', width: 2.5, dash: 'dot' },
           marker: { size: 6, symbol: isHK ? 'square' : 'circle' }
-        },
+        });
+      }
+
+      traces.push(
         {
           x: tw,
           y: pVals,
-          name: '✈️ Penumpang (Orang)',
+          name: showGrowthLines ? `Pertumbuhan Penumpang ${growthLabel} (%)` : '✈️ Penumpang (Orang)',
           mode: 'lines+markers',
-          line: { color: '#10b981', width: 3 },
+          line: { color: showGrowthLines ? '#6366f1' : '#10b981', width: 3 },
           marker: { size: 8, symbol: 'diamond' }
         },
         {
           x: tw,
           y: bagVals,
-          name: '🧳 Bagasi (Kg)',
+          name: showGrowthLines ? `Pertumbuhan Bagasi ${growthLabel} (%)` : '🧳 Bagasi (Kg)',
           mode: 'lines+markers',
           line: { color: '#06b6d4', width: 2.5, dash: 'dash' },
           marker: { size: 7, symbol: 'square' }
@@ -1010,14 +1098,19 @@
         {
           x: tw,
           y: barVals,
-          name: '📦 Barang/Kargo (Kg)',
+          name: showGrowthLines ? `Pertumbuhan Barang ${growthLabel} (%)` : '📦 Barang/Kargo (Kg)',
           mode: 'lines+markers',
           line: { color: '#f59e0b', width: 2.5, dash: 'dashdot' },
           marker: { size: 7, symbol: 'triangle-up' }
         }
-      ];
+      );
 
-      const yTitle = isIdx ? "Indeks Pertumbuhan (Base Q1 = 100)" : (isQoq ? "Pertumbuhan Kuartalan (%)" : "Volume Nilai");
+      let yTitle;
+      if (showGrowthLines) {
+        yTitle = `Laju Pertumbuhan ${growthLabel} (%)`;
+      } else {
+        yTitle = isIdx ? "Indeks Pertumbuhan (Base Q1 = 100)" : (isQoq ? "Pertumbuhan Kuartalan (%)" : "Volume Nilai");
+      }
       const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
       const textColor = isDarkMode ? '#94a3b8' : '#475569';
 
@@ -1037,23 +1130,28 @@
 
     function renderRegressionChart(data) {
       const isAnnual = currentRegPeriod === 'annual';
-      const reg = isAnnual 
-        ? (data.regression_annual || data.regression) 
-        : data.regression;
+      const growth = isGrowthMode();
+
+      // Di mode growth, regresi triwulan dan tahunan menggunakan data pooled yang sama
+      const reg = growth
+        ? data.regression
+        : (isAnnual ? (data.regression_annual || data.regression) : data.regression);
 
       const isNeg = reg.r_val < 0;
       const regColorClass = isNeg ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400';
       const rColorHex = isNeg ? '#f43f5e' : '#10b981';
 
-      const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
-      const periodLabel = isAnnual ? 'Tahunan (2021-2024)' : `Triwulanan (${currentYear})`;
-      const themeColor = data.tipe_pdrb === 'HB' ? '#a855f7' : '#38bdf8';
+      const growthTag = currentAnalysisMode === 'growth_yoy' ? 'YoY' : 'QoQ';
+      const tipeLabel = growth ? getAnalysisModeLabel() : (data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)');
+      const periodLabel = growth ? `Pooled Multi-Tahun (N=${reg.n_points || '?'})` : (isAnnual ? 'Tahunan (2021-2024)' : `Triwulanan (${currentYear})`);
+      const themeColor = growth ? '#10b981' : (data.tipe_pdrb === 'HB' ? '#a855f7' : '#38bdf8');
 
-      document.getElementById("chartRegRVal").textContent = `r = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
+      const rLabel = growth ? `r = ${reg.r_val.toFixed(4)} (${growthTag} Pooled, N=${reg.n_points || '?'})` : `r = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
+      document.getElementById("chartRegRVal").textContent = rLabel;
       
       const regSummaryEl = document.getElementById("regSummaryR");
       if (regSummaryEl) {
-        regSummaryEl.textContent = `${reg.r_val.toFixed(4)} (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
+        regSummaryEl.textContent = `${reg.r_val.toFixed(4)} (${growth ? growthTag + ' Pooled' : data.tipe_pdrb + ' - ' + (isAnnual ? 'Tahunan' : 'Triwulan')})`;
         regSummaryEl.className = `font-mono font-bold text-sm ${regColorClass}`;
       }
 
@@ -1064,13 +1162,17 @@
       const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
       const textColor = isDarkMode ? '#94a3b8' : '#475569';
 
+      const traceLineName = growth 
+        ? `Garis Regresi OLS (${growthTag} Pooled)` 
+        : `Garis Regresi OLS (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`;
+
       const traces = [
         {
           x: trend.map(p => p.x),
           y: trend.map(p => p.y),
           mode: 'lines',
-          name: `Garis Regresi OLS (${data.tipe_pdrb} - ${isAnnual ? 'Tahunan' : 'Triwulan'})`,
-          line: { color: data.tipe_pdrb === 'HB' ? '#c084fc' : '#818cf8', width: 3 }
+          name: traceLineName,
+          line: { color: growth ? '#10b981' : (data.tipe_pdrb === 'HB' ? '#c084fc' : '#818cf8'), width: 3 }
         },
         {
           x: pts.map(p => p.x),
@@ -1083,20 +1185,33 @@
         }
       ];
 
+      const xAxisTitle = growth
+        ? `${reg.label_x || 'Pertumbuhan PDRB (%)'} - Sumbu X`
+        : `PDRB: ${data.active_sector} [${tipeLabel}] - ${periodLabel} (Sumbu X)`;
+
+      const yAxisTitle = growth
+        ? `${reg.label_y || 'Pertumbuhan Transportasi (%)'} - Sumbu Y`
+        : `${reg.label_y} (Sumbu Y)`;
+
+      const annotTipe = growth ? `${growthTag} Pooled` : data.tipe_pdrb;
+      const pValStr = (reg.p_value !== undefined && reg.p_value !== null)
+        ? ` | <span style="color:#a855f7;">p = ${reg.p_value < 0.001 ? reg.p_value.toExponential(2) : reg.p_value.toFixed(4)}</span>`
+        : '';
+
       const layout = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: textColor, family: 'Inter' },
         margin: { l: 55, r: 25, t: 20, b: 45 },
-        xaxis: { title: `PDRB: ${data.active_sector} [${tipeLabel}] - ${periodLabel} (Sumbu X)`, gridcolor: gridColor },
-        yaxis: { title: `${reg.label_y} (Sumbu Y)`, gridcolor: gridColor },
+        xaxis: { title: xAxisTitle, gridcolor: gridColor },
+        yaxis: { title: yAxisTitle, gridcolor: gridColor },
         showlegend: false,
         annotations: [{
           xref: 'paper',
           yref: 'paper',
           x: 0.05,
           y: 0.95,
-          text: `<b>${reg.equation}</b><br><span style="color:#0ea5e9;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:${rColorHex};">R = ${reg.r_val.toFixed(4)} (${data.tipe_pdrb})</span>`,
+          text: `<b>${reg.equation}</b><br><span style="color:#0ea5e9;">R² = ${reg.r_squared.toFixed(4)}</span> | <span style="color:${rColorHex};">R = ${reg.r_val.toFixed(4)} (${annotTipe})</span>${pValStr}`,
           showarrow: false,
           bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
           bordercolor: themeColor,

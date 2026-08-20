@@ -5,3 +5,4 @@ pyarrow
 openpyxl
 jinja2
 numpy
+scipy
