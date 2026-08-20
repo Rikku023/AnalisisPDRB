@@ -266,7 +266,8 @@ def compute_growth_df(df: pd.DataFrame, periods: int = 4) -> pd.DataFrame:
 
 def _compute_correlation_matrix_from_growth(
     df_growth: pd.DataFrame,
-    category: str = "lu"
+    category: str = "lu",
+    pdrb_price_type: str = "HK"
 ) -> pd.DataFrame:
     """
     Menghitung matriks korelasi (+ p-value) antara setiap sektor PDRB
@@ -275,6 +276,7 @@ def _compute_correlation_matrix_from_growth(
     Args:
         df_growth: DataFrame pertumbuhan dari compute_growth_df().
         category: "lu" (Lapangan Usaha) atau "peng" (Pengeluaran).
+        pdrb_price_type: "HK" (Harga Konstan / Riil) atau "HB" (Harga Berlaku / Nominal).
 
     Returns:
         DataFrame dengan kolom: [label_col, "Tipe PDRB", "Korelasi dgn Penumpang",
@@ -285,11 +287,12 @@ def _compute_correlation_matrix_from_growth(
     bag_col = next((c for c in df_growth.columns if "bagasi" in c.lower()), None)
     bar_col = next((c for c in df_growth.columns if "barang" in c.lower()), None)
 
-    prefix = "LU (HK)" if category == "lu" else "Peng (HK)"
+    is_hb = str(pdrb_price_type).upper() == "HB"
+    prefix = ("LU (HB)" if is_hb else "LU (HK)") if category == "lu" else ("Peng (HB)" if is_hb else "Peng (HK)")
     label_col = "Lapangan Usaha" if category == "lu" else "Komponen Pengeluaran"
-    tipe_label = "Harga Konstan (HK)"
+    tipe_label = "Harga Berlaku (HB)" if is_hb else "Harga Konstan (HK)"
 
-    # Temukan semua kolom sektor HK
+    # Temukan semua kolom sektor sesuai prefix
     sector_cols = [c for c in df_growth.columns if c.lower().startswith(prefix.lower())]
 
     rows = []
@@ -408,7 +411,7 @@ async def get_correlations(
     """
     Mengembalikan data matriks korelasi (Lapangan Usaha atau Pengeluaran)
     dengan dukungan filter 6 sektor utama (G, F, C, H, I, E), sorting, search,
-    dan mode analisis: growth_yoy, growth_qoq, abs_hk, abs_hb.
+    dan mode analisis: growth_yoy, growth_qoq, growth_yoy_hb, growth_qoq_hb, abs_all, abs_hk, abs_hb.
     """
     is_growth = analysis_mode.startswith("growth_")
     label_col = "Lapangan Usaha" if type == "lu" else "Komponen Pengeluaran"
@@ -416,7 +419,8 @@ async def get_correlations(
 
     if is_growth:
         # === MODE GROWTH: Hitung korelasi on-the-fly dari data pertumbuhan multi-tahun ===
-        periods = 4 if analysis_mode == "growth_yoy" else 1
+        periods = 4 if "yoy" in analysis_mode else 1
+        growth_pdrb_type = "HB" if analysis_mode.endswith("_hb") else "HK"
         df_multi, avail_years = build_multi_year_df(province)
 
         if df_multi.empty:
@@ -430,18 +434,18 @@ async def get_correlations(
 
         # Periksa kecukupan data untuk YoY
         total_quarters = len(df_multi)
-        if analysis_mode == "growth_yoy" and total_quarters <= 4:
+        if "yoy" in analysis_mode and total_quarters <= 4:
             data_warning = (
                 f"Data hanya tersedia {total_quarters} triwulan. "
                 f"YoY membutuhkan >4 triwulan. Pertimbangkan gunakan mode QoQ."
             )
 
-        # Notifikasi khusus jika user memilih tahun 2021 pada YoY
-        if analysis_mode == "growth_yoy" and avail_years and str(year) == str(avail_years[0]):
+        # Notifikasi khusus jika user memilih tahun pertama pada YoY
+        if "yoy" in analysis_mode and avail_years and str(year) == str(avail_years[0]):
             data_warning = (
                 f"Tahun {year} adalah tahun pertama dalam dataset. "
-                f"Tidak ada data periode sebelumnya untuk menghitung YoY. "
-                f"Korelasi akan dihitung dari seluruh tahun yang tersedia (pooled)."
+                f"Tidak ada data periode sebelumnya untuk menghitung YoY tahun tunggal. "
+                f"Korelasi dihitung dari seluruh tahun yang tersedia (pooled multi-tahun)."
             )
 
         df_growth = compute_growth_df(df_multi, periods=periods)
@@ -457,9 +461,10 @@ async def get_correlations(
             }
 
         # Hitung matriks korelasi dari data pertumbuhan (pooled seluruh tahun)
-        df_view = _compute_correlation_matrix_from_growth(df_growth, category=type)
+        df_view = _compute_correlation_matrix_from_growth(df_growth, category=type, pdrb_price_type=growth_pdrb_type)
 
-        analysis_label = "Pertumbuhan YoY (%)" if analysis_mode == "growth_yoy" else "Pertumbuhan QoQ (%)"
+        growth_pdrb_label = "Harga Berlaku (Nominal)" if growth_pdrb_type == "HB" else "Harga Konstan (Riil)"
+        analysis_label = f"Pertumbuhan {'YoY' if periods == 4 else 'QoQ'} (%) — {growth_pdrb_label}"
         n_observations = len(df_growth)
 
     else:
@@ -478,14 +483,19 @@ async def get_correlations(
 
         df_view = df.copy()
 
-        # Filter Tipe PDRB (HB / HK) untuk mode absolut
-        effective_pdrb_type = "HK" if analysis_mode == "abs_hk" else ("HB" if analysis_mode == "abs_hb" else pdrb_type)
+        # Filter Tipe PDRB (HB / HK / all) untuk mode absolut
+        effective_pdrb_type = "HK" if analysis_mode == "abs_hk" else ("HB" if analysis_mode == "abs_hb" else ("all" if analysis_mode == "abs_all" else pdrb_type))
         if effective_pdrb_type == "HB" and "Tipe PDRB" in df_view.columns:
             df_view = df_view[df_view["Tipe PDRB"].str.contains("HB", case=False, na=False)]
         elif effective_pdrb_type == "HK" and "Tipe PDRB" in df_view.columns:
             df_view = df_view[df_view["Tipe PDRB"].str.contains("HK", case=False, na=False)]
 
-        analysis_label = "Nilai Riil (Harga Konstan)" if analysis_mode == "abs_hk" else "Nilai Nominal (Harga Berlaku)"
+        if effective_pdrb_type == "HB":
+            analysis_label = "Nilai Nominal (Harga Berlaku)"
+        elif effective_pdrb_type == "HK":
+            analysis_label = "Nilai Riil (Harga Konstan)"
+        else:
+            analysis_label = "Semua Tipe (HK & HB)"
         n_observations = 4  # Single year
 
     # === FILTERS (berlaku untuk semua mode) ===
@@ -559,24 +569,27 @@ async def get_dashboard_data(
     category: str = "lu",
     tipe_pdrb: str = "HK",
     transport_metric: str = "penumpang",
-    analysis_mode: str = "growth_yoy"
+    analysis_mode: str = "growth_yoy",
+    ols_scope: str = "year"
 ):
     """
     Endpoint agregasi lengkap: KPI, Data Triwulanan (raw, index 100, QoQ untuk HK & HB),
-    Regresi Linear OLS dengan persamaan $y=mx+c$, $R^2$, $R$, p-value,
-    dan ringkasan sektoral untuk visualisasi frontend.
+    Regresi Linear OLS (Tahun Terpilih N=4 dan Multi-Tahun Pooled N=12/15/16)
+    dengan persamaan $y=mx+c$, $R^2$, $R$, p-value, dan ringkasan sektoral.
 
-    Mendukung analysis_mode: growth_yoy, growth_qoq, abs_hk, abs_hb.
-    Mode growth menggunakan pooled data multi-tahun untuk regresi (N≥12).
+    Mendukung analysis_mode: growth_yoy, growth_qoq, growth_yoy_hb, growth_qoq_hb, abs_all, abs_hk, abs_hb.
+    Mendukung ols_scope: "year" (Tahun Terpilih) dan "pooled" (Multi-Tahun Pooled).
     """
     is_growth = analysis_mode.startswith("growth_")
     data_warning = None
 
-    # Saat mode growth, paksa HK (Harga Konstan / Riil)
+    # Tentukan chosen_type (HB atau HK)
     if is_growth:
-        chosen_type = "HK"
+        chosen_type = "HB" if analysis_mode.endswith("_hb") else "HK"
     elif analysis_mode == "abs_hb":
         chosen_type = "HB"
+    elif analysis_mode == "abs_hk":
+        chosen_type = "HK"
     else:
         chosen_type = "HB" if str(tipe_pdrb).upper() == "HB" else "HK"
 
@@ -707,18 +720,21 @@ async def get_dashboard_data(
 
     # Jika mode growth, hitung juga pertumbuhan multi-tahun untuk time-series display
     growth_ts_data: Dict[str, List[float]] = {}
+    df_multi_all, avail_years = build_multi_year_df(province)
+
     if is_growth:
-        df_multi_all, avail_years = build_multi_year_df(province)
         if not df_multi_all.empty:
-            periods_g = 4 if analysis_mode == "growth_yoy" else 1
+            periods_g = 4 if "yoy" in analysis_mode else 1
             df_g_all = compute_growth_df(df_multi_all, periods=periods_g)
 
             # Filter ke tahun terpilih untuk time-series display
             df_g_year = df_g_all[df_g_all["_tahun"] == int(year)]
 
+            prefix_growth = prefix_hb if chosen_type == "HB" else prefix_hk
+
             if not df_g_year.empty:
                 # Cari kolom yang cocok di data growth
-                g_sector_col = next((c for c in df_g_year.columns if clean_sec in c.lower() and prefix_hk.lower() in c.lower()), None)
+                g_sector_col = next((c for c in df_g_year.columns if clean_sec in c.lower() and prefix_growth.lower() in c.lower()), None)
                 g_p_col = next((c for c in df_g_year.columns if "penumpang" in c.lower()), None)
                 g_bag_col = next((c for c in df_g_year.columns if "bagasi" in c.lower()), None)
                 g_bar_col = next((c for c in df_g_year.columns if "barang" in c.lower()), None)
@@ -729,10 +745,10 @@ async def get_dashboard_data(
                 growth_ts_data["barang_growth"] = df_g_year[g_bar_col].fillna(0).tolist() if g_bar_col and g_bar_col in df_g_year.columns else [0]*len(df_g_year)
             else:
                 # Tahun pertama pada YoY: semua growth = NaN → kosong
-                growth_mode_label = "YoY" if analysis_mode == "growth_yoy" else "QoQ"
+                growth_mode_label = "YoY" if "yoy" in analysis_mode else "QoQ"
                 data_warning = (
                     f"Tahun {year} tidak memiliki data pertumbuhan {growth_mode_label} "
-                    f"(tahun awal dataset). Grafik pertumbuhan kosong untuk tahun ini."
+                    f"(tahun awal dataset). Gunakan toggle 'Multi-Tahun (Pooled)' untuk regresi OLS."
                 )
 
     triwulan_data = []
@@ -768,7 +784,7 @@ async def get_dashboard_data(
         triwulan_data.append(row_data)
 
     # ==================================================================================
-    # 3. OLS Linear Regression
+    # 3. OLS Linear Regression (Tahun Terpilih N=4 vs Multi-Tahun Pooled N=12/15/16)
     # ==================================================================================
     if transport_metric == "bagasi" and bag_col:
         y_raw_series = bag_series
@@ -782,8 +798,8 @@ async def get_dashboard_data(
 
     def compute_regression(x_s: pd.Series, y_s: pd.Series, label_x_str: str, label_y_str: str,
                            point_labels: Optional[List[str]] = None) -> Dict[str, Any]:
-        x_vals = x_s.values.astype(float)
-        y_vals = y_s.values.astype(float)
+        x_vals = x_s.values.astype(float) if len(x_s) > 0 else np.array([], dtype=float)
+        y_vals = y_s.values.astype(float) if len(y_s) > 0 else np.array([], dtype=float)
         valid_m = ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isinf(x_vals) | np.isinf(y_vals))
         x_clean = x_vals[valid_m]
         y_clean = y_vals[valid_m]
@@ -823,7 +839,7 @@ async def get_dashboard_data(
             slope_str = f"{slope:.3e}" if abs(slope) < 0.0001 else f"{slope:.4f}"
             eq_str = f"y = {slope_str}x {sign_c} {abs(intercept):,.2f}"
 
-            points = [{"triwulan": lbl_clean[k], "x": float(x_clean[k]), "y": float(y_clean[k])} for k in range(len(x_clean))]
+            points = [{"triwulan": lbl_clean[k], "label": lbl_clean[k], "x": float(x_clean[k]), "y": float(y_clean[k])} for k in range(len(x_clean))]
 
             x_min, x_max = float(x_clean.min()), float(x_clean.max())
             trend_line = [
@@ -844,24 +860,19 @@ async def get_dashboard_data(
             })
         return res
 
-    # --- Regresi untuk mode Growth (pooled multi-tahun, N≥12) ---
     if is_growth:
-        df_multi_all, avail_years = build_multi_year_df(province)
-        periods_g = 4 if analysis_mode == "growth_yoy" else 1
+        periods_g = 4 if "yoy" in analysis_mode else 1
+        growth_mode_label = "YoY" if "yoy" in analysis_mode else "QoQ"
+        pdrb_type_label = "HB" if chosen_type == "HB" else "HK"
+        prefix_growth = prefix_hb if chosen_type == "HB" else prefix_hk
+
+        label_y_growth = f"Pertumbuhan {label_y.split('(')[0].strip()} ({growth_mode_label} %)"
+        label_x_growth = f"Pertumbuhan PDRB ({pdrb_type_label}): {active_label} ({growth_mode_label} %)"
+
         df_g_pooled = compute_growth_df(df_multi_all, periods=periods_g)
 
-        growth_mode_label = "YoY" if analysis_mode == "growth_yoy" else "QoQ"
-        label_y_growth = f"Pertumbuhan {label_y.split('(')[0].strip()} ({growth_mode_label} %)"
-
-        # Notifikasi tahun 2021
-        if analysis_mode == "growth_yoy" and avail_years and year == avail_years[0]:
-            data_warning = (
-                f"Tahun {year} adalah tahun pertama dalam dataset. "
-                f"Regresi menggunakan pooled data seluruh tahun ({', '.join(avail_years)}) agar N cukup."
-            )
-
         if not df_g_pooled.empty:
-            g_sector_col = next((c for c in df_g_pooled.columns if clean_sec in c.lower() and prefix_hk.lower() in c.lower()), None)
+            g_sec_col = next((c for c in df_g_pooled.columns if clean_sec in c.lower() and prefix_growth.lower() in c.lower()), None)
             g_p_col = next((c for c in df_g_pooled.columns if "penumpang" in c.lower()), None)
             g_bag_col = next((c for c in df_g_pooled.columns if "bagasi" in c.lower()), None)
             g_bar_col = next((c for c in df_g_pooled.columns if "barang" in c.lower()), None)
@@ -876,131 +887,67 @@ async def get_dashboard_data(
             else:
                 g_y_col = None
 
-            # Buat label triwulan untuk pooled data
+            # 1. Regresi Pooled Multi-Tahun (N=12 untuk YoY / N=15 untuk QoQ)
             pooled_labels = [f"{int(r['_tahun'])} Q{int(r['_triwulan_num'])}" for _, r in df_g_pooled.iterrows()]
-
-            if g_sector_col and g_sector_col in df_g_pooled.columns and g_y_col:
-                x_pooled = df_g_pooled[g_sector_col].astype(float)
-                y_pooled = df_g_pooled[g_y_col].astype(float)
-
-                label_x_growth = f"Pertumbuhan PDRB: {active_label} ({growth_mode_label} %)"
-                reg_result = compute_regression(x_pooled, y_pooled, label_x_growth, label_y_growth, pooled_labels)
+            if g_sec_col and g_sec_col in df_g_pooled.columns and g_y_col:
+                reg_pooled = compute_regression(df_g_pooled[g_sec_col], df_g_pooled[g_y_col], label_x_growth, label_y_growth, pooled_labels)
             else:
-                reg_result = compute_regression(pd.Series([0]), pd.Series([0]), f"Pertumbuhan PDRB ({growth_mode_label} %)", label_y_growth)
+                reg_pooled = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_growth, label_y_growth, [])
+
+            # 2. Regresi Tahun Terpilih (N=4)
+            df_g_year = df_g_pooled[df_g_pooled["_tahun"] == int(year)]
+            year_labels = [f"{int(r['_tahun'])} Q{int(r['_triwulan_num'])}" for _, r in df_g_year.iterrows()]
+            if not df_g_year.empty and g_sec_col and g_sec_col in df_g_year.columns and g_y_col:
+                reg_year = compute_regression(df_g_year[g_sec_col], df_g_year[g_y_col], label_x_growth, label_y_growth, year_labels)
+            else:
+                reg_year = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_growth, label_y_growth, [])
         else:
-            reg_result = compute_regression(pd.Series([0]), pd.Series([0]), f"Pertumbuhan PDRB ({growth_mode_label} %)", label_y_growth)
-
-        # Untuk mode growth, HK dan HB regression diarahkan ke result yang sama (karena growth selalu HK)
-        reg_hk = reg_result
-        reg_hb = reg_result
+            reg_pooled = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_growth, label_y_growth, [])
+            reg_year = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_growth, label_y_growth, [])
 
     else:
-        # --- Regresi absolut (perilaku lama, backward-compatible) ---
-        reg_result = compute_regression(pdrb_series, y_raw_series, f"{active_label} ({actual_tipe})", label_y)
-        reg_hk = compute_regression(pdrb_hk_series, y_raw_series, f"{active_label} (HK)", label_y)
-        reg_hb = compute_regression(pdrb_hb_series, y_raw_series, f"{active_label} (HB)", label_y)
+        # --- Mode Absolut ---
+        label_x_abs = f"PDRB: {active_label} ({actual_tipe})"
+        label_y_abs = label_y
 
-    # ==================================================================================
-    # 3b. Regresi Multi-Tahun (Tahunan: 2021 s.d. 2024) — hanya untuk mode absolut
-    # ==================================================================================
-    prov_manifest = load_manifest()
-    prov_info = prov_manifest.get("provinces", {}).get(province, {})
-    available_years = sorted(list(prov_info.get("years", {}).keys())) if (prov_info and prov_info.get("years")) else ["2021", "2022", "2023", "2024"]
+        # 1. Regresi Tahun Terpilih (N=4)
+        year_labels = [f"{year} {tw}" for tw in triwulan_labels]
+        reg_year = compute_regression(pdrb_series, y_raw_series, label_x_abs, label_y_abs, year_labels)
 
-    if not is_growth:
-        annual_pts_hk = []
-        annual_pts_hb = []
-        for yr in available_years:
-            df_yr = get_parquet_df(f"{province}_{yr}_pdrb_triwulan")
-            if df_yr is not None:
-                m_hk = [c for c in df_yr.columns if clean_sec in c.lower() and prefix_hk.lower() in c.lower()]
-                m_hb = [c for c in df_yr.columns if clean_sec in c.lower() and prefix_hb.lower() in c.lower()]
-                yr_p = next((c for c in df_yr.columns if "penumpang" in c.lower()), None)
-                yr_bag = next((c for c in df_yr.columns if "bagasi" in c.lower()), None)
-                yr_bar = next((c for c in df_yr.columns if "barang" in c.lower()), None)
+        # 2. Regresi Pooled Multi-Tahun (Semua Triwulan 2021-2024, N=16)
+        if not df_multi_all.empty:
+            prefix_active = prefix_hb if actual_tipe == "HB" else prefix_hk
+            my_sec_col = next((c for c in df_multi_all.columns if clean_sec in c.lower() and prefix_active.lower() in c.lower()), None)
+            my_p_col = next((c for c in df_multi_all.columns if "penumpang" in c.lower()), None)
+            my_bag_col = next((c for c in df_multi_all.columns if "bagasi" in c.lower()), None)
+            my_bar_col = next((c for c in df_multi_all.columns if "barang" in c.lower()), None)
 
-                if transport_metric == "bagasi" and yr_bag:
-                    y_col = yr_bag
-                elif transport_metric == "barang" and yr_bar:
-                    y_col = yr_bar
-                else:
-                    y_col = yr_p
+            if transport_metric == "bagasi" and my_bag_col:
+                my_y_col = my_bag_col
+            elif transport_metric == "barang" and my_bar_col:
+                my_y_col = my_bar_col
+            elif my_p_col:
+                my_y_col = my_p_col
+            else:
+                my_y_col = None
 
-                if y_col and y_col in df_yr:
-                    tot_y = float(df_yr[y_col].sum())
-                    if m_hk and m_hk[0] in df_yr:
-                        tot_x_hk = float(df_yr[m_hk[0]].sum())
-                        annual_pts_hk.append({"label": yr, "x": tot_x_hk, "y": tot_y})
-                    if m_hb and m_hb[0] in df_yr:
-                        tot_x_hb = float(df_yr[m_hb[0]].sum())
-                        annual_pts_hb.append({"label": yr, "x": tot_x_hb, "y": tot_y})
+            pooled_labels = [f"{int(r['_tahun'])} Q{int(r['_triwulan_num'])}" for _, r in df_multi_all.iterrows()]
+            if my_sec_col and my_sec_col in df_multi_all.columns and my_y_col:
+                reg_pooled = compute_regression(df_multi_all[my_sec_col], df_multi_all[my_y_col], f"{label_x_abs} [Pooled]", label_y_abs, pooled_labels)
+            else:
+                reg_pooled = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_abs, label_y_abs, [])
+        else:
+            reg_pooled = reg_year
 
-        def compute_regression_from_pts(pts: List[Dict[str, Any]], label_x_str: str, label_y_str: str) -> Dict[str, Any]:
-            res: Dict[str, Any] = {
-                "slope": 0.0,
-                "intercept": 0.0,
-                "r_val": 0.0,
-                "r_squared": 0.0,
-                "p_value": 1.0,
-                "equation": "y = 0x + 0",
-                "label_x": label_x_str,
-                "label_y": label_y_str,
-                "points": [],
-                "trend_line": [],
-                "n_points": 0
-            }
-            if len(pts) >= 2:
-                x_arr = np.array([p["x"] for p in pts], dtype=float)
-                y_arr = np.array([p["y"] for p in pts], dtype=float)
-                valid_m = ~(np.isnan(x_arr) | np.isnan(y_arr))
-                xc = x_arr[valid_m]
-                yc = y_arr[valid_m]
-                lbls = [pts[k]["label"] for k in range(len(pts)) if valid_m[k]]
+    # Pilih regresi aktif berdasarkan ols_scope
+    reg_result = reg_pooled if str(ols_scope).lower() == "pooled" else reg_year
 
-                if len(xc) >= 2:
-                    slope, intercept = np.polyfit(xc, yc, 1)
-                    r_mat = np.corrcoef(xc, yc)
-                    r_val = float(r_mat[0, 1]) if not np.isnan(r_mat[0, 1]) else 0.0
-                    r_sq = float(r_val ** 2)
-
-                    try:
-                        _, p_val = pearsonr(xc, yc)
-                        p_val = float(p_val) if not np.isnan(p_val) else 1.0
-                    except Exception:
-                        p_val = 1.0
-
-                    sign_c = "+" if intercept >= 0 else "-"
-                    slope_str = f"{slope:.3e}" if abs(slope) < 0.0001 else f"{slope:.4f}"
-                    eq_str = f"y = {slope_str}x {sign_c} {abs(intercept):,.2f}"
-
-                    points = [{"triwulan": lbls[k], "label": lbls[k], "x": float(xc[k]), "y": float(yc[k])} for k in range(len(xc))]
-                    x_min, x_max = float(xc.min()), float(xc.max())
-                    trend_line = [
-                        {"x": x_min, "y": float(slope * x_min + intercept)},
-                        {"x": x_max, "y": float(slope * x_max + intercept)}
-                    ]
-                    res.update({
-                        "slope": float(slope),
-                        "intercept": float(intercept),
-                        "r_val": r_val,
-                        "r_squared": r_sq,
-                        "p_value": p_val,
-                        "equation": eq_str,
-                        "points": points,
-                        "trend_line": trend_line,
-                        "n_points": len(xc)
-                    })
-            return res
-
-        annual_pts_active = annual_pts_hb if actual_tipe == "HB" else annual_pts_hk
-        reg_annual = compute_regression_from_pts(annual_pts_active, f"{active_label} ({actual_tipe}) - Tahunan", label_y)
-        reg_annual_hk = compute_regression_from_pts(annual_pts_hk, f"{active_label} (HK) - Tahunan", label_y)
-        reg_annual_hb = compute_regression_from_pts(annual_pts_hb, f"{active_label} (HB) - Tahunan", label_y)
-    else:
-        # Mode growth: regresi tahunan tidak relevan — gunakan pooled growth sebagai fallback
-        reg_annual = reg_result
-        reg_annual_hk = reg_result
-        reg_annual_hb = reg_result
+    # Backward-compatible references
+    reg_hk = reg_result
+    reg_hb = reg_result
+    reg_annual = reg_pooled
+    reg_annual_hk = reg_pooled
+    reg_annual_hb = reg_pooled
 
     # ==================================================================================
     # 4. Sektor Lapangan Usaha Top 10 Summary
@@ -1030,9 +977,12 @@ async def get_dashboard_data(
         "has_hk": col_hk is not None,
         "has_hb": col_hb is not None,
         "analysis_mode": analysis_mode,
+        "ols_scope": ols_scope,
         "kpi": kpi,
         "triwulan_data": triwulan_data,
         "regression": reg_result,
+        "regression_year": reg_year,
+        "regression_pooled": reg_pooled,
         "regression_hk": reg_hk,
         "regression_hb": reg_hb,
         "regression_annual": reg_annual,
@@ -1040,7 +990,7 @@ async def get_dashboard_data(
         "regression_annual_hb": reg_annual_hb,
         "sectors_summary": sectors_summary[:10],
         "all_sectors_summary": sectors_summary,
-        "available_years": available_years,
+        "available_years": avail_years,
     }
     if data_warning:
         response_data["data_warning"] = data_warning
