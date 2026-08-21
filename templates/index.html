@@ -253,6 +253,13 @@
               2. Matriks Korelasi PDRB Menurut Lapangan Usaha vs Transportasi
             </h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Pilih baris pada tabel untuk langsung menampilkan visualisasi time-series dan regresi linier di bawah.</p>
+            <!-- Badge Indikator Metodologi Sampel (diperbarui dinamis oleh JS) -->
+            <div id="badgeMethodology" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-help
+              bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60"
+              title="Informasi tentang ukuran sampel yang digunakan untuk menghitung korelasi.">
+              <i class="fa-solid fa-flask text-indigo-500 dark:text-indigo-400 text-[10px]"></i>
+              <span id="badgeMethodologyText">📊 Memuat info metodologi...</span>
+            </div>
           </div>
 
           <!-- Category Toggle: Lapangan Usaha vs Pengeluaran -->
@@ -622,6 +629,43 @@
       return labels[currentAnalysisMode] || currentAnalysisMode;
     }
 
+    // Helper: perbarui badge indikator metodologi sampel pada tabel korelasi
+    function updateMethodologyBadge() {
+      const badge = document.getElementById('badgeMethodology');
+      const textEl = document.getElementById('badgeMethodologyText');
+      if (!badge || !textEl) return;
+
+      if (isGrowthMode()) {
+        // Ambil rentang tahun dari manifest
+        const provData = currentManifest.provinces?.[currentProvince];
+        const years = provData?.years ? Object.keys(provData.years).sort() : [];
+        const yearRange = years.length >= 2 ? `${years[0]}–${years[years.length - 1]}` : (years[0] || currentYear);
+        const nYears = years.length || 1;
+        // YoY kehilangan 4 observasi pertama, QoQ kehilangan 1
+        const isYoY = currentAnalysisMode.includes('yoy');
+        const totalQ = nYears * 4;
+        const nObs = isYoY ? Math.max(totalQ - 4, 0) : Math.max(totalQ - 1, 0);
+        const growthLabel = isYoY ? 'YoY' : 'QoQ';
+
+        textEl.textContent = `📊 Sampel: Runtun Waktu Lengkap (Multi-Tahun Pooled ${yearRange}, N = ${nObs} Triwulan)`;
+        badge.title = `Korelasi pertumbuhan ${growthLabel} dihitung berbasis seluruh runtun waktu (${yearRange}) untuk menghindari bias statistik akibat sampel kecil (N=4) pada satu tahun tunggal. Oleh karena itu, nilai korelasi tidak berubah saat filter tahun diubah.`;
+
+        // Styling: indigo/purple untuk pooled
+        badge.className = 'mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-help ' +
+          'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60';
+        badge.querySelector('i').className = 'fa-solid fa-layer-group text-indigo-500 dark:text-indigo-400 text-[10px]';
+      } else {
+        // Mode nilai absolut — sampel hanya tahun terpilih
+        textEl.textContent = `📅 Sampel: Triwulan Tahun Terpilih (${currentYear}, N = 4)`;
+        badge.title = `Korelasi dihitung berdasarkan 4 observasi triwulan pada tahun ${currentYear}. Ukuran sampel kecil, interpretasi harus berhati-hati.`;
+
+        // Styling: sky/blue untuk single-year
+        badge.className = 'mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-help ' +
+          'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60';
+        badge.querySelector('i').className = 'fa-solid fa-calendar-day text-sky-500 dark:text-sky-400 text-[10px]';
+      }
+    }
+
     // Format helper Indonesia
     function formatNumberID(num, decimals = 0) {
       if (num === null || num === undefined || isNaN(num)) return "-";
@@ -936,6 +980,9 @@
       if (heading) {
         heading.innerHTML = `<i class="fa-solid fa-table text-sky-500 dark:text-sky-400"></i> ${numLabel}. Matriks Korelasi PDRB Menurut ${catLabel} vs Transportasi <span class="text-xs font-normal text-sky-600 dark:text-sky-400">${modeSuffix}</span>`;
       }
+
+      // Update badge indikator metodologi sampel
+      updateMethodologyBadge();
 
       try {
         const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=${currentCategory}&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${getBackendTipePdrb()}&search=${encodeURIComponent(search)}&analysis_mode=${currentAnalysisMode}`;
