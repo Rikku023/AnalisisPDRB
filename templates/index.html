@@ -650,6 +650,9 @@
 
     // Init App
     document.addEventListener("DOMContentLoaded", async () => {
+      // Bangunkan container serverless di latar belakang (cold start pre-warm)
+      fetch('/api/options', { cache: 'no-store' }).catch(() => {});
+
       initTheme();
       await loadInitialManifest();
       await refreshData();

@@ -104,9 +104,9 @@ _parquet_cache: Dict[str, pd.DataFrame] = {}
 # Cache multi-year aggregated DataFrames
 _multi_year_cache: Dict[str, pd.DataFrame] = {}
 
-# Cache headers standar untuk Vercel Serverless CDN & Browser
+# Cache headers standar untuk Vercel Edge CDN (tanpa browser max-age agar selalu revalidate)
 CACHE_HEADERS = {
-    "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400"
+    "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=86400"
 }
 
 
@@ -960,9 +960,19 @@ def _compute_dashboard_data(
         year_labels = [f"{year} {tw}" for tw in triwulan_labels]
         reg_year = compute_regression(pdrb_series, y_raw_series, label_x_abs, label_y_abs, year_labels)
 
+        # --- Hitung regresi terpisah untuk HK dan HB agar frontend tidak perlu fetch ulang ---
+        label_x_hk = f"PDRB: {active_label} (HK)"
+        label_x_hb = f"PDRB: {active_label} (HB)"
+        if col_hk:
+            reg_year_hk = compute_regression(pdrb_hk_series, y_raw_series, label_x_hk, label_y_abs, year_labels)
+        else:
+            reg_year_hk = reg_year
+        if col_hb:
+            reg_year_hb = compute_regression(pdrb_hb_series, y_raw_series, label_x_hb, label_y_abs, year_labels)
+        else:
+            reg_year_hb = reg_year
+
         if not df_multi_all.empty:
-            prefix_active = prefix_hb if actual_tipe == "HB" else prefix_hk
-            my_sec_col = next((c for c in df_multi_all.columns if clean_sec in c.lower() and prefix_active.lower() in c.lower()), None)
             my_p_col = next((c for c in df_multi_all.columns if "penumpang" in c.lower()), None)
             my_bag_col = next((c for c in df_multi_all.columns if "bagasi" in c.lower()), None)
             my_bar_col = next((c for c in df_multi_all.columns if "barang" in c.lower()), None)
@@ -977,19 +987,47 @@ def _compute_dashboard_data(
                 my_y_col = None
 
             pooled_labels = [f"{int(r['_tahun'])} Q{int(r['_triwulan_num'])}" for _, r in df_multi_all.iterrows()]
+
+            # Pooled regression untuk tipe aktif
+            prefix_active = prefix_hb if actual_tipe == "HB" else prefix_hk
+            my_sec_col = next((c for c in df_multi_all.columns if clean_sec in c.lower() and prefix_active.lower() in c.lower()), None)
             if my_sec_col and my_sec_col in df_multi_all.columns and my_y_col:
                 reg_pooled = compute_regression(df_multi_all[my_sec_col], df_multi_all[my_y_col], f"{label_x_abs} [Pooled]", label_y_abs, pooled_labels)
             else:
                 reg_pooled = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_abs, label_y_abs, [])
+
+            # Pooled regression terpisah HK & HB
+            my_sec_hk = next((c for c in df_multi_all.columns if clean_sec in c.lower() and prefix_hk.lower() in c.lower()), None)
+            my_sec_hb = next((c for c in df_multi_all.columns if clean_sec in c.lower() and prefix_hb.lower() in c.lower()), None)
+            if my_sec_hk and my_sec_hk in df_multi_all.columns and my_y_col:
+                reg_pooled_hk = compute_regression(df_multi_all[my_sec_hk], df_multi_all[my_y_col], f"{label_x_hk} [Pooled]", label_y_abs, pooled_labels)
+            else:
+                reg_pooled_hk = reg_pooled
+            if my_sec_hb and my_sec_hb in df_multi_all.columns and my_y_col:
+                reg_pooled_hb = compute_regression(df_multi_all[my_sec_hb], df_multi_all[my_y_col], f"{label_x_hb} [Pooled]", label_y_abs, pooled_labels)
+            else:
+                reg_pooled_hb = reg_pooled
         else:
             reg_pooled = reg_year
+            reg_pooled_hk = reg_year_hk
+            reg_pooled_hb = reg_year_hb
 
     reg_result = reg_pooled if str(ols_scope).lower() == "pooled" else reg_year
-    reg_hk = reg_result
-    reg_hb = reg_result
-    reg_annual = reg_pooled
-    reg_annual_hk = reg_pooled
-    reg_annual_hb = reg_pooled
+
+    # Untuk mode growth, HK/HB sudah ditentukan oleh analysis_mode — gunakan reg_result
+    if is_growth:
+        reg_hk = reg_result
+        reg_hb = reg_result
+        reg_annual = reg_pooled
+        reg_annual_hk = reg_pooled
+        reg_annual_hb = reg_pooled
+    else:
+        # Untuk mode absolut, kirim regresi HK & HB terpisah
+        reg_hk = reg_year_hk
+        reg_hb = reg_year_hb
+        reg_annual = reg_pooled
+        reg_annual_hk = reg_pooled_hk
+        reg_annual_hb = reg_pooled_hb
 
     # 4. Sektor Lapangan Usaha Top 10 Summary
     target_lu_cols = lu_hb_cols if actual_tipe == "HB" else lu_hk_cols
