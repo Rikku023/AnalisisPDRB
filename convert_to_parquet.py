@@ -113,6 +113,7 @@ def parse_pdrb_sheet(raw_df):
             for c in df_triwulan.columns:
                 if c != 'Triwulan':
                     df_triwulan[c] = pd.to_numeric(df_triwulan[c], errors='coerce')
+            df_triwulan.reset_index(drop=True, inplace=True)
 
     # 2. Cari Seksi 2: Matriks Korelasi Lapangan Usaha
     df_correl_lu = None
@@ -151,6 +152,7 @@ def parse_pdrb_sheet(raw_df):
             for c in df_correl_lu.columns:
                 if 'Korelasi' in c:
                     df_correl_lu[c] = pd.to_numeric(df_correl_lu[c], errors='coerce')
+            df_correl_lu.reset_index(drop=True, inplace=True)
 
     # 3. Cari Seksi 3: Matriks Korelasi Pengeluaran
     df_correl_peng = None
@@ -186,6 +188,7 @@ def parse_pdrb_sheet(raw_df):
             for c in df_correl_peng.columns:
                 if 'Korelasi' in c:
                     df_correl_peng[c] = pd.to_numeric(df_correl_peng[c], errors='coerce')
+            df_correl_peng.reset_index(drop=True, inplace=True)
 
     return df_triwulan, df_correl_lu, df_correl_peng
 
@@ -197,10 +200,10 @@ def main():
 
     TARGET_PROJECT_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Copy convert_to_parquet.py to TARGET_PROJECT_DIR as well
-    self_script = Path(__file__)
-    shutil.copy(self_script, TARGET_PROJECT_DIR / "convert_to_parquet.py")
+    API_DATA_DIR = TARGET_PROJECT_DIR / "api" / "data"
+    API_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    PY_DIR = TARGET_PROJECT_DIR / "py"
+    PY_DIR.mkdir(parents=True, exist_ok=True)
 
     # 1. Cari seluruh file *_updated.xlsx
     excel_files = []
@@ -274,6 +277,7 @@ def main():
                     df = pd.read_excel(file_path, sheet_name=sheet_name)
                     df.columns = [clean_label(c) if pd.notna(c) else f"col_{i}" for i, c in enumerate(df.columns)]
                     df = df.loc[:, ~df.columns.str.contains('^col_|^unnamed', case=False)]
+                    df.reset_index(drop=True, inplace=True)
 
                     clean_sheet_name = re.sub(r'[^a-z0-9_]+', '', sheet_lower)
                     out_file = DATA_DIR / f"{prov_key}_{year_str}_{clean_sheet_name}.parquet"
@@ -291,6 +295,18 @@ def main():
     manifest_path = DATA_DIR / "manifest.json"
     with open(manifest_path, 'w', encoding='utf-8') as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+    # Sinkronkan seluruh isi data/ ke api/data/
+    for item in DATA_DIR.iterdir():
+        if item.is_file():
+            shutil.copy2(item, API_DATA_DIR / item.name)
+    print(f"🔄 Berhasil menyinkronkan data parquet ke {API_DATA_DIR}")
+
+    # Sinkronkan script ke py/convert_to_parquet.py
+    self_script = Path(__file__)
+    if self_script.exists():
+        shutil.copy2(self_script, PY_DIR / "convert_to_parquet.py")
+        print(f"🔄 Script tersinkron ke {PY_DIR / 'convert_to_parquet.py'}")
 
     print("\n" + "=" * 70)
     print(f"🎉 KONVERSI SELESAI: {converted_count} file .parquet berhasil dibuat di {DATA_DIR}")
