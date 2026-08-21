@@ -98,9 +98,11 @@
         <div class="relative">
           <select id="selAnalysisMode" onchange="onAnalysisModeChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
             <optgroup label="📈 Laju Pertumbuhan (Rekomendasi)">
+              <option value="growth_yoy_all">Pertumbuhan YoY (%) — HK & HB (Semua Tipe)</option>
               <option value="growth_yoy" selected>Pertumbuhan YoY (%) — Harga Konstan (Riil)</option>
-              <option value="growth_qoq">Pertumbuhan QoQ (%) — Harga Konstan (Riil)</option>
               <option value="growth_yoy_hb">Pertumbuhan YoY (%) — Harga Berlaku (Nominal)</option>
+              <option value="growth_qoq_all">Pertumbuhan QoQ (%) — HK & HB (Semua Tipe)</option>
+              <option value="growth_qoq">Pertumbuhan QoQ (%) — Harga Konstan (Riil)</option>
               <option value="growth_qoq_hb">Pertumbuhan QoQ (%) — Harga Berlaku (Nominal)</option>
             </optgroup>
             <optgroup label="📊 Nilai Absolut / Level">
@@ -575,9 +577,10 @@
     let currentManifest = {};
     let currentProvince = "sulawesi_selatan";
     let currentYear = "2024";
-    let currentAnalysisMode = "growth_yoy"; // "growth_yoy" | "growth_qoq" | "growth_yoy_hb" | "growth_qoq_hb" | "abs_all" | "abs_hk" | "abs_hb"
+    let currentAnalysisMode = "growth_yoy"; // "growth_yoy_all" | "growth_yoy" | "growth_yoy_hb" | "growth_qoq_all" | "growth_qoq" | "growth_qoq_hb" | "abs_all" | "abs_hk" | "abs_hb"
     let currentSector = "Transportasi dan Pergudangan";
     let currentCategory = "lu"; // "lu" (Lapangan Usaha) atau "peng" (Pengeluaran)
+    let currentSelectedPdrbType = "HK"; // "HK" atau "HB" untuk tracking pilihan saat di mode gabungan
     let currentScaleMode = "idx100";
     let currentRegMetric = "penumpang";
     let currentOlsScope = "year"; // "year" (Tahun Terpilih) atau "pooled" (Multi-Tahun Pooled)
@@ -591,19 +594,26 @@
       return currentAnalysisMode.startsWith('growth_');
     }
 
+    // Helper: apakah mode gabungan (HK & HB sekaligus) aktif
+    function isCombinedMode() {
+      return currentAnalysisMode === 'abs_all' || currentAnalysisMode === 'growth_yoy_all' || currentAnalysisMode === 'growth_qoq_all';
+    }
+
     // Helper: dapatkan tipe PDRB backend dari analysis mode
     function getBackendTipePdrb() {
       if (currentAnalysisMode === 'abs_hb' || currentAnalysisMode === 'growth_yoy_hb' || currentAnalysisMode === 'growth_qoq_hb') return 'HB';
-      if (currentAnalysisMode === 'abs_all') return 'all';
+      if (isCombinedMode()) return 'all';
       return 'HK'; // growth modes default dan abs_hk semua pakai HK
     }
 
     // Helper: label mode analisis untuk UI
     function getAnalysisModeLabel() {
       const labels = {
+        'growth_yoy_all': 'Pertumbuhan YoY (%) — HK & HB (Semua Tipe)',
         'growth_yoy': 'Pertumbuhan YoY (%) — HK Riil',
-        'growth_qoq': 'Pertumbuhan QoQ (%) — HK Riil',
         'growth_yoy_hb': 'Pertumbuhan YoY (%) — HB Nominal',
+        'growth_qoq_all': 'Pertumbuhan QoQ (%) — HK & HB (Semua Tipe)',
+        'growth_qoq': 'Pertumbuhan QoQ (%) — HK Riil',
         'growth_qoq_hb': 'Pertumbuhan QoQ (%) — HB Nominal',
         'abs_all': 'Semua Tipe (HK & HB)',
         'abs_hk': 'Nilai Riil (Harga Konstan)',
@@ -753,6 +763,14 @@
     function onTipePDRBChange() { onAnalysisModeChange(); }
 
     function setPdrbPriceType(type) {
+      currentSelectedPdrbType = type;
+      if (isCombinedMode()) {
+        updatePdrbTypeButtons();
+        loadCorrelations();
+        loadSectorData();
+        return;
+      }
+
       if (isGrowthMode()) {
         const isQoq = currentAnalysisMode.includes('qoq');
         if (type === 'HB') {
@@ -773,7 +791,9 @@
     }
 
     function updatePdrbTypeButtons() {
-      const isHB = currentAnalysisMode === 'abs_hb' || currentAnalysisMode === 'growth_yoy_hb' || currentAnalysisMode === 'growth_qoq_hb';
+      const isHB = isCombinedMode()
+        ? (currentSelectedPdrbType === 'HB')
+        : (currentAnalysisMode === 'abs_hb' || currentAnalysisMode === 'growth_yoy_hb' || currentAnalysisMode === 'growth_qoq_hb');
       const btnHK = document.getElementById("btnPdrbHK");
       const btnHB = document.getElementById("btnPdrbHB");
 
@@ -931,10 +951,13 @@
         data.rows.forEach((r) => {
           const rowLabel = r[labelKey] || r["Lapangan Usaha"] || r["Komponen Pengeluaran"];
           const rowTipe = r["Tipe PDRB"] || "";
-          const isSelected = rowLabel === currentSector;
+          const rowTipeClean = rowTipe.includes("HB") ? "HB" : "HK";
+          const isSelected = (rowLabel === currentSector) && (
+            isCombinedMode() ? (rowTipeClean === currentSelectedPdrbType) : true
+          );
           const tr = document.createElement("tr");
           tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer transition border-b border-slate-200 dark:border-slate-800/50 " + (isSelected ? "bg-sky-100 dark:bg-sky-950/40 border-sky-500 font-semibold" : "");
-          tr.onclick = () => selectSector(rowLabel, isGrowthMode() ? (rowTipe.includes("HB") ? "HB" : "HK") : (rowTipe.includes("HB") ? "HB" : "HK"));
+          tr.onclick = () => selectSector(rowLabel, rowTipeClean);
 
           const pVal = r["Korelasi dgn Penumpang"] !== null ? Number(r["Korelasi dgn Penumpang"]) : NaN;
           const bagVal = r["Korelasi dgn Bagasi"] !== null ? Number(r["Korelasi dgn Bagasi"]) : NaN;
@@ -962,7 +985,11 @@
 
     function selectSector(sectorName, tipe) {
       currentSector = sectorName;
-      if (tipe && currentAnalysisMode !== 'abs_all') {
+      if (tipe) {
+        currentSelectedPdrbType = tipe.includes("HB") ? "HB" : "HK";
+      }
+
+      if (tipe && !isCombinedMode()) {
         if (isGrowthMode()) {
           const isQoq = currentAnalysisMode.includes('qoq');
           currentAnalysisMode = tipe.includes("HB") ? (isQoq ? "growth_qoq_hb" : "growth_yoy_hb") : (isQoq ? "growth_qoq" : "growth_yoy");
@@ -970,15 +997,16 @@
           currentAnalysisMode = tipe.includes("HB") ? "abs_hb" : "abs_hk";
         }
         document.getElementById("selAnalysisMode").value = currentAnalysisMode;
-        updatePdrbTypeButtons();
       }
+      updatePdrbTypeButtons();
       loadCorrelations();
       loadSectorData();
     }
 
     async function loadSectorData(force = false) {
       try {
-        const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&category=${currentCategory}&tipe_pdrb=${getBackendTipePdrb()}&transport_metric=${currentRegMetric}&analysis_mode=${currentAnalysisMode}&ols_scope=${currentOlsScope}`;
+        const effectiveTipe = isCombinedMode() ? currentSelectedPdrbType : getBackendTipePdrb();
+        const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&category=${currentCategory}&tipe_pdrb=${effectiveTipe}&transport_metric=${currentRegMetric}&analysis_mode=${currentAnalysisMode}&ols_scope=${currentOlsScope}`;
         const data = await fetchWithCache(url, { bypassCache: force });
         activeDashboardData = data;
 
@@ -1034,11 +1062,12 @@
 
       const tipeLabel = data.tipe_pdrb === 'HB' ? 'Harga Berlaku (HB)' : 'Harga Konstan (HK)';
       const tipeBadgeClass = data.tipe_pdrb === 'HB' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30';
+      const tipeBadge = `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${tipeBadgeClass}">${tipeLabel}</span>`;
       
       const growthActive = isGrowthMode();
       const modeBadge = growthActive 
-        ? `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">🔄 ${getAnalysisModeLabel()}</span>` 
-        : `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${tipeBadgeClass}">${tipeLabel}</span>`;
+        ? `<span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">🔄 ${getAnalysisModeLabel()}</span> ${tipeBadge}` 
+        : tipeBadge;
 
       const scopeBadge = isPooled
         ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-md border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30">Multi-Tahun Pooled</span>`

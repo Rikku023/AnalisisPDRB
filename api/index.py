@@ -301,7 +301,36 @@ def _compute_correlation_matrix_from_growth(
     """
     Menghitung matriks korelasi (+ p-value) antara setiap sektor PDRB
     dan 3 metrik transportasi dari data pertumbuhan.
+    Mendukung pdrb_price_type: 'HK', 'HB', atau 'ALL'/'all'.
     """
+    if str(pdrb_price_type).upper() == "ALL":
+        df_hk = _compute_correlation_matrix_from_growth(df_growth, category=category, pdrb_price_type="HK")
+        df_hb = _compute_correlation_matrix_from_growth(df_growth, category=category, pdrb_price_type="HB")
+        if df_hk.empty:
+            return df_hb
+        if df_hb.empty:
+            return df_hk
+
+        label_col = "Lapangan Usaha" if category == "lu" else "Komponen Pengeluaran"
+        combined_rows = []
+        hk_rows = df_hk.to_dict(orient="records")
+        hb_rows = df_hb.to_dict(orient="records")
+        hb_by_label = {r[label_col]: r for r in hb_rows if label_col in r}
+        used_hb = set()
+
+        for r_hk in hk_rows:
+            combined_rows.append(r_hk)
+            lbl = r_hk.get(label_col)
+            if lbl in hb_by_label:
+                combined_rows.append(hb_by_label[lbl])
+                used_hb.add(lbl)
+
+        for r_hb in hb_rows:
+            if r_hb.get(label_col) not in used_hb:
+                combined_rows.append(r_hb)
+
+        return pd.DataFrame(combined_rows)
+
     p_col = next((c for c in df_growth.columns if "penumpang" in c.lower()), None)
     bag_col = next((c for c in df_growth.columns if "bagasi" in c.lower()), None)
     bar_col = next((c for c in df_growth.columns if "barang" in c.lower()), None)
@@ -448,7 +477,15 @@ def _compute_correlations(
 
     if is_growth:
         periods = 4 if "yoy" in analysis_mode else 1
-        growth_pdrb_type = "HB" if analysis_mode.endswith("_hb") else "HK"
+        if analysis_mode.endswith("_hb"):
+            growth_pdrb_type = "HB"
+        elif analysis_mode.endswith("_all") or str(pdrb_type).lower() == "all":
+            growth_pdrb_type = "ALL"
+        elif str(pdrb_type).upper() == "HB":
+            growth_pdrb_type = "HB"
+        else:
+            growth_pdrb_type = "HK"
+
         df_multi, avail_years = _build_multi_year_df_cached(province)
 
         if df_multi.empty:
@@ -488,7 +525,13 @@ def _compute_correlations(
 
         df_view = _get_growth_correlation_matrix_cached(province, periods, type, growth_pdrb_type).copy()
 
-        growth_pdrb_label = "Harga Berlaku (Nominal)" if growth_pdrb_type == "HB" else "Harga Konstan (Riil)"
+        if growth_pdrb_type == "HB":
+            growth_pdrb_label = "Harga Berlaku (Nominal)"
+        elif growth_pdrb_type == "ALL":
+            growth_pdrb_label = "Semua Tipe (HK & HB)"
+        else:
+            growth_pdrb_label = "Harga Konstan (Riil)"
+
         analysis_label = f"Pertumbuhan {'YoY' if periods == 4 else 'QoQ'} (%) — {growth_pdrb_label}"
         n_observations = len(df_growth)
 
@@ -611,7 +654,12 @@ def _compute_dashboard_data(
     data_warning = None
 
     if is_growth:
-        chosen_type = "HB" if analysis_mode.endswith("_hb") else "HK"
+        if analysis_mode.endswith("_hb"):
+            chosen_type = "HB"
+        elif analysis_mode.endswith("_all"):
+            chosen_type = "HB" if str(tipe_pdrb).upper() == "HB" else "HK"
+        else:
+            chosen_type = "HB" if str(tipe_pdrb).upper() == "HB" else "HK"
     elif analysis_mode == "abs_hb":
         chosen_type = "HB"
     elif analysis_mode == "abs_hk":
@@ -1052,7 +1100,7 @@ def prewarm_all_caches():
             _get_growth_df_cached(p, 4)
             _get_growth_df_cached(p, 1)
             for cat in ["lu", "peng"]:
-                for pt in ["HK", "HB"]:
+                for pt in ["HK", "HB", "ALL"]:
                     _get_growth_correlation_matrix_cached(p, 4, cat, pt)
                     _get_growth_correlation_matrix_cached(p, 1, cat, pt)
         print(f"⚡ In-memory cache pre-warmed for {len(prov_list)} provinces.")
