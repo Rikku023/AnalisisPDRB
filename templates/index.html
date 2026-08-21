@@ -118,7 +118,7 @@
         </button>
 
         <!-- Refresh Button -->
-        <button onclick="refreshData()" class="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition" title="Muat Ulang Data">
+        <button onclick="refreshData(true)" class="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition" title="Muat Ulang Data (Bypass Cache)">
           <i class="fa-solid fa-arrows-rotate"></i>
         </button>
       </div>
@@ -540,6 +540,37 @@
 
   <!-- Core Dashboard Logic -->
   <script>
+    // =========================================================================
+    // Client-Side In-Memory Cache (0ms latency for visited views)
+    // =========================================================================
+    const apiCache = new Map();
+    const MAX_CLIENT_CACHE = 150;
+
+    async function fetchWithCache(url, options = {}) {
+      const forceRefresh = options.bypassCache === true;
+      if (!forceRefresh && apiCache.has(url)) {
+        return apiCache.get(url);
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status} for ${url}`);
+      }
+      const data = await res.json();
+
+      if (apiCache.size >= MAX_CLIENT_CACHE) {
+        const oldestKey = apiCache.keys().next().value;
+        apiCache.delete(oldestKey);
+      }
+
+      apiCache.set(url, data);
+      return data;
+    }
+
+    function clearClientCache() {
+      apiCache.clear();
+    }
+
     // State global
     let currentManifest = {};
     let currentProvince = "sulawesi_selatan";
@@ -652,8 +683,7 @@
 
     async function loadInitialManifest() {
       try {
-        const res = await fetch("/api/manifest");
-        currentManifest = await res.json();
+        currentManifest = await fetchWithCache("/api/manifest");
         
         const selProv = document.getElementById("selProvince");
         selProv.innerHTML = "";
@@ -723,7 +753,6 @@
     function onTipePDRBChange() { onAnalysisModeChange(); }
 
     function setPdrbPriceType(type) {
-      // Saat user klik HK/HB di panel regresi
       if (isGrowthMode()) {
         const isQoq = currentAnalysisMode.includes('qoq');
         if (type === 'HB') {
@@ -803,7 +832,6 @@
         heading.innerHTML = `<i class="fa-solid fa-table text-sky-500 dark:text-sky-400"></i> 2. Matriks Korelasi PDRB Menurut Lapangan Usaha vs Transportasi`;
         thLabel.textContent = "Lapangan Usaha";
         
-        // Show 6 Sektor option for LU
         filterModeSel.innerHTML = `
           <option value="all">🔍 Semua Baris</option>
           <option value="6_core" selected>⭐ 6 Sektor Pilihan (G, F, C, H, I, E)</option>
@@ -856,7 +884,10 @@
       document.getElementById("sortIcon-bar").textContent = currentVal === 'bar_desc' ? '▼' : (currentVal === 'bar_asc' ? '▲' : '↕');
     }
 
-    async function refreshData() {
+    async function refreshData(force = false) {
+      if (force) {
+        clearClientCache();
+      }
       const provData = currentManifest.provinces?.[currentProvince];
       document.getElementById("heroProvName").textContent = provData ? provData.name : currentProvince;
       document.getElementById("heroYear").textContent = currentYear;
@@ -864,12 +895,12 @@
 
       updatePdrbTypeButtons();
       updateOlsScopeButtons();
-      await loadCorrelations();
-      await loadSectorData();
-      await loadTab3Table(currentTab3Sheet);
+      await loadCorrelations(force);
+      await loadSectorData(force);
+      await loadTab3Table(currentTab3Sheet, force);
     }
 
-    async function loadCorrelations() {
+    async function loadCorrelations(force = false) {
       updateSortIcons();
       const filterMode = document.getElementById("selFilterMode").value;
       const sortBy = document.getElementById("selSortBy").value;
@@ -885,8 +916,7 @@
 
       try {
         const url = `/api/correlations?province=${currentProvince}&year=${currentYear}&type=${currentCategory}&filter_mode=${filterMode}&sort_by=${sortBy}&pdrb_type=${getBackendTipePdrb()}&search=${encodeURIComponent(search)}&analysis_mode=${currentAnalysisMode}`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const data = await fetchWithCache(url, { bypassCache: force });
 
         const tbody = document.getElementById("tblCorrelBody");
         tbody.innerHTML = "";
@@ -946,11 +976,10 @@
       loadSectorData();
     }
 
-    async function loadSectorData() {
+    async function loadSectorData(force = false) {
       try {
         const url = `/api/data?province=${currentProvince}&year=${currentYear}&sector=${encodeURIComponent(currentSector)}&category=${currentCategory}&tipe_pdrb=${getBackendTipePdrb()}&transport_metric=${currentRegMetric}&analysis_mode=${currentAnalysisMode}&ols_scope=${currentOlsScope}`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const data = await fetchWithCache(url, { bypassCache: force });
         activeDashboardData = data;
 
         // 1. Update KPI
@@ -1350,15 +1379,14 @@
       await loadTab3Table(sheetKey);
     }
 
-    async function loadTab3Table(sheetKey) {
+    async function loadTab3Table(sheetKey, force = false) {
       const tbl = document.getElementById("tblDynamicRaw");
       const info = document.getElementById("txtTableInfo");
       info.textContent = `Memuat ${sheetKey}...`;
 
       try {
         const url = `/api/raw_sheet?province=${currentProvince}&year=${currentYear}&sheet=${sheetKey}`;
-        const res = await fetch(url);
-        const data = await res.json();
+        const data = await fetchWithCache(url, { bypassCache: force });
         activeTab3RawData = data;
 
         if (!data.rows || data.rows.length === 0) {

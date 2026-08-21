@@ -96,11 +96,24 @@ if PUBLIC_DIR.exists():
 # Setup Jinja2 Templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+import functools
+
 # Cache data parquet di memory
 _parquet_cache: Dict[str, pd.DataFrame] = {}
 
 # Cache multi-year aggregated DataFrames
 _multi_year_cache: Dict[str, pd.DataFrame] = {}
+
+# Cache headers standar untuk Vercel Serverless CDN & Browser
+CACHE_HEADERS = {
+    "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400"
+}
+
+
+def cached_json_response(content: Any) -> JSONResponse:
+    """Mengembalikan JSONResponse dengan HTTP Cache-Control headers terstandar."""
+    return JSONResponse(content=content, headers=CACHE_HEADERS)
+
 
 # Mapping triwulan string → integer yang aman (case-insensitive, toleran terhadap variasi)
 _TRIWULAN_MAP: Dict[str, int] = {
@@ -128,8 +141,9 @@ def _parse_triwulan_num(label: str) -> int:
     return 1
 
 
+@functools.lru_cache(maxsize=1)
 def load_manifest() -> Dict[str, Any]:
-    """Membaca manifest metadata data parquet."""
+    """Membaca manifest metadata data parquet (memoized in-memory)."""
     manifest_path = DATA_DIR / "manifest.json"
     if manifest_path.exists():
         try:
@@ -157,11 +171,24 @@ def load_manifest() -> Dict[str, Any]:
     return {"provinces": fallback_provinces, "auto_discovered": True}
 
 
-def get_parquet_df(file_stem: str) -> Optional[pd.DataFrame]:
-    """Membaca file parquet dengan in-memory cache dan multi-candidate path search."""
-    if file_stem in _parquet_cache:
-        return _parquet_cache[file_stem]
+@functools.lru_cache(maxsize=256)
+def _read_parquet_cached_file(fp_str: str, cols_tuple: Optional[Tuple[str, ...]] = None) -> Optional[pd.DataFrame]:
+    """Membaca file parquet dari disk dengan LRU cache."""
+    try:
+        cols = list(cols_tuple) if cols_tuple else None
+        return pd.read_parquet(fp_str, columns=cols)
+    except Exception as e:
+        print(f"❌ Error reading parquet {fp_str}: {e}")
+        return None
 
+
+def get_parquet_df(file_stem: str, columns: Optional[List[str]] = None) -> Optional[pd.DataFrame]:
+    """Membaca file parquet dengan in-memory cache, multi-candidate path search, dan column pruning."""
+    cache_key = f"{file_stem}_{','.join(sorted(columns)) if columns else 'all'}"
+    if cache_key in _parquet_cache:
+        return _parquet_cache[cache_key]
+
+    cols_tuple = tuple(sorted(columns)) if columns else None
     candidate_paths = [
         DATA_DIR / f"{file_stem}.parquet",
         resolve_data_dir() / f"{file_stem}.parquet",
@@ -171,34 +198,24 @@ def get_parquet_df(file_stem: str) -> Optional[pd.DataFrame]:
 
     for fp in candidate_paths:
         if fp.exists():
-            try:
-                df = pd.read_parquet(fp)
-                _parquet_cache[file_stem] = df
+            df = _read_parquet_cached_file(str(fp), cols_tuple)
+            if df is not None:
+                _parquet_cache[cache_key] = df
                 return df
-            except Exception as e:
-                print(f"❌ Error reading parquet {fp}: {e}")
 
     return None
 
 
 # ======================================================================================
-# GROWTH RATE ANALYSIS ENGINE — Multi-Year Aggregation & Pertumbuhan
+# GROWTH RATE ANALYSIS ENGINE — Multi-Year Aggregation & Pertumbuhan (Memoized)
 # ======================================================================================
 
-def build_multi_year_df(province: str) -> Tuple[pd.DataFrame, List[str]]:
+@functools.lru_cache(maxsize=32)
+def _build_multi_year_df_cached(province: str) -> Tuple[pd.DataFrame, Tuple[str, ...]]:
     """
     Menggabungkan semua file pdrb_triwulan.parquet lintas tahun untuk satu provinsi
-    menjadi satu DataFrame panjang yang tersortir kronologis.
-
-    Returns:
-        (df_combined, available_years): DataFrame gabungan + daftar tahun tersedia.
+    menjadi satu DataFrame panjang yang tersortir kronologis (Memoized).
     """
-    cache_key = f"_multiyear_{province}"
-    if cache_key in _multi_year_cache:
-        df_cached = _multi_year_cache[cache_key]
-        years = [str(y) for y in sorted(df_cached["_tahun"].unique().tolist())]
-        return df_cached.copy(), years
-
     manifest = load_manifest()
     prov_info = manifest.get("provinces", {}).get(province, {})
     available_years = sorted(list(prov_info.get("years", {}).keys())) if prov_info.get("years") else []
@@ -223,31 +240,27 @@ def build_multi_year_df(province: str) -> Tuple[pd.DataFrame, List[str]]:
             frames.append(df_copy)
 
     if not frames:
-        return pd.DataFrame(), available_years
+        return pd.DataFrame(), tuple(available_years)
 
     df_combined = pd.concat(frames, ignore_index=True)
     df_combined = df_combined.sort_values("_time_order").reset_index(drop=True)
-
-    _multi_year_cache[cache_key] = df_combined
-    return df_combined.copy(), available_years
+    return df_combined, tuple(available_years)
 
 
-def compute_growth_df(df: pd.DataFrame, periods: int = 4) -> pd.DataFrame:
-    """
-    Menghitung laju pertumbuhan (pct_change) pada seluruh kolom numerik.
+def build_multi_year_df(province: str) -> Tuple[pd.DataFrame, List[str]]:
+    """Public wrapper untuk build_multi_year_df dengan return type DataFrame & list."""
+    df, years = _build_multi_year_df_cached(province)
+    return df.copy(), list(years)
 
-    Args:
-        df: DataFrame multi-tahun tersortir kronologis (dari build_multi_year_df).
-        periods: 4 untuk YoY (year-over-year), 1 untuk QoQ (quarter-over-quarter).
 
-    Returns:
-        DataFrame dengan kolom numerik berisi pertumbuhan (%), tanpa inf/nan.
-    """
-    if df.empty:
-        return df
+@functools.lru_cache(maxsize=64)
+def _get_growth_df_cached(province: str, periods: int) -> pd.DataFrame:
+    """Menghitung dan mem-cache laju pertumbuhan multi-tahun per provinsi & period (YoY/QoQ)."""
+    df_multi, _ = _build_multi_year_df_cached(province)
+    if df_multi.empty:
+        return pd.DataFrame()
 
-    df_g = df.copy()
-    # Identifikasi kolom numerik (kecuali kolom internal _*)
+    df_g = df_multi.copy()
     numeric_cols = [c for c in df_g.columns
                     if c not in ("Triwulan", "_tahun", "_triwulan_num", "_time_order")
                     and pd.api.types.is_numeric_dtype(df_g[c])]
@@ -255,12 +268,28 @@ def compute_growth_df(df: pd.DataFrame, periods: int = 4) -> pd.DataFrame:
     for col in numeric_cols:
         df_g[col] = df_g[col].pct_change(periods=periods) * 100.0
 
-    # Guard: ganti inf/-inf dengan NaN sebelum dropna
     df_g.replace([np.inf, -np.inf], np.nan, inplace=True)
-
-    # Drop baris yang punya NaN di kolom numerik (baris awal akibat lag)
     df_g = df_g.dropna(subset=numeric_cols, how="all").reset_index(drop=True)
+    return df_g
 
+
+def compute_growth_df(df: pd.DataFrame, periods: int = 4) -> pd.DataFrame:
+    """
+    Menghitung laju pertumbuhan (pct_change) pada seluruh kolom numerik.
+    """
+    if df.empty:
+        return df
+
+    df_g = df.copy()
+    numeric_cols = [c for c in df_g.columns
+                    if c not in ("Triwulan", "_tahun", "_triwulan_num", "_time_order")
+                    and pd.api.types.is_numeric_dtype(df_g[c])]
+
+    for col in numeric_cols:
+        df_g[col] = df_g[col].pct_change(periods=periods) * 100.0
+
+    df_g.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df_g = df_g.dropna(subset=numeric_cols, how="all").reset_index(drop=True)
     return df_g
 
 
@@ -272,16 +301,6 @@ def _compute_correlation_matrix_from_growth(
     """
     Menghitung matriks korelasi (+ p-value) antara setiap sektor PDRB
     dan 3 metrik transportasi dari data pertumbuhan.
-
-    Args:
-        df_growth: DataFrame pertumbuhan dari compute_growth_df().
-        category: "lu" (Lapangan Usaha) atau "peng" (Pengeluaran).
-        pdrb_price_type: "HK" (Harga Konstan / Riil) atau "HB" (Harga Berlaku / Nominal).
-
-    Returns:
-        DataFrame dengan kolom: [label_col, "Tipe PDRB", "Korelasi dgn Penumpang",
-        "p-value Penumpang", "Korelasi dgn Bagasi", "p-value Bagasi",
-        "Korelasi dgn Barang", "p-value Barang"]
     """
     p_col = next((c for c in df_growth.columns if "penumpang" in c.lower()), None)
     bag_col = next((c for c in df_growth.columns if "bagasi" in c.lower()), None)
@@ -292,13 +311,11 @@ def _compute_correlation_matrix_from_growth(
     label_col = "Lapangan Usaha" if category == "lu" else "Komponen Pengeluaran"
     tipe_label = "Harga Berlaku (HB)" if is_hb else "Harga Konstan (HK)"
 
-    # Temukan semua kolom sektor sesuai prefix
     sector_cols = [c for c in df_growth.columns if c.lower().startswith(prefix.lower())]
 
     rows = []
     for sec_col in sector_cols:
         clean_name = re.sub(r"^(LU|Peng)\s*\([A-Z]+\)\s*-\s*", "", sec_col).strip()
-
         row: Dict[str, Any] = {label_col: clean_name, "Tipe PDRB": tipe_label}
 
         for metric_label, metric_col in [("Penumpang", p_col), ("Bagasi", bag_col), ("Barang", bar_col)]:
@@ -310,7 +327,6 @@ def _compute_correlation_matrix_from_growth(
                 row[pv_key] = None
                 continue
 
-            # Ambil pasangan data valid (non-NaN)
             mask = df_growth[[sec_col, metric_col]].dropna()
             x_vals = mask[sec_col].values.astype(float)
             y_vals = mask[metric_col].values.astype(float)
@@ -332,8 +348,22 @@ def _compute_correlation_matrix_from_growth(
     return pd.DataFrame(rows)
 
 
+@functools.lru_cache(maxsize=128)
+def _get_growth_correlation_matrix_cached(
+    province: str,
+    periods: int,
+    category: str,
+    pdrb_price_type: str
+) -> pd.DataFrame:
+    """Memoized base correlation matrix for growth mode."""
+    df_growth = _get_growth_df_cached(province, periods)
+    if df_growth.empty:
+        return pd.DataFrame()
+    return _compute_correlation_matrix_from_growth(df_growth, category=category, pdrb_price_type=pdrb_price_type)
+
+
 # ======================================================================================
-# API ENDPOINTS
+# API ENDPOINTS (with Caching & High Performance)
 # ======================================================================================
 
 @app.get("/", response_class=HTMLResponse)
@@ -355,7 +385,7 @@ async def index_page(request: Request):
 async def health_check():
     """Health check dan diagnostic report."""
     data_files = [f.name for f in DATA_DIR.glob("*")] if DATA_DIR.exists() else []
-    return {
+    return cached_json_response({
         "status": "ok",
         "service": "KorelasiPDRB-FastAPI",
         "version": "4.0.0",
@@ -363,20 +393,18 @@ async def health_check():
         "data_dir_exists": DATA_DIR.exists(),
         "total_data_files": len(data_files),
         "sample_files": data_files[:5]
-    }
+    })
 
 
 @app.get("/api/manifest")
 async def get_manifest():
     """Mengembalikan seluruh manifest metadata."""
-    return load_manifest()
+    return cached_json_response(load_manifest())
 
 
-@app.get("/api/options")
-async def get_options(province: str = "sulawesi_selatan", year: str = "2024"):
-    """Mengembalikan opsi filter (provinsi, tahun, sektor, dan tipe PDRB)."""
+@functools.lru_cache(maxsize=64)
+def _compute_options(province: str, year: str) -> Dict[str, Any]:
     manifest = load_manifest()
-    
     lu_stem = f"{province}_{year}_pdrb_correl_lu"
     df_lu = get_parquet_df(lu_stem)
     
@@ -397,31 +425,31 @@ async def get_options(province: str = "sulawesi_selatan", year: str = "2024"):
     }
 
 
-@app.get("/api/correlations")
-async def get_correlations(
-    province: str = "sulawesi_selatan",
-    year: str = "2024",
-    type: str = "lu",
-    filter_mode: str = "all",
-    sort_by: str = "default",
-    pdrb_type: str = "all",
-    search: str = "",
-    analysis_mode: str = "growth_yoy"
-):
-    """
-    Mengembalikan data matriks korelasi (Lapangan Usaha atau Pengeluaran)
-    dengan dukungan filter 6 sektor utama (G, F, C, H, I, E), sorting, search,
-    dan mode analisis: growth_yoy, growth_qoq, growth_yoy_hb, growth_qoq_hb, abs_all, abs_hk, abs_hb.
-    """
+@app.get("/api/options")
+async def get_options(province: str = "sulawesi_selatan", year: str = "2024"):
+    """Mengembalikan opsi filter (provinsi, tahun, sektor, dan tipe PDRB)."""
+    return cached_json_response(_compute_options(province, year))
+
+
+@functools.lru_cache(maxsize=512)
+def _compute_correlations(
+    province: str,
+    year: str,
+    type: str,
+    filter_mode: str,
+    sort_by: str,
+    pdrb_type: str,
+    search: str,
+    analysis_mode: str
+) -> Dict[str, Any]:
     is_growth = analysis_mode.startswith("growth_")
     label_col = "Lapangan Usaha" if type == "lu" else "Komponen Pengeluaran"
     data_warning = None
 
     if is_growth:
-        # === MODE GROWTH: Hitung korelasi on-the-fly dari data pertumbuhan multi-tahun ===
         periods = 4 if "yoy" in analysis_mode else 1
         growth_pdrb_type = "HB" if analysis_mode.endswith("_hb") else "HK"
-        df_multi, avail_years = build_multi_year_df(province)
+        df_multi, avail_years = _build_multi_year_df_cached(province)
 
         if df_multi.empty:
             return {
@@ -432,7 +460,6 @@ async def get_correlations(
                 "error": f"Data triwulan multi-tahun untuk {province} tidak ditemukan."
             }
 
-        # Periksa kecukupan data untuk YoY
         total_quarters = len(df_multi)
         if "yoy" in analysis_mode and total_quarters <= 4:
             data_warning = (
@@ -440,7 +467,6 @@ async def get_correlations(
                 f"YoY membutuhkan >4 triwulan. Pertimbangkan gunakan mode QoQ."
             )
 
-        # Notifikasi khusus jika user memilih tahun pertama pada YoY
         if "yoy" in analysis_mode and avail_years and str(year) == str(avail_years[0]):
             data_warning = (
                 f"Tahun {year} adalah tahun pertama dalam dataset. "
@@ -448,7 +474,7 @@ async def get_correlations(
                 f"Korelasi dihitung dari seluruh tahun yang tersedia (pooled multi-tahun)."
             )
 
-        df_growth = compute_growth_df(df_multi, periods=periods)
+        df_growth = _get_growth_df_cached(province, periods)
 
         if df_growth.empty:
             return {
@@ -460,15 +486,13 @@ async def get_correlations(
                 "error": "Data pertumbuhan kosong setelah kalkulasi (kemungkinan rentang tahun terlalu pendek)."
             }
 
-        # Hitung matriks korelasi dari data pertumbuhan (pooled seluruh tahun)
-        df_view = _compute_correlation_matrix_from_growth(df_growth, category=type, pdrb_price_type=growth_pdrb_type)
+        df_view = _get_growth_correlation_matrix_cached(province, periods, type, growth_pdrb_type).copy()
 
         growth_pdrb_label = "Harga Berlaku (Nominal)" if growth_pdrb_type == "HB" else "Harga Konstan (Riil)"
         analysis_label = f"Pertumbuhan {'YoY' if periods == 4 else 'QoQ'} (%) — {growth_pdrb_label}"
         n_observations = len(df_growth)
 
     else:
-        # === MODE ABSOLUT: Gunakan file korelasi statis yang sudah ada ===
         stem = f"{province}_{year}_pdrb_correl_lu" if type == "lu" else f"{province}_{year}_pdrb_correl_peng"
         df = get_parquet_df(stem)
 
@@ -483,7 +507,6 @@ async def get_correlations(
 
         df_view = df.copy()
 
-        # Filter Tipe PDRB (HB / HK / all) untuk mode absolut
         effective_pdrb_type = "HK" if analysis_mode == "abs_hk" else ("HB" if analysis_mode == "abs_hb" else ("all" if analysis_mode == "abs_all" else pdrb_type))
         if effective_pdrb_type == "HB" and "Tipe PDRB" in df_view.columns:
             df_view = df_view[df_view["Tipe PDRB"].str.contains("HB", case=False, na=False)]
@@ -496,15 +519,12 @@ async def get_correlations(
             analysis_label = "Nilai Riil (Harga Konstan)"
         else:
             analysis_label = "Semua Tipe (HK & HB)"
-        n_observations = 4  # Single year
+        n_observations = 4
 
-    # === FILTERS (berlaku untuk semua mode) ===
-
-    # Filter Pencarian Nama Sektor
+    # Filters
     if search and label_col in df_view.columns:
         df_view = df_view[df_view[label_col].str.contains(search, case=False, na=False)]
 
-    # Filter Mode
     if filter_mode == "6_core" and type == "lu":
         core_keywords = [
             "perdagangan",
@@ -516,7 +536,6 @@ async def get_correlations(
         ]
         pattern = "|".join(core_keywords)
         df_view = df_view[df_view[label_col].str.contains(pattern, case=False, na=False)]
-
     elif filter_mode == "top5_high" and "Korelasi dgn Penumpang" in df_view.columns:
         df_view = df_view.sort_values(by="Korelasi dgn Penumpang", ascending=False).head(10)
     elif filter_mode == "top5_low" and "Korelasi dgn Penumpang" in df_view.columns:
@@ -561,29 +580,36 @@ async def get_correlations(
     return result
 
 
-@app.get("/api/data")
-async def get_dashboard_data(
+@app.get("/api/correlations")
+async def get_correlations(
     province: str = "sulawesi_selatan",
     year: str = "2024",
-    sector: str = "Transportasi dan Pergudangan",
-    category: str = "lu",
-    tipe_pdrb: str = "HK",
-    transport_metric: str = "penumpang",
-    analysis_mode: str = "growth_yoy",
-    ols_scope: str = "year"
+    type: str = "lu",
+    filter_mode: str = "all",
+    sort_by: str = "default",
+    pdrb_type: str = "all",
+    search: str = "",
+    analysis_mode: str = "growth_yoy"
 ):
-    """
-    Endpoint agregasi lengkap: KPI, Data Triwulanan (raw, index 100, QoQ untuk HK & HB),
-    Regresi Linear OLS (Tahun Terpilih N=4 dan Multi-Tahun Pooled N=12/15/16)
-    dengan persamaan $y=mx+c$, $R^2$, $R$, p-value, dan ringkasan sektoral.
+    """Mengembalikan data matriks korelasi dengan in-memory cache berkecepatan tinggi."""
+    res = _compute_correlations(province, year, type, filter_mode, sort_by, pdrb_type, search, analysis_mode)
+    return cached_json_response(res)
 
-    Mendukung analysis_mode: growth_yoy, growth_qoq, growth_yoy_hb, growth_qoq_hb, abs_all, abs_hk, abs_hb.
-    Mendukung ols_scope: "year" (Tahun Terpilih) dan "pooled" (Multi-Tahun Pooled).
-    """
+
+@functools.lru_cache(maxsize=1024)
+def _compute_dashboard_data(
+    province: str,
+    year: str,
+    sector: str,
+    category: str,
+    tipe_pdrb: str,
+    transport_metric: str,
+    analysis_mode: str,
+    ols_scope: str
+) -> Dict[str, Any]:
     is_growth = analysis_mode.startswith("growth_")
     data_warning = None
 
-    # Tentukan chosen_type (HB atau HK)
     if is_growth:
         chosen_type = "HB" if analysis_mode.endswith("_hb") else "HK"
     elif analysis_mode == "abs_hb":
@@ -593,29 +619,20 @@ async def get_dashboard_data(
     else:
         chosen_type = "HB" if str(tipe_pdrb).upper() == "HB" else "HK"
 
-    # ==================================================================================
-    # LOAD DATA TRIWULAN TAHUN TERPILIH (untuk KPI & time-series)
-    # ==================================================================================
     stem_tri = f"{province}_{year}_pdrb_triwulan"
     df_tri = get_parquet_df(stem_tri)
 
     if df_tri is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Data triwulan {stem_tri}.parquet tidak ditemukan di {DATA_DIR}."
-        )
+        return {"error": f"Data triwulan {stem_tri}.parquet tidak ditemukan di {DATA_DIR}."}
 
-    # Kolom Transportasi
     p_col = next((c for c in df_tri.columns if "penumpang" in c.lower()), None)
     bag_col = next((c for c in df_tri.columns if "bagasi" in c.lower()), None)
     bar_col = next((c for c in df_tri.columns if "barang" in c.lower()), None)
 
-    # Kolom Total PDRB
     lu_hk_cols = [c for c in df_tri.columns if c.startswith("LU (HK)")]
     lu_hb_cols = [c for c in df_tri.columns if c.startswith("LU (HB)")]
     total_lu_hk_col = next((c for c in lu_hk_cols if "produk domestik" in c.lower() or "pdrb" in c.lower()), None)
 
-    # Cari kolom target (Lapangan Usaha atau Pengeluaran) untuk HK dan HB
     clean_sec = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', sector, flags=re.IGNORECASE).strip().lower()
     prefix_hk = "Peng (HK)" if category == "peng" else "LU (HK)"
     prefix_hb = "Peng (HB)" if category == "peng" else "LU (HB)"
@@ -626,7 +643,6 @@ async def get_dashboard_data(
     col_hk = matching_hk[0] if matching_hk else None
     col_hb = matching_hb[0] if matching_hb else None
 
-    # Tentukan kolom PDRB aktif
     actual_tipe = chosen_type
     if chosen_type == "HB" and col_hb:
         sector_col = col_hb
@@ -643,9 +659,7 @@ async def get_dashboard_data(
 
     active_label = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', sector_col).strip()
 
-    # ==================================================================================
-    # 1. KPI Cards Calculation (selalu dari data tahun terpilih)
-    # ==================================================================================
+    # 1. KPI Cards
     tot_p = float(df_tri[p_col].sum()) if p_col else 0
     tot_bag = float(df_tri[bag_col].sum()) if bag_col else 0
     tot_bar = float(df_tri[bar_col].sum()) if bar_col else 0
@@ -672,7 +686,6 @@ async def get_dashboard_data(
         "max_correl_type": "HK"
     }
 
-    # Sektor Terkorelasi Max dari df_correl_lu
     stem_lu = f"{province}_{year}_pdrb_correl_lu"
     df_lu = get_parquet_df(stem_lu)
     if df_lu is not None and "Korelasi dgn Penumpang" in df_lu.columns:
@@ -683,9 +696,7 @@ async def get_dashboard_data(
             kpi["max_correl_val"] = float(top_row["Korelasi dgn Penumpang"])
             kpi["max_correl_type"] = str(top_row.get("Tipe PDRB", ""))
 
-    # ==================================================================================
-    # 2. Time Series Data (Triwulanan) — selalu dari tahun terpilih
-    # ==================================================================================
+    # 2. Time Series Data
     triwulan_labels = df_tri["Triwulan"].tolist()
     
     def calc_idx100(series):
@@ -718,22 +729,19 @@ async def get_dashboard_data(
     bar_idx = calc_idx100(bar_series)
     bar_qoq = calc_qoq(bar_series)
 
-    # Jika mode growth, hitung juga pertumbuhan multi-tahun untuk time-series display
     growth_ts_data: Dict[str, List[float]] = {}
-    df_multi_all, avail_years = build_multi_year_df(province)
+    df_multi_all, avail_years_tuple = _build_multi_year_df_cached(province)
+    avail_years = list(avail_years_tuple)
 
     if is_growth:
-        if not df_multi_all.empty:
-            periods_g = 4 if "yoy" in analysis_mode else 1
-            df_g_all = compute_growth_df(df_multi_all, periods=periods_g)
+        periods_g = 4 if "yoy" in analysis_mode else 1
+        df_g_all = _get_growth_df_cached(province, periods_g)
 
-            # Filter ke tahun terpilih untuk time-series display
+        if not df_g_all.empty:
             df_g_year = df_g_all[df_g_all["_tahun"] == int(year)]
-
             prefix_growth = prefix_hb if chosen_type == "HB" else prefix_hk
 
             if not df_g_year.empty:
-                # Cari kolom yang cocok di data growth
                 g_sector_col = next((c for c in df_g_year.columns if clean_sec in c.lower() and prefix_growth.lower() in c.lower()), None)
                 g_p_col = next((c for c in df_g_year.columns if "penumpang" in c.lower()), None)
                 g_bag_col = next((c for c in df_g_year.columns if "bagasi" in c.lower()), None)
@@ -744,7 +752,6 @@ async def get_dashboard_data(
                 growth_ts_data["bagasi_growth"] = df_g_year[g_bag_col].fillna(0).tolist() if g_bag_col and g_bag_col in df_g_year.columns else [0]*len(df_g_year)
                 growth_ts_data["barang_growth"] = df_g_year[g_bar_col].fillna(0).tolist() if g_bar_col and g_bar_col in df_g_year.columns else [0]*len(df_g_year)
             else:
-                # Tahun pertama pada YoY: semua growth = NaN → kosong
                 growth_mode_label = "YoY" if "yoy" in analysis_mode else "QoQ"
                 data_warning = (
                     f"Tahun {year} tidak memiliki data pertumbuhan {growth_mode_label} "
@@ -774,7 +781,6 @@ async def get_dashboard_data(
             "barang_idx": float(bar_idx[i]),
             "barang_qoq": float(bar_qoq[i]),
         }
-        # Tambah kolom growth jika tersedia
         if growth_ts_data:
             row_data["pdrb_growth"] = float(growth_ts_data.get("pdrb_growth", [0]*4)[i]) if i < len(growth_ts_data.get("pdrb_growth", [])) else 0.0
             row_data["penumpang_growth"] = float(growth_ts_data.get("penumpang_growth", [0]*4)[i]) if i < len(growth_ts_data.get("penumpang_growth", [])) else 0.0
@@ -783,9 +789,7 @@ async def get_dashboard_data(
 
         triwulan_data.append(row_data)
 
-    # ==================================================================================
-    # 3. OLS Linear Regression (Tahun Terpilih N=4 vs Multi-Tahun Pooled N=12/15/16)
-    # ==================================================================================
+    # 3. OLS Regression
     if transport_metric == "bagasi" and bag_col:
         y_raw_series = bag_series
         label_y = "Bagasi (Kg)"
@@ -828,7 +832,6 @@ async def get_dashboard_data(
             r_val = float(r_matrix[0, 1]) if not np.isnan(r_matrix[0, 1]) else 0.0
             r_squared = float(r_val ** 2)
 
-            # p-value dari pearsonr
             try:
                 _, p_val = pearsonr(x_clean, y_clean)
                 p_val = float(p_val) if not np.isnan(p_val) else 1.0
@@ -869,7 +872,7 @@ async def get_dashboard_data(
         label_y_growth = f"Pertumbuhan {label_y.split('(')[0].strip()} ({growth_mode_label} %)"
         label_x_growth = f"Pertumbuhan PDRB ({pdrb_type_label}): {active_label} ({growth_mode_label} %)"
 
-        df_g_pooled = compute_growth_df(df_multi_all, periods=periods_g)
+        df_g_pooled = _get_growth_df_cached(province, periods_g)
 
         if not df_g_pooled.empty:
             g_sec_col = next((c for c in df_g_pooled.columns if clean_sec in c.lower() and prefix_growth.lower() in c.lower()), None)
@@ -877,7 +880,6 @@ async def get_dashboard_data(
             g_bag_col = next((c for c in df_g_pooled.columns if "bagasi" in c.lower()), None)
             g_bar_col = next((c for c in df_g_pooled.columns if "barang" in c.lower()), None)
 
-            # Pilih Y untuk regresi
             if transport_metric == "bagasi" and g_bag_col and g_bag_col in df_g_pooled.columns:
                 g_y_col = g_bag_col
             elif transport_metric == "barang" and g_bar_col and g_bar_col in df_g_pooled.columns:
@@ -887,14 +889,12 @@ async def get_dashboard_data(
             else:
                 g_y_col = None
 
-            # 1. Regresi Pooled Multi-Tahun (N=12 untuk YoY / N=15 untuk QoQ)
             pooled_labels = [f"{int(r['_tahun'])} Q{int(r['_triwulan_num'])}" for _, r in df_g_pooled.iterrows()]
             if g_sec_col and g_sec_col in df_g_pooled.columns and g_y_col:
                 reg_pooled = compute_regression(df_g_pooled[g_sec_col], df_g_pooled[g_y_col], label_x_growth, label_y_growth, pooled_labels)
             else:
                 reg_pooled = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_growth, label_y_growth, [])
 
-            # 2. Regresi Tahun Terpilih (N=4)
             df_g_year = df_g_pooled[df_g_pooled["_tahun"] == int(year)]
             year_labels = [f"{int(r['_tahun'])} Q{int(r['_triwulan_num'])}" for _, r in df_g_year.iterrows()]
             if not df_g_year.empty and g_sec_col and g_sec_col in df_g_year.columns and g_y_col:
@@ -906,15 +906,12 @@ async def get_dashboard_data(
             reg_year = compute_regression(pd.Series([], dtype=float), pd.Series([], dtype=float), label_x_growth, label_y_growth, [])
 
     else:
-        # --- Mode Absolut ---
         label_x_abs = f"PDRB: {active_label} ({actual_tipe})"
         label_y_abs = label_y
 
-        # 1. Regresi Tahun Terpilih (N=4)
         year_labels = [f"{year} {tw}" for tw in triwulan_labels]
         reg_year = compute_regression(pdrb_series, y_raw_series, label_x_abs, label_y_abs, year_labels)
 
-        # 2. Regresi Pooled Multi-Tahun (Semua Triwulan 2021-2024, N=16)
         if not df_multi_all.empty:
             prefix_active = prefix_hb if actual_tipe == "HB" else prefix_hk
             my_sec_col = next((c for c in df_multi_all.columns if clean_sec in c.lower() and prefix_active.lower() in c.lower()), None)
@@ -939,19 +936,14 @@ async def get_dashboard_data(
         else:
             reg_pooled = reg_year
 
-    # Pilih regresi aktif berdasarkan ols_scope
     reg_result = reg_pooled if str(ols_scope).lower() == "pooled" else reg_year
-
-    # Backward-compatible references
     reg_hk = reg_result
     reg_hb = reg_result
     reg_annual = reg_pooled
     reg_annual_hk = reg_pooled
     reg_annual_hb = reg_pooled
 
-    # ==================================================================================
     # 4. Sektor Lapangan Usaha Top 10 Summary
-    # ==================================================================================
     target_lu_cols = lu_hb_cols if actual_tipe == "HB" else lu_hk_cols
     sectors_summary = []
     for col in target_lu_cols:
@@ -965,9 +957,6 @@ async def get_dashboard_data(
     for s in sectors_summary:
         s["percentage"] = round((s["total_output"] / total_lu_sum) * 100.0, 2)
 
-    # ==================================================================================
-    # Build Response
-    # ==================================================================================
     response_data: Dict[str, Any] = {
         "province": province,
         "year": year,
@@ -1000,17 +989,32 @@ async def get_dashboard_data(
     return response_data
 
 
-@app.get("/api/raw_sheet")
-async def get_raw_sheet(
+@app.get("/api/data")
+async def get_dashboard_data(
     province: str = "sulawesi_selatan",
     year: str = "2024",
-    sheet: str = "pdrb_triwulan"
+    sector: str = "Transportasi dan Pergudangan",
+    category: str = "lu",
+    tipe_pdrb: str = "HK",
+    transport_metric: str = "penumpang",
+    analysis_mode: str = "growth_yoy",
+    ols_scope: str = "year"
 ):
-    """Membaca raw sheet parquet tabular untuk ekspor dan inspeksi."""
+    """Endpoint agregasi lengkap dengan in-memory LRU caching berkecepatan tinggi (<10ms)."""
+    res = _compute_dashboard_data(
+        province, year, sector, category, tipe_pdrb, transport_metric, analysis_mode, ols_scope
+    )
+    if "error" in res:
+        raise HTTPException(status_code=404, detail=res["error"])
+    return cached_json_response(res)
+
+
+@functools.lru_cache(maxsize=64)
+def _compute_raw_sheet(province: str, year: str, sheet: str) -> Dict[str, Any]:
     stem = f"{province}_{year}_{sheet}"
     df = get_parquet_df(stem)
     if df is None:
-        raise HTTPException(status_code=404, detail=f"Sheet {stem}.parquet tidak ditemukan di {DATA_DIR}.")
+        return {"error": f"Sheet {stem}.parquet tidak ditemukan di {DATA_DIR}."}
     
     df_clean = df.replace({np.nan: None})
     return {
@@ -1019,3 +1023,48 @@ async def get_raw_sheet(
         "rows": df_clean.to_dict(orient="records"),
         "count": len(df_clean)
     }
+
+
+@app.get("/api/raw_sheet")
+async def get_raw_sheet(
+    province: str = "sulawesi_selatan",
+    year: str = "2024",
+    sheet: str = "pdrb_triwulan"
+):
+    """Membaca raw sheet parquet tabular untuk ekspor dan inspeksi dengan caching."""
+    res = _compute_raw_sheet(province, year, sheet)
+    if "error" in res:
+        raise HTTPException(status_code=404, detail=res["error"])
+    return cached_json_response(res)
+
+
+# ======================================================================================
+# STARTUP CACHE PRE-WARMING
+# ======================================================================================
+
+def prewarm_all_caches():
+    """Melakukan pra-kalkulasi seluruh dataset di memory saat server pertama kali start."""
+    try:
+        manifest = load_manifest()
+        prov_list = list(manifest.get("provinces", {}).keys())
+        for p in prov_list:
+            _build_multi_year_df_cached(p)
+            _get_growth_df_cached(p, 4)
+            _get_growth_df_cached(p, 1)
+            for cat in ["lu", "peng"]:
+                for pt in ["HK", "HB"]:
+                    _get_growth_correlation_matrix_cached(p, 4, cat, pt)
+                    _get_growth_correlation_matrix_cached(p, 1, cat, pt)
+        print(f"⚡ In-memory cache pre-warmed for {len(prov_list)} provinces.")
+    except Exception as e:
+        print(f"⚠️ Cache pre-warming note: {e}")
+
+
+# Jalankan pre-warming saat startup aplikasi
+@app.on_event("startup")
+def on_startup():
+    prewarm_all_caches()
+
+
+# Jalankan synchronous warmup untuk lingkungan serverless cold-start
+prewarm_all_caches()
