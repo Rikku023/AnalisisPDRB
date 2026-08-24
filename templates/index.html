@@ -81,7 +81,13 @@
         <!-- Province Selector -->
         <div class="relative">
           <select id="selProvince" onchange="onProvinceChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
-            <!-- Populated dynamically -->
+            {% if manifest and manifest.provinces %}
+              {% for p_key, p_val in manifest.provinces.items() %}
+                <option value="{{ p_key }}">📍 {{ p_val.name }}</option>
+              {% endfor %}
+            {% else %}
+              <option value="sulawesi_selatan">📍 Sulawesi Selatan</option>
+            {% endif %}
           </select>
           <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
         </div>
@@ -1264,26 +1270,30 @@
       }
     }
 
+    function populateProvinceDropdown(manifest = currentManifest) {
+      const selProv = document.getElementById("selProvince");
+      if (!selProv) return;
+      
+      const provEntries = Object.entries(manifest.provinces || {});
+      if (provEntries.length > 0) {
+        selProv.innerHTML = "";
+        if (!manifest.provinces[currentProvince]) {
+          currentProvince = provEntries[0][0];
+        }
+        for (const [key, val] of provEntries) {
+          const opt = document.createElement("option");
+          opt.value = key;
+          opt.textContent = `📍 ${val.name}`;
+          if (key === currentProvince) opt.selected = true;
+          selProv.appendChild(opt);
+        }
+      }
+    }
+
     async function loadInitialManifest() {
       try {
         currentManifest = await fetchWithCache("/api/manifest");
-        
-        const selProv = document.getElementById("selProvince");
-        selProv.innerHTML = "";
-        
-        const provEntries = Object.entries(currentManifest.provinces || {});
-        if (provEntries.length > 0) {
-          if (!currentManifest.provinces[currentProvince]) {
-            currentProvince = provEntries[0][0];
-          }
-          for (const [key, val] of provEntries) {
-            const opt = document.createElement("option");
-            opt.value = key;
-            opt.textContent = `📍 ${val.name}`;
-            if (key === currentProvince) opt.selected = true;
-            selProv.appendChild(opt);
-          }
-        }
+        populateProvinceDropdown(currentManifest);
         populateYears(true);
       } catch (err) {
         console.error("Error loading manifest:", err);

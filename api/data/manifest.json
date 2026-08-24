@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T08:17:28.646704",
+  "generated_at": "2026-08-24T17:09:17.110768",
   "provinces": {
     "gorontalo": {
       "name": "Gorontalo",
@@ -159,7 +159,1001 @@
           ]
         }
       }
+    },
+    "kalimantan_selatan": {
+      "name": "Kalimantan Selatan",
+      "airports": [
+        "Syamsudin Noor (Banjar/Banjarmasin)",
+        "Gusti Sjamsir Alam (Kotabaru)",
+        "Bersujud (Batulicin)",
+        "Warukin (Tabalong)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "kalimantan_timur": {
+      "name": "Kalimantan Timur",
+      "airports": [
+        "Sultan Aji Muhammad Sulaiman Sepinggan (Balikpapan)",
+        "APT Pranoto (Samarinda)",
+        "Kalimarau (Berau)",
+        "Badak (Bontang)",
+        "Melak (Kutai Barat)",
+        "Datah Dawai (Mahakam Ulu)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "kalimantan_barat": {
+      "name": "Kalimantan Barat",
+      "airports": [
+        "Supadio (Kubu Raya/Pontianak)",
+        "Rahadi Oesman (Ketapang)",
+        "Tebelian (Sintang)",
+        "Pangsuma (Kapuas Hulu)",
+        "Singkawang (Singkawang)",
+        "Nanga Pinoh (Melawi)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "kalimantan_tengah": {
+      "name": "Kalimantan Tengah",
+      "airports": [
+        "Tjilik Riwut (Palangka Raya)",
+        "Iskandar (Pangkalan Bun)",
+        "H. Asan (Sampit)",
+        "Beringin (Muara Teweh)",
+        "Kuala Pembuang (Seruyan)",
+        "Sanggu (Buntok)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "aceh": {
+      "name": "Aceh",
+      "airports": [
+        "Sultan Iskandar Muda (Banda Aceh/Aceh Besar)",
+        "Rembele (Bener Meriah/Takengon)",
+        "Lasikin (Simeulue)",
+        "Malikussaleh (Lhokseumawe)",
+        "Cut Nyak Dhien (Nagan Raya)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Aceh_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Aceh_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Aceh_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Aceh_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Aceh_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "sumatera_utara": {
+      "name": "Sumatera Utara",
+      "airports": [
+        "Kualanamu (Deli Serdang/Medan)",
+        "Silangit (Tapanuli Utara)",
+        "Binaka (Gunungsitoli/Nias)",
+        "Aek Godang (Padang Sidempuan)",
+        "Dr. Ferdinand Lumban Tobing (Sibolga)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Sumatera_Utara_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Sumatera_Utara_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Sumatera_Utara_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Sumatera_Utara_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Sumatera_Utara_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "sumatera_barat": {
+      "name": "Sumatera Barat",
+      "airports": [
+        "Minangkabau (Padang Pariaman/Padang)",
+        "Rokot (Kepulauan Mentawai)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Sumatera_Barat_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Sumatera_Barat_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Sumatera_Barat_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Sumatera_Barat_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Sumatera_Barat_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "riau": {
+      "name": "Riau",
+      "airports": [
+        "Sultan Syarif Kasim II (Pekanbaru)",
+        "Pinang Kampai (Dumai)",
+        "Tuanku Tambusai (Pasir Pengaraian)",
+        "Japura (Rengat)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Riau_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Riau_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Riau_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Riau_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Riau_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "kep_riau": {
+      "name": "Kepulauan Riau",
+      "airports": [
+        "Hang Nadim (Batam)",
+        "Raja Haji Fisabilillah (Tanjung Pinang)",
+        "Dabo (Singkep/Lingga)",
+        "Ranai (Natuna)",
+        "Matak (Anambas)",
+        "Letung (Jemaja)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Kep_Riau_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Kep_Riau_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Kep_Riau_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Kep_Riau_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Kep_Riau_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "jambi": {
+      "name": "Jambi",
+      "airports": [
+        "Sultan Thaha (Jambi)",
+        "Depati Parbo (Kerinci)",
+        "Muara Bungo (Bungo)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Jambi_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Jambi_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Jambi_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Jambi_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Jambi_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "sumatera_selatan": {
+      "name": "Sumatera Selatan",
+      "airports": [
+        "Sultan Mahmud Badaruddin II (Palembang)",
+        "Silampari (Lubuklinggau)",
+        "Banding Agung (OKU Selatan)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Sumatera_Selatan_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Sumatera_Selatan_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Sumatera_Selatan_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Sumatera_Selatan_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Sumatera_Selatan_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "bengkulu": {
+      "name": "Bengkulu",
+      "airports": [
+        "Fatmawati Soekarno (Bengkulu)",
+        "Mukomuko (Mukomuko)",
+        "Enggano (Enggano)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Bengkulu_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Bengkulu_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Bengkulu_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Bengkulu_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Bengkulu_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "lampung": {
+      "name": "Lampung",
+      "airports": [
+        "Radin Inten II (Lampung Selatan/Bandar Lampung)",
+        "Muhammad Taufiq Kiemas (Pesisir Barat)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Lampung_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Lampung_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Lampung_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Lampung_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Lampung_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "kep_bangka_belitung": {
+      "name": "Kepulauan Bangka Belitung",
+      "airports": [
+        "Depati Amir (Pangkal Pinang/Bangka)",
+        "H.A.S. Hanandjoeddin (Tanjung Pandan/Belitung)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "Kep_Bangka_Belitung_2020.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "Kep_Bangka_Belitung_2021.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "Kep_Bangka_Belitung_2022.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "Kep_Bangka_Belitung_2023.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "Kep_Bangka_Belitung_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
     }
-  },
-  "files_count": 12
+  }
 }
