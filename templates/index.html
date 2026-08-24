@@ -226,14 +226,17 @@
 
     <!-- Navigation Tabs -->
     <div class="border-b border-slate-200 dark:border-slate-800">
-      <nav class="flex space-x-2" aria-label="Tabs">
-        <button onclick="switchTab('tab1')" id="nav-tab1" class="tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60">
+      <nav class="flex space-x-2 overflow-x-auto custom-scrollbar" aria-label="Tabs">
+        <button onclick="switchTab('tab1')" id="nav-tab1" class="tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60 whitespace-nowrap">
           <i class="fa-solid fa-table-cells mr-2"></i> Matriks Korelasi & Grafik Interaktif
         </button>
-        <button onclick="switchTab('tab2')" id="nav-tab2" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30">
+        <button onclick="switchTab('tab4')" id="nav-tab4" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap">
+          <i class="fa-solid fa-shield-halved mr-2 text-indigo-500"></i> Diagnostik Multikolinearitas (VIF)
+        </button>
+        <button onclick="switchTab('tab2')" id="nav-tab2" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap">
           <i class="fa-solid fa-chart-area mr-2"></i> Tren Makro & Sektoral
         </button>
-        <button onclick="switchTab('tab3')" id="nav-tab3" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30">
+        <button onclick="switchTab('tab3')" id="nav-tab3" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap">
           <i class="fa-solid fa-database mr-2"></i> Data Lengkap & Ekspor
         </button>
       </nav>
@@ -539,6 +542,515 @@
       </div>
     </div>
 
+    <!-- TAB 4: DIAGNOSTIK MULTIKOLINEARITAS (VIF, KORELASI SILANG, & MULTIKO TRANSPORTASI) -->
+    <div id="content-tab4" class="hidden space-y-6">
+
+      <!-- Sub-Tab Header & Switcher -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-indigo-500"></i>
+              <span id="txtMultiMainTitle">Diagnostik Multikolinearitas Antar-Sektor (X × X)</span>
+            </h3>
+            <p id="txtMultiMainSubtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Uji independensi linier antar-sektor PDRB untuk memastikan kelayakan model regresi multivariat bebas dari redundansi statistik.
+            </p>
+          </div>
+
+          <!-- 3-Mode Switcher: X × X vs X × Y vs Y × Y -->
+          <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-300 dark:border-slate-700 shadow-inner self-start lg:self-center">
+            <button onclick="setMultiSubTab('sector')" id="btnMultiSubSector" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 shadow transition flex items-center gap-1.5">
+              <i class="fa-solid fa-braille"></i> Antar-Sektor (X × X)
+            </button>
+            <button onclick="setMultiSubTab('cross')" id="btnMultiSubCross" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center gap-1.5">
+              <i class="fa-solid fa-shuffle"></i> Korelasi Silang (X × Y)
+            </button>
+            <button onclick="setMultiSubTab('transport')" id="btnMultiSubTransport" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center gap-1.5">
+              <i class="fa-solid fa-plane-departure"></i> Multiko Transport (Y × Y)
+            </button>
+          </div>
+        </div>
+
+        <!-- Sector Selector Panel (Active for Sector X×X and Cross X×Y modes) -->
+        <div id="panelMultiSectorConfig" class="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- Category Toggle: LU vs Peng -->
+              <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-300 dark:border-slate-700 shadow-inner">
+                <button onclick="setMultiCategory('lu')" id="btnMultiCatLU" class="px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 shadow transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-industry"></i> Lapangan Usaha (17)
+                </button>
+                <button onclick="setMultiCategory('peng')" id="btnMultiCatPeng" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-bag-shopping"></i> Pengeluaran (7)
+                </button>
+              </div>
+
+              <!-- Preset Buttons -->
+              <div class="flex flex-wrap items-center gap-1">
+                <button onclick="setMultiPreset('core6')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-300 dark:border-slate-700 transition">
+                  ⭐ 6 Sektor Inti
+                </button>
+                <button onclick="setMultiPreset('transport_related')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-300 dark:border-slate-700 transition">
+                  ✈️ Transportasi & Terkait
+                </button>
+                <button onclick="setMultiPreset('all')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-300 dark:border-slate-700 transition">
+                  📋 Pilih Semua
+                </button>
+                <button onclick="setMultiPreset('clear')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-300 dark:border-slate-700 transition">
+                  🔄 Reset
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Counter -->
+            <div class="flex items-center gap-2 self-end lg:self-auto">
+              <span id="multiSelectedCounter" class="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-mono font-semibold text-xs">
+                0 Sektor Terpilih
+              </span>
+              <div class="relative">
+                <input type="text" id="txtSearchMultiSector" oninput="filterMultiSectorCheckboxes()" placeholder="Saring nama sektor..." class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-lg pl-8 pr-3 py-1 outline-none focus:ring-1 focus:ring-indigo-500 w-44">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1.5 text-xs text-slate-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Checkboxes Grid -->
+          <div id="multiSectorCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-36 overflow-y-auto custom-scrollbar p-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SUB-VIEW 1: ANTAR-SEKTOR PDRB (X × X) -->
+      <!-- ========================================================================= -->
+      <div id="viewMultiSector" class="space-y-6">
+
+        <!-- 4 KPI Diagnostic Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- KPI 1: Status Multikolinearitas Global -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition" id="cardMultiStatus">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Multiko PDRB</span>
+              <div id="iconMultiStatus" class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <i class="fa-solid fa-shield-check text-sm"></i>
+              </div>
+            </div>
+            <div class="my-2">
+              <div id="multiKpiStatusVal" class="text-lg font-heading font-bold text-emerald-600 dark:text-emerald-400">Aman (< 5)</div>
+              <div id="multiKpiStatusSub" class="text-xs text-slate-500 dark:text-slate-400">Tidak ada redundansi berat</div>
+            </div>
+            <div id="multiKpiStatusBadge" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Layak untuk OLS Multivariat</div>
+          </div>
+
+          <!-- KPI 2: Condition Number -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Condition Number (κ)</span>
+              <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <i class="fa-solid fa-scale-balanced text-sm"></i>
+              </div>
+            </div>
+            <div class="my-2">
+              <div id="multiKpiCondVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white font-mono">-</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Il-conditioning matriks R_x</div>
+            </div>
+            <div id="multiKpiCondBadge" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Ambang: &lt; 15 Aman, &gt; 30 Parah</div>
+          </div>
+
+          <!-- KPI 3: VIF Tertinggi -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">VIF Sektor Tertinggi</span>
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <i class="fa-solid fa-fire-flame-curved text-sm"></i>
+              </div>
+            </div>
+            <div class="my-2">
+              <div id="multiKpiMaxVifVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white font-mono">-</div>
+              <div id="multiKpiMaxVifSector" class="text-xs text-slate-500 dark:text-slate-400 truncate" title="-">-</div>
+            </div>
+            <div id="multiKpiMaxVifBadge" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Tolerance: -</div>
+          </div>
+
+          <!-- KPI 4: Sektor Teruji -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sektor Teruji (k)</span>
+              <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                <i class="fa-solid fa-cubes text-sm"></i>
+              </div>
+            </div>
+            <div class="my-2">
+              <div id="multiKpiTotalSectors" class="text-2xl font-heading font-bold text-slate-900 dark:text-white font-mono">0 Sektor</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Dimensi Matriks R: k × k</div>
+            </div>
+            <div id="multiKpiSampleInfo" class="text-xs font-semibold text-sky-600 dark:text-sky-400">Pooled Multi-Tahun</div>
+          </div>
+        </div>
+
+        <!-- Visualizations: Heatmap & VIF Bar Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left: Heatmap Matriks Korelasi Antar-Sektor R_k×k -->
+          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-braille text-indigo-500"></i>
+                Matriks Korelasi Pearson Antar-Sektor (R_X)
+              </h4>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">Rentang: -1.0 s.d. +1.0</span>
+            </div>
+            <div id="chartMultiHeatmap" class="w-full h-96"></div>
+            <div class="mt-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
+              <span><i class="fa-solid fa-info-circle mr-1"></i> Nilai sel menunjukkan koefisien korelasi Pearson (r). Warna merah mengindikasikan korelasi linear positif kuat.</span>
+            </div>
+          </div>
+
+          <!-- Right: Horizontal Bar Chart VIF -->
+          <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-column text-sky-500"></i>
+                Nilai VIF per Sektor & Ambang Batas
+              </h4>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">VIF = (R⁻¹)ⱼⱼ</span>
+            </div>
+            <div id="chartMultiVif" class="w-full h-96"></div>
+            <div class="mt-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span> &lt; 5 Aman</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-500"></span> 5–10 Waspada</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-rose-500"></span> ≥ 10 Multiko Berat</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table & Econometric Recommendations -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-table-list text-indigo-500"></i>
+              Tabel Diagnostik VIF & Tolerance Sektor
+            </h4>
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-72">
+              <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="px-4 py-3">Nama Sektor</th>
+                    <th class="px-4 py-3 text-right">VIF</th>
+                    <th class="px-4 py-3 text-right">Tolerance (1/VIF)</th>
+                    <th class="px-4 py-3 text-center">Status Evaluasi</th>
+                  </tr>
+                </thead>
+                <tbody id="tblMultiDiagnosticBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 bg-gradient-to-br from-indigo-900/40 via-slate-900 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
+                <i class="fa-solid fa-lightbulb"></i> Rekomendasi Sektor Multivariat
+              </div>
+              <h4 class="font-heading font-bold text-base text-white">Panduan Spesifikasi Model OLS</h4>
+              <div id="multiRecommendationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-indigo-500/20 space-y-2">
+                Memuat rekomendasi...
+              </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1.5">
+              <div class="font-bold text-indigo-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-book-open"></i> Kaidah Ambang Batas VIF:
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-slate-300">
+                <li><strong class="text-emerald-400">VIF &lt; 5:</strong> Bebas multikolinearitas, varians OLS stabil.</li>
+                <li><strong class="text-amber-400">5 ≤ VIF &lt; 10:</strong> Multiko moderat, standard error membesar.</li>
+                <li><strong class="text-rose-400">VIF ≥ 10:</strong> Multiko parah; estimasi koefisien tidak reliabel.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SUB-VIEW 2: KORELASI SILANG PDRB × TRANSPORTASI (X × Y) -->
+      <!-- ========================================================================= -->
+      <div id="viewMultiCross" class="hidden space-y-6">
+
+        <!-- 3 KPI Cards: Best Target Indicator per Metric -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- KPI 1: Penumpang -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-plane"></i> Target: Penumpang
+              </span>
+              <span id="kpiCrossPenumpangR" class="px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-mono font-bold text-xs">r = -</span>
+            </div>
+            <div class="my-2">
+              <div id="kpiCrossPenumpangSector" class="text-sm font-heading font-bold text-slate-900 dark:text-white line-clamp-2" title="-">-</div>
+              <div id="kpiCrossPenumpangP" class="text-xs text-slate-500 dark:text-slate-400 mt-1">p-value: -</div>
+            </div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">Korelasi terkuat dengan lalu lintas penumpang</div>
+          </div>
+
+          <!-- KPI 2: Bagasi -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-suitcase-rolling"></i> Target: Bagasi
+              </span>
+              <span id="kpiCrossBagasiR" class="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono font-bold text-xs">r = -</span>
+            </div>
+            <div class="my-2">
+              <div id="kpiCrossBagasiSector" class="text-sm font-heading font-bold text-slate-900 dark:text-white line-clamp-2" title="-">-</div>
+              <div id="kpiCrossBagasiP" class="text-xs text-slate-500 dark:text-slate-400 mt-1">p-value: -</div>
+            </div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">Korelasi terkuat dengan volume bagasi terangkut</div>
+          </div>
+
+          <!-- KPI 3: Barang / Kargo -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-box-open"></i> Target: Barang (Kargo)
+              </span>
+              <span id="kpiCrossBarangR" class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs">r = -</span>
+            </div>
+            <div class="my-2">
+              <div id="kpiCrossBarangSector" class="text-sm font-heading font-bold text-slate-900 dark:text-white line-clamp-2" title="-">-</div>
+              <div id="kpiCrossBarangP" class="text-xs text-slate-500 dark:text-slate-400 mt-1">p-value: -</div>
+            </div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">Korelasi terkuat dengan volume arus kargo/barang</div>
+          </div>
+        </div>
+
+        <!-- Visualizations: Cross Heatmap & Comparison Bar Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left: Heatmap Korelasi Silang (k × 3) -->
+          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-table-cells-large text-sky-500"></i>
+                Matriks Korelasi Silang: Sektor PDRB (X) × Indikator Transportasi (Y)
+              </h4>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">Dimensi: k × 3</span>
+            </div>
+            <div id="chartMultiCrossHeatmap" class="w-full h-96"></div>
+            <div class="mt-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
+              <span><i class="fa-solid fa-asterisk text-amber-500 mr-1"></i> Penanda Signifikansi: *** p&lt;0.01 | ** p&lt;0.05 | * p&lt;0.10</span>
+            </div>
+          </div>
+
+          <!-- Right: Bar Chart Komparasi 3 Indikator -->
+          <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-bar text-purple-500"></i>
+                Komparasi Korelasi per Variabel Transportasi
+              </h4>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">Koefisien (r)</span>
+            </div>
+            <div id="chartMultiCrossBar" class="w-full h-96"></div>
+            <div class="mt-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-4">
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-sky-500"></span> Penumpang</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-purple-500"></span> Bagasi</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span> Barang</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table & Econometric Target Selection Guidance -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-sky-500"></i>
+              Tabel Korelasi Silang & Rekomendasi Target Y Optimal
+            </h4>
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-72">
+              <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="px-3 py-2.5">Sektor PDRB</th>
+                    <th class="px-3 py-2.5 text-right">r Penumpang</th>
+                    <th class="px-3 py-2.5 text-right">r Bagasi</th>
+                    <th class="px-3 py-2.5 text-right">r Barang</th>
+                    <th class="px-3 py-2.5 text-center">Target Y Terkuat</th>
+                  </tr>
+                </thead>
+                <tbody id="tblMultiCrossBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 bg-gradient-to-br from-sky-900/40 via-slate-900 to-slate-950 border border-sky-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-semibold">
+                <i class="fa-solid fa-bullseye"></i> Panduan Pemilihan Target (Y)
+              </div>
+              <h4 class="font-heading font-bold text-base text-white">Interpretasi Hubungan Kausal Sektoral</h4>
+              <div id="crossRecommendationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-sky-500/20 space-y-2">
+                Memuat analisis korelasi silang...
+              </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1.5">
+              <div class="font-bold text-sky-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-compass"></i> Pedoman Pemilihan Variabel Dependen:
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-slate-300">
+                <li><strong>Sektor Jasa/Akomodasi:</strong> Cenderung sensitif terhadap <em>Penumpang</em> dan <em>Bagasi</em>.</li>
+                <li><strong>Sektor Pertanian & Industri:</strong> Cenderung sensitif terhadap logistik <em>Barang (Kargo)</em>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SUB-VIEW 3: MULTIKOLINEARITAS TRANSPORTASI (Y × Y) -->
+      <!-- ========================================================================= -->
+      <div id="viewMultiTransport" class="hidden space-y-6">
+
+        <!-- 3 KPI Cards: Transport Multicollinearity -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- KPI 1: Status Transport Multico -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition" id="cardMultiTransStatus">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Multiko Transport</span>
+              <div id="iconMultiTransStatus" class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <i class="fa-solid fa-shield-check text-sm"></i>
+              </div>
+            </div>
+            <div class="my-2">
+              <div id="multiKpiTransStatusVal" class="text-lg font-heading font-bold text-emerald-600 dark:text-emerald-400">BEBAS MULTIKO</div>
+              <div id="multiKpiTransStatusSub" class="text-xs text-slate-500 dark:text-slate-400">Evaluasi antar Penumpang vs Bagasi vs Barang</div>
+            </div>
+            <div id="multiKpiTransStatusBadge" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Aman Digabung Simultan</div>
+          </div>
+
+          <!-- KPI 2: Condition Number Transport -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Condition Number (κ_T)</span>
+              <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                <i class="fa-solid fa-scale-balanced text-sm"></i>
+              </div>
+            </div>
+            <div class="my-2">
+              <div id="multiKpiTransCondVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white font-mono">-</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">Tingkat Il-conditioning matriks R_T</div>
+            </div>
+            <div id="multiKpiTransCondBadge" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Ambang: &lt; 15 Aman, &gt; 30 Parah</div>
+          </div>
+
+          <!-- KPI 3: VIF Maksimum Transport -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">VIF Transport Maksimum</span>
+              <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <i class="fa-solid fa-plane text-sm"></i>
+              </div>
+            </div>
+            <div class="my-2">
+              <div id="multiKpiTransMaxVifVal" class="text-2xl font-heading font-bold text-slate-900 dark:text-white font-mono">-</div>
+              <div id="multiKpiTransMaxVifIndicator" class="text-xs text-slate-500 dark:text-slate-400 truncate" title="-">-</div>
+            </div>
+            <div id="multiKpiTransMaxVifBadge" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Tolerance: -</div>
+          </div>
+        </div>
+
+        <!-- Visualizations: Transport Heatmap & Transport VIF Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left: Heatmap Matriks Korelasi Antar-Transportasi (3 × 3) -->
+          <div class="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-braille text-purple-500"></i>
+                Matriks Korelasi Antar-Indikator Transportasi (R_T)
+              </h4>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">Dimensi: 3 × 3</span>
+            </div>
+            <div id="chartMultiTransportHeatmap" class="w-full h-80"></div>
+            <div class="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
+              <span><i class="fa-solid fa-info-circle mr-1"></i> Menguji hubungan linear antara Penumpang, Bagasi, dan Barang.</span>
+            </div>
+          </div>
+
+          <!-- Right: Bar Chart VIF Transportasi -->
+          <div class="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-column text-indigo-500"></i>
+                Nilai VIF Indikator Transportasi
+              </h4>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">VIF = (R_T⁻¹)ⱼⱼ</span>
+            </div>
+            <div id="chartMultiTransportVif" class="w-full h-80"></div>
+            <div class="mt-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span> &lt; 5 Bebas Multiko</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-500"></span> 5–10 Moderat</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-rose-500"></span> ≥ 10 Multiko Berat</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table & Econometric Guidelines for Transport Model -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-table-list text-purple-500"></i>
+              Tabel Diagnostik VIF Indikator Transportasi
+            </h4>
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl">
+              <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="px-4 py-3">Indikator Transportasi</th>
+                    <th class="px-4 py-3 text-right">VIF</th>
+                    <th class="px-4 py-3 text-right">Tolerance (1/VIF)</th>
+                    <th class="px-4 py-3 text-center">Status Evaluasi</th>
+                  </tr>
+                </thead>
+                <tbody id="tblMultiTransportBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="lg:col-span-6 bg-gradient-to-br from-purple-900/40 via-slate-900 to-slate-950 border border-purple-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-300 text-xs font-semibold">
+                <i class="fa-solid fa-lightbulb"></i> Rekomendasi Model Prediksi Gabungan
+              </div>
+              <h4 class="font-heading font-bold text-base text-white">Kelayakan Penggabungan Penumpang, Bagasi & Barang</h4>
+              <div id="multiTransportRecommendationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-purple-500/20 space-y-2">
+                Memuat evaluasi multikolinearitas transportasi...
+              </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1.5">
+              <div class="font-bold text-purple-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-lightbulb"></i> Implikasi Multikolinearitas Transportasi:
+              </div>
+              <p class="text-slate-300 text-[11px] leading-relaxed">
+                Jika Penumpang dan Bagasi memiliki VIF tinggi (&gt; 10) akibat korelasi kuasi-sempurna, memasukkan keduanya bersamaan dalam satu model regresi berganda akan menyebabkan pembengkakan varians (inflasi standard error) dan tanda koefisien tidak stabil. Disarankan memilih salah satu metrik atau menggunakan regresi komponen utama (PCA).
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
   </main>
 
   <!-- Footer -->
@@ -557,11 +1069,16 @@
 
     async function fetchWithCache(url, options = {}) {
       const forceRefresh = options.bypassCache === true;
-      if (!forceRefresh && apiCache.has(url)) {
-        return apiCache.get(url);
+      const method = options.method || 'GET';
+      const cacheKey = method === 'GET' ? url : `${method}:${url}:${options.body || ''}`;
+      if (!forceRefresh && apiCache.has(cacheKey)) {
+        return apiCache.get(cacheKey);
       }
 
-      const res = await fetch(url);
+      const fetchOptions = { ...options };
+      delete fetchOptions.bypassCache;
+
+      const res = await fetch(url, fetchOptions);
       if (!res.ok) {
         throw new Error(`HTTP error ${res.status} for ${url}`);
       }
@@ -572,7 +1089,7 @@
         apiCache.delete(oldestKey);
       }
 
-      apiCache.set(url, data);
+      apiCache.set(cacheKey, data);
       return data;
     }
 
@@ -698,6 +1215,7 @@
       fetch('/api/options', { cache: 'no-store' }).catch(() => {});
 
       initTheme();
+      renderMultiSectorCheckboxes();
       await loadInitialManifest();
       await refreshData();
     });
@@ -735,6 +1253,14 @@
         renderTimeSeriesChart(activeDashboardData);
         renderRegressionChart(activeDashboardData);
         renderMacroCharts(activeDashboardData);
+      }
+      if (activeMulticollinearityData) {
+        renderMultiHeatmap(activeMulticollinearityData);
+        renderMultiVifChart(activeMulticollinearityData);
+        renderMultiCrossHeatmap(activeMulticollinearityData);
+        renderMultiCrossBarChart(activeMulticollinearityData);
+        renderMultiTransportHeatmap(activeMulticollinearityData);
+        renderMultiTransportVifChart(activeMulticollinearityData);
       }
     }
 
@@ -965,6 +1491,7 @@
       await loadCorrelations(force);
       await loadSectorData(force);
       await loadTab3Table(currentTab3Sheet, force);
+      await loadMulticollinearityData(force);
     }
 
     async function loadCorrelations(force = false) {
@@ -1536,15 +2063,1027 @@
       document.getElementById("content-tab1").classList.add("hidden");
       document.getElementById("content-tab2").classList.add("hidden");
       document.getElementById("content-tab3").classList.add("hidden");
+      document.getElementById("content-tab4").classList.add("hidden");
 
       document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.className = "tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30";
+        btn.className = "tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap";
       });
 
       document.getElementById(`content-${tabId}`).classList.remove("hidden");
-      document.getElementById(`nav-${tabId}`).className = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60";
+      const activeColorClass = tabId === 'tab4' 
+        ? "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-slate-800/60 whitespace-nowrap"
+        : "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60 whitespace-nowrap";
+      document.getElementById(`nav-${tabId}`).className = activeColorClass;
+
+      if (tabId === 'tab4') {
+        renderMultiSectorCheckboxes();
+        loadMulticollinearityData();
+      }
 
       window.dispatchEvent(new Event('resize'));
+    }
+
+    // =========================================================================
+    // TAB 4: DIAGNOSTIK MULTIKOLINEARITAS (VIF, KORELASI SILANG, & TRANSPORTASI)
+    // =========================================================================
+    let currentMultiSubTab = "sector"; // "sector" | "cross" | "transport"
+    let currentMultiCategory = "lu";
+    let currentMultiSectors = [
+      "Industri Pengolahan",
+      "Konstruksi",
+      "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
+      "Transportasi dan Pergudangan",
+      "Penyediaan Akomodasi dan Makan Minum",
+      "Pengadaan Air, Pengelolaan Sampah, Limbah dan Daur Ulang"
+    ];
+    let activeMulticollinearityData = null;
+
+    const ALL_LU_SECTORS = [
+      "Pertanian, Kehutanan, dan Perikanan",
+      "Pertambangan dan Penggalian",
+      "Industri Pengolahan",
+      "Pengadaan Listrik dan Gas",
+      "Pengadaan Air, Pengelolaan Sampah, Limbah dan Daur Ulang",
+      "Konstruksi",
+      "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
+      "Transportasi dan Pergudangan",
+      "Penyediaan Akomodasi dan Makan Minum",
+      "Informasi dan Komunikasi",
+      "Jasa Keuangan dan Asuransi",
+      "Real Estat",
+      "Jasa Perusahaan",
+      "Administrasi Pemerintahan, Pertahanan dan Jaminan Sosial Wajib",
+      "Jasa Pendidikan",
+      "Jasa Kesehatan dan Kegiatan Sosial",
+      "Jasa Lainnya"
+    ];
+
+    const ALL_PENG_SECTORS = [
+      "Pengeluaran Konsumsi Rumah Tangga",
+      "Pengeluaran Konsumsi LNPRT",
+      "Pengeluaran Konsumsi Pemerintah",
+      "Pembentukan Modal Tetap Bruto",
+      "Perubahan Inventori",
+      "Ekspor Barang dan Jasa",
+      "Impor Barang dan Jasa"
+    ];
+
+    function setMultiSubTab(subTab) {
+      currentMultiSubTab = subTab;
+      const btnSector = document.getElementById("btnMultiSubSector");
+      const btnCross = document.getElementById("btnMultiSubCross");
+      const btnTransport = document.getElementById("btnMultiSubTransport");
+
+      const viewSector = document.getElementById("viewMultiSector");
+      const viewCross = document.getElementById("viewMultiCross");
+      const viewTransport = document.getElementById("viewMultiTransport");
+      const panelConfig = document.getElementById("panelMultiSectorConfig");
+
+      const activeBtnClass = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 shadow transition flex items-center gap-1.5";
+      const inactiveBtnClass = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center gap-1.5";
+
+      if (btnSector) btnSector.className = subTab === 'sector' ? activeBtnClass : inactiveBtnClass;
+      if (btnCross) btnCross.className = subTab === 'cross' ? activeBtnClass : inactiveBtnClass;
+      if (btnTransport) btnTransport.className = subTab === 'transport' ? activeBtnClass : inactiveBtnClass;
+
+      if (viewSector) viewSector.classList.toggle('hidden', subTab !== 'sector');
+      if (viewCross) viewCross.classList.toggle('hidden', subTab !== 'cross');
+      if (viewTransport) viewTransport.classList.toggle('hidden', subTab !== 'transport');
+      if (panelConfig) panelConfig.classList.toggle('hidden', subTab === 'transport');
+
+      const titleEl = document.getElementById("txtMultiMainTitle");
+      const subtitleEl = document.getElementById("txtMultiMainSubtitle");
+
+      if (subTab === 'sector') {
+        if (titleEl) titleEl.textContent = "Diagnostik Multikolinearitas Antar-Sektor (X × X)";
+        if (subtitleEl) subtitleEl.textContent = "Uji independensi linier antar-sektor PDRB untuk memastikan kelayakan model regresi multivariat bebas dari redundansi statistik.";
+      } else if (subTab === 'cross') {
+        if (titleEl) titleEl.textContent = "Matriks Korelasi Silang (PDRB × Transportasi, X × Y)";
+        if (subtitleEl) subtitleEl.textContent = "Peta korelasi silang antara sektor-sektor PDRB (X) terhadap 3 variabel lalu lintas transportasi (Y: Penumpang, Bagasi, Barang) untuk memandu pemilihan target optimal.";
+      } else if (subTab === 'transport') {
+        if (titleEl) titleEl.textContent = "Uji Multikolinearitas Antar-Indikator Transportasi (Y × Y)";
+        if (subtitleEl) subtitleEl.textContent = "Uji apakah indikator Penumpang, Bagasi, dan Barang aman jika digabungkan bersamaan dalam satu model prediksi regresi multivariat terhadap PDRB.";
+      }
+
+      if (activeMulticollinearityData) {
+        if (subTab === 'sector') {
+          renderMultiHeatmap(activeMulticollinearityData);
+          renderMultiVifChart(activeMulticollinearityData);
+        } else if (subTab === 'cross') {
+          renderMultiCrossHeatmap(activeMulticollinearityData);
+          renderMultiCrossBarChart(activeMulticollinearityData);
+        } else if (subTab === 'transport') {
+          renderMultiTransportHeatmap(activeMulticollinearityData);
+          renderMultiTransportVifChart(activeMulticollinearityData);
+        }
+      }
+
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    function setMultiCategory(cat) {
+      currentMultiCategory = cat;
+      const btnLU = document.getElementById("btnMultiCatLU");
+      const btnPeng = document.getElementById("btnMultiCatPeng");
+
+      if (cat === 'lu') {
+        if (btnLU) btnLU.className = "px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 shadow transition flex items-center gap-1.5";
+        if (btnPeng) btnPeng.className = "px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center gap-1.5";
+        currentMultiSectors = [
+          "Industri Pengolahan",
+          "Konstruksi",
+          "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
+          "Transportasi dan Pergudangan",
+          "Penyediaan Akomodasi dan Makan Minum",
+          "Pengadaan Air, Pengelolaan Sampah, Limbah dan Daur Ulang"
+        ];
+      } else {
+        if (btnPeng) btnPeng.className = "px-3 py-1 rounded-lg text-xs font-bold text-white bg-indigo-600 shadow transition flex items-center gap-1.5";
+        if (btnLU) btnLU.className = "px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center gap-1.5";
+        currentMultiSectors = [
+          "Pengeluaran Konsumsi Rumah Tangga",
+          "Pembentukan Modal Tetap Bruto",
+          "Ekspor Barang dan Jasa",
+          "Impor Barang dan Jasa"
+        ];
+      }
+      renderMultiSectorCheckboxes();
+      loadMulticollinearityData();
+    }
+
+    function setMultiPreset(presetName) {
+      if (currentMultiCategory === 'lu') {
+        if (presetName === 'core6') {
+          currentMultiSectors = [
+            "Industri Pengolahan",
+            "Konstruksi",
+            "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
+            "Transportasi dan Pergudangan",
+            "Penyediaan Akomodasi dan Makan Minum",
+            "Pengadaan Air, Pengelolaan Sampah, Limbah dan Daur Ulang"
+          ];
+        } else if (presetName === 'transport_related') {
+          currentMultiSectors = [
+            "Transportasi dan Pergudangan",
+            "Penyediaan Akomodasi dan Makan Minum",
+            "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
+            "Industri Pengolahan"
+          ];
+        } else if (presetName === 'all') {
+          currentMultiSectors = [...ALL_LU_SECTORS];
+        } else if (presetName === 'clear') {
+          currentMultiSectors = [];
+        }
+      } else {
+        if (presetName === 'all' || presetName === 'core6' || presetName === 'transport_related') {
+          currentMultiSectors = [
+            "Pengeluaran Konsumsi Rumah Tangga",
+            "Pembentukan Modal Tetap Bruto",
+            "Ekspor Barang dan Jasa",
+            "Impor Barang dan Jasa"
+          ];
+        } else if (presetName === 'clear') {
+          currentMultiSectors = [];
+        }
+      }
+      renderMultiSectorCheckboxes();
+      loadMulticollinearityData();
+    }
+
+    function renderMultiSectorCheckboxes() {
+      const container = document.getElementById("multiSectorCheckboxes");
+      if (!container) return;
+      const sectors = currentMultiCategory === 'lu' ? ALL_LU_SECTORS : ALL_PENG_SECTORS;
+      const counterEl = document.getElementById("multiSelectedCounter");
+      if (counterEl) {
+        counterEl.textContent = `${currentMultiSectors.length} Sektor Terpilih`;
+      }
+
+      container.innerHTML = "";
+      sectors.forEach((sec) => {
+        const isChecked = currentMultiSectors.includes(sec);
+        const div = document.createElement("label");
+        div.className = `flex items-center gap-2 p-2 rounded-lg cursor-pointer border text-xs transition select-none ${
+          isChecked 
+            ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200 font-semibold' 
+            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+        }`;
+        div.innerHTML = `
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleMultiSector('${sec.replace(/'/g, "\\'")}')" class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700">
+          <span class="truncate" title="${sec}">${sec}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function toggleMultiSector(sec) {
+      if (currentMultiSectors.includes(sec)) {
+        currentMultiSectors = currentMultiSectors.filter(s => s !== sec);
+      } else {
+        currentMultiSectors.push(sec);
+      }
+      renderMultiSectorCheckboxes();
+      loadMulticollinearityData();
+    }
+
+    function filterMultiSectorCheckboxes() {
+      const query = (document.getElementById("txtSearchMultiSector")?.value || "").toLowerCase();
+      const labels = document.querySelectorAll("#multiSectorCheckboxes label");
+      labels.forEach(lbl => {
+        const txt = lbl.textContent.toLowerCase();
+        lbl.style.display = txt.includes(query) ? "flex" : "none";
+      });
+    }
+
+    async function loadMulticollinearityData(force = false) {
+      if (currentMultiSectors.length < 2) {
+        const tbody = document.getElementById("tblMultiDiagnosticBody");
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-amber-500 font-semibold">⚠️ Pilih minimal 2 sektor pada daftar di atas untuk kalkulasi multikolinearitas.</td></tr>`;
+        }
+        const statusValEl = document.getElementById("multiKpiStatusVal");
+        if (statusValEl) {
+          statusValEl.textContent = "Pilih ≥ 2 Sektor";
+          statusValEl.className = "text-lg font-heading font-bold text-amber-500";
+        }
+        const statusSubEl = document.getElementById("multiKpiStatusSub");
+        if (statusSubEl) statusSubEl.textContent = "Minimal 2 sektor dibutuhkan";
+        const condValEl = document.getElementById("multiKpiCondVal");
+        if (condValEl) condValEl.textContent = "-";
+        const maxVifEl = document.getElementById("multiKpiMaxVifVal");
+        if (maxVifEl) maxVifEl.textContent = "-";
+        const totalSecEl = document.getElementById("multiKpiTotalSectors");
+        if (totalSecEl) totalSecEl.textContent = `${currentMultiSectors.length} Sektor`;
+        const recEl = document.getElementById("multiRecommendationText");
+        if (recEl) recEl.textContent = "Silakan pilih minimal 2 sektor untuk mengkalkulasi matriks korelasi dan nilai VIF.";
+        return;
+      }
+
+      try {
+        const pt = isCombinedMode() ? currentSelectedPdrbType : getBackendTipePdrb();
+        const payload = {
+          province: currentProvince,
+          price_type: pt,
+          analysis_mode: currentAnalysisMode,
+          category: currentMultiCategory,
+          sectors: currentMultiSectors
+        };
+        
+        const data = await fetchWithCache("/api/multicollinearity", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload),
+          bypassCache: force
+        });
+        activeMulticollinearityData = data;
+        renderMulticollinearityPanel(data);
+      } catch (err) {
+        console.error("Error loading multicollinearity data:", err);
+      }
+    }
+
+    function renderMulticollinearityPanel(data) {
+      if (!data || data.status !== 'success') return;
+
+      const hasMulti = data.has_multicollinearity;
+      const condNum = data.condition_number;
+      const vifs = data.vif_results || [];
+
+      // =======================================================================
+      // 1. SUB-VIEW 1: SECTOR VIF & MULTICOLLINEARITY (X × X)
+      // =======================================================================
+      const statusEl = document.getElementById("multiKpiStatusVal");
+      const statusSub = document.getElementById("multiKpiStatusSub");
+      const statusBadge = document.getElementById("multiKpiStatusBadge");
+      const iconStatus = document.getElementById("iconMultiStatus");
+
+      if (statusEl && statusSub && statusBadge && iconStatus) {
+        if (hasMulti) {
+          statusEl.textContent = "TERDETEKSI MULTIKO";
+          statusEl.className = "text-lg font-heading font-bold text-rose-600 dark:text-rose-400";
+          statusSub.textContent = "Terdapat redundansi linier tinggi";
+          statusBadge.textContent = "⚠️ Perlu Eliminasi / Regularisasi";
+          statusBadge.className = "text-[11px] font-semibold text-rose-600 dark:text-rose-400";
+          iconStatus.className = "w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center";
+          iconStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-sm"></i>';
+        } else {
+          statusEl.textContent = "BEBAS MULTIKO";
+          statusEl.className = "text-lg font-heading font-bold text-emerald-600 dark:text-emerald-400";
+          statusSub.textContent = "Seluruh VIF < 5 & κ < 15";
+          statusBadge.textContent = "✅ Layak untuk OLS Multivariat";
+          statusBadge.className = "text-[11px] font-semibold text-emerald-600 dark:text-emerald-400";
+          iconStatus.className = "w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center";
+          iconStatus.innerHTML = '<i class="fa-solid fa-shield-check text-sm"></i>';
+        }
+      }
+
+      const condValEl = document.getElementById("multiKpiCondVal");
+      const condBadgeEl = document.getElementById("multiKpiCondBadge");
+      if (condValEl && condBadgeEl) {
+        condValEl.textContent = condNum.toFixed(2);
+        if (condNum > 30) {
+          condValEl.className = "text-2xl font-heading font-bold text-rose-600 dark:text-rose-400 font-mono";
+          condBadgeEl.innerHTML = '<span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">κ > 30 (Multiko Parah)</span>';
+        } else if (condNum > 15) {
+          condValEl.className = "text-2xl font-heading font-bold text-amber-600 dark:text-amber-400 font-mono";
+          condBadgeEl.innerHTML = '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">15 ≤ κ ≤ 30 (Moderat)</span>';
+        } else {
+          condValEl.className = "text-2xl font-heading font-bold text-emerald-600 dark:text-emerald-400 font-mono";
+          condBadgeEl.innerHTML = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">κ < 15 (Sangat Aman)</span>';
+        }
+      }
+
+      if (vifs.length > 0) {
+        const maxVifItem = [...vifs].sort((a, b) => b.vif - a.vif)[0];
+        const maxVifValEl = document.getElementById("multiKpiMaxVifVal");
+        if (maxVifValEl) {
+          maxVifValEl.textContent = maxVifItem.vif.toFixed(2);
+          maxVifValEl.className = `text-2xl font-heading font-bold font-mono ${maxVifItem.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (maxVifItem.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}`;
+        }
+        
+        const maxSecEl = document.getElementById("multiKpiMaxVifSector");
+        if (maxSecEl) {
+          maxSecEl.textContent = maxVifItem.sector;
+          maxSecEl.title = maxVifItem.sector;
+        }
+        const maxBadgeEl = document.getElementById("multiKpiMaxVifBadge");
+        if (maxBadgeEl) {
+          maxBadgeEl.innerHTML = `Tolerance: <span class="font-mono font-bold">${maxVifItem.tolerance.toFixed(4)}</span>`;
+        }
+      }
+
+      const totSecEl = document.getElementById("multiKpiTotalSectors");
+      if (totSecEl) totSecEl.textContent = `${vifs.length} Sektor`;
+      const sampleInfoEl = document.getElementById("multiKpiSampleInfo");
+      if (sampleInfoEl) sampleInfoEl.textContent = isGrowthMode() ? "Pertumbuhan Pooled" : `Tahun ${currentYear} (Absolut)`;
+
+      renderMultiHeatmap(data);
+      renderMultiVifChart(data);
+
+      const tbody = document.getElementById("tblMultiDiagnosticBody");
+      if (tbody) {
+        tbody.innerHTML = "";
+        vifs.forEach((item, idx) => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+          
+          let badgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+          if (item.badge_color === 'red') {
+            badgeClass = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
+          } else if (item.badge_color === 'yellow') {
+            badgeClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
+          }
+
+          tr.innerHTML = `
+            <td class="px-4 py-2.5 text-slate-800 dark:text-slate-200 font-sans flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono">${idx + 1}</span>
+              <span>${item.sector}</span>
+            </td>
+            <td class="px-4 py-2.5 text-right font-bold ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
+            <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400">${item.tolerance.toFixed(4)}</td>
+            <td class="px-4 py-2.5 text-center font-sans">
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] border ${badgeClass}">${item.status}</span>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const recEl = document.getElementById("multiRecommendationText");
+      if (recEl) {
+        recEl.innerHTML = `<p class="leading-relaxed"><i class="fa-solid fa-circle-check text-indigo-400 mr-1.5"></i> ${data.recommendation}</p>`;
+      }
+
+      // =======================================================================
+      // 2. SUB-VIEW 2: CROSS-CORRELATION (X × Y: PDRB × Transportasi)
+      // =======================================================================
+      const crossObj = data.cross_transport_matrix;
+      if (crossObj && crossObj.matrix && crossObj.sector_labels) {
+        const secLabels = crossObj.sector_labels;
+        const transLabels = crossObj.transport_labels || ["Penumpang", "Bagasi", "Barang"];
+        const crossMat = crossObj.matrix;
+        const crossP = crossObj.p_values || [];
+
+        // Identifikasi Top Performer untuk masing-masing indikator Y
+        let bestP = { sec: '-', r: 0, p: 1 };
+        let bestBag = { sec: '-', r: 0, p: 1 };
+        let bestBar = { sec: '-', r: 0, p: 1 };
+
+        secLabels.forEach((sec, idx) => {
+          const rp = crossMat[idx]?.[0] || 0;
+          const pp = crossP[idx]?.[0] || 1;
+          const rbag = crossMat[idx]?.[1] || 0;
+          const pbag = crossP[idx]?.[1] || 1;
+          const rbar = crossMat[idx]?.[2] || 0;
+          const pbar = crossP[idx]?.[2] || 1;
+
+          if (Math.abs(rp) > Math.abs(bestP.r)) bestP = { sec, r: rp, p: pp };
+          if (Math.abs(rbag) > Math.abs(bestBag.r)) bestBag = { sec, r: rbag, p: pbag };
+          if (Math.abs(rbar) > Math.abs(bestBar.r)) bestBar = { sec, r: rbar, p: pbar };
+        });
+
+        // Update KPI Cards Cross
+        const kpP_R = document.getElementById("kpiCrossPenumpangR");
+        const kpP_Sec = document.getElementById("kpiCrossPenumpangSector");
+        const kpP_P = document.getElementById("kpiCrossPenumpangP");
+        if (kpP_R) kpP_R.textContent = `r = ${bestP.r.toFixed(4)}`;
+        if (kpP_Sec) { kpP_Sec.textContent = bestP.sec; kpP_Sec.title = bestP.sec; }
+        if (kpP_P) kpP_P.textContent = `p-value: ${bestP.p < 0.001 ? bestP.p.toExponential(2) : bestP.p.toFixed(4)}`;
+
+        const kpBag_R = document.getElementById("kpiCrossBagasiR");
+        const kpBag_Sec = document.getElementById("kpiCrossBagasiSector");
+        const kpBag_P = document.getElementById("kpiCrossBagasiP");
+        if (kpBag_R) kpBag_R.textContent = `r = ${bestBag.r.toFixed(4)}`;
+        if (kpBag_Sec) { kpBag_Sec.textContent = bestBag.sec; kpBag_Sec.title = bestBag.sec; }
+        if (kpBag_P) kpBag_P.textContent = `p-value: ${bestBag.p < 0.001 ? bestBag.p.toExponential(2) : bestBag.p.toFixed(4)}`;
+
+        const kpBar_R = document.getElementById("kpiCrossBarangR");
+        const kpBar_Sec = document.getElementById("kpiCrossBarangSector");
+        const kpBar_P = document.getElementById("kpiCrossBarangP");
+        if (kpBar_R) kpBar_R.textContent = `r = ${bestBar.r.toFixed(4)}`;
+        if (kpBar_Sec) { kpBar_Sec.textContent = bestBar.sec; kpBar_Sec.title = bestBar.sec; }
+        if (kpBar_P) kpBar_P.textContent = `p-value: ${bestBar.p < 0.001 ? bestBar.p.toExponential(2) : bestBar.p.toFixed(4)}`;
+
+        // Render Cross Heatmap & Bar Chart
+        renderMultiCrossHeatmap(data);
+        renderMultiCrossBarChart(data);
+
+        // Render Cross Table
+        const tblCrossBody = document.getElementById("tblMultiCrossBody");
+        if (tblCrossBody) {
+          tblCrossBody.innerHTML = "";
+          secLabels.forEach((sec, idx) => {
+            const rp = crossMat[idx]?.[0] || 0;
+            const rbag = crossMat[idx]?.[1] || 0;
+            const rbar = crossMat[idx]?.[2] || 0;
+            const bestTarget = crossObj.strongest_targets?.[idx]?.best_target || 'Penumpang';
+
+            let targetBadgeClass = "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20";
+            if (bestTarget === 'Bagasi') targetBadgeClass = "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
+            else if (bestTarget === 'Barang') targetBadgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+            tr.innerHTML = `
+              <td class="px-3 py-2.5 font-sans text-slate-800 dark:text-slate-200">${sec}</td>
+              <td class="px-3 py-2.5 text-right ${rp >= 0.7 ? 'font-bold text-sky-600 dark:text-sky-400' : ''}">${rp.toFixed(4)}</td>
+              <td class="px-3 py-2.5 text-right ${rbag >= 0.7 ? 'font-bold text-purple-600 dark:text-purple-400' : ''}">${rbag.toFixed(4)}</td>
+              <td class="px-3 py-2.5 text-right ${rbar >= 0.7 ? 'font-bold text-emerald-600 dark:text-emerald-400' : ''}">${rbar.toFixed(4)}</td>
+              <td class="px-3 py-2.5 text-center font-sans">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] border font-semibold ${targetBadgeClass}">${bestTarget}</span>
+              </td>
+            `;
+            tblCrossBody.appendChild(tr);
+          });
+        }
+
+        // Cross Guidance Callout
+        const crossRecEl = document.getElementById("crossRecommendationText");
+        if (crossRecEl) {
+          crossRecEl.innerHTML = `
+            <p>Dari ${secLabels.length} sektor teruji, hubungan terkuat terdistribusi sebagai berikut:</p>
+            <ul class="list-disc list-inside space-y-1 mt-1 text-slate-300">
+              <li><strong>Penumpang:</strong> Sektor paling sensitif adalah <em>'${bestP.sec}'</em> (r = ${bestP.r.toFixed(4)}).</li>
+              <li><strong>Bagasi:</strong> Sektor paling sensitif adalah <em>'${bestBag.sec}'</em> (r = ${bestBag.r.toFixed(4)}).</li>
+              <li><strong>Barang / Kargo:</strong> Sektor paling sensitif adalah <em>'${bestBar.sec}'</em> (r = ${bestBar.r.toFixed(4)}).</li>
+            </ul>
+          `;
+        }
+      }
+
+      // =======================================================================
+      // 3. SUB-VIEW 3: TRANSPORTATION MULTICOLLINEARITY (Y × Y)
+      // =======================================================================
+      const transObj = data.transport_multicollinearity;
+      if (transObj) {
+        const transHasMulti = transObj.has_multicollinearity;
+        const transCond = transObj.condition_number;
+        const transVifs = transObj.vif_results || [];
+
+        // KPI Status
+        const transStatusVal = document.getElementById("multiKpiTransStatusVal");
+        const transStatusSub = document.getElementById("multiKpiTransStatusSub");
+        const transStatusBadge = document.getElementById("multiKpiTransStatusBadge");
+        const iconTransStatus = document.getElementById("iconMultiTransStatus");
+
+        if (transStatusVal && transStatusSub && transStatusBadge && iconTransStatus) {
+          if (transHasMulti) {
+            transStatusVal.textContent = "TERDETEKSI MULTIKO";
+            transStatusVal.className = "text-lg font-heading font-bold text-rose-600 dark:text-rose-400";
+            transStatusSub.textContent = "Korelasi Penumpang vs Bagasi sangat kuat";
+            transStatusBadge.textContent = "⚠️ Jangan digabung simultan dalam 1 model";
+            transStatusBadge.className = "text-[11px] font-semibold text-rose-600 dark:text-rose-400";
+            iconTransStatus.className = "w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center";
+            iconTransStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-sm"></i>';
+          } else {
+            transStatusVal.textContent = "BEBAS MULTIKO";
+            transStatusVal.className = "text-lg font-heading font-bold text-emerald-600 dark:text-emerald-400";
+            transStatusSub.textContent = "Seluruh VIF < 5 & κ_T < 15";
+            transStatusBadge.textContent = "✅ Aman Digabung Simultan";
+            transStatusBadge.className = "text-[11px] font-semibold text-emerald-600 dark:text-emerald-400";
+            iconTransStatus.className = "w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center";
+            iconTransStatus.innerHTML = '<i class="fa-solid fa-shield-check text-sm"></i>';
+          }
+        }
+
+        // KPI Condition Number
+        const transCondVal = document.getElementById("multiKpiTransCondVal");
+        const transCondBadge = document.getElementById("multiKpiTransCondBadge");
+        if (transCondVal && transCondBadge) {
+          transCondVal.textContent = transCond.toFixed(2);
+          if (transCond > 30) {
+            transCondVal.className = "text-2xl font-heading font-bold text-rose-600 dark:text-rose-400 font-mono";
+            transCondBadge.innerHTML = '<span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">κ > 30 (Multiko Berat)</span>';
+          } else if (transCond > 15) {
+            transCondVal.className = "text-2xl font-heading font-bold text-amber-600 dark:text-amber-400 font-mono";
+            transCondBadge.innerHTML = '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">15 ≤ κ ≤ 30 (Moderat)</span>';
+          } else {
+            transCondVal.className = "text-2xl font-heading font-bold text-emerald-600 dark:text-emerald-400 font-mono";
+            transCondBadge.innerHTML = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">κ < 15 (Sangat Aman)</span>';
+          }
+        }
+
+        // KPI VIF Max
+        if (transVifs.length > 0) {
+          const maxTransVif = [...transVifs].sort((a, b) => b.vif - a.vif)[0];
+          const transMaxVifVal = document.getElementById("multiKpiTransMaxVifVal");
+          if (transMaxVifVal) {
+            transMaxVifVal.textContent = maxTransVif.vif.toFixed(2);
+            transMaxVifVal.className = `text-2xl font-heading font-bold font-mono ${maxTransVif.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (maxTransVif.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}`;
+          }
+          const transMaxInd = document.getElementById("multiKpiTransMaxVifIndicator");
+          if (transMaxInd) transMaxInd.textContent = `Indikator: ${maxTransVif.indicator}`;
+          const transMaxBadge = document.getElementById("multiKpiTransMaxVifBadge");
+          if (transMaxBadge) transMaxBadge.innerHTML = `Tolerance: <span class="font-mono font-bold">${maxTransVif.tolerance.toFixed(4)}</span>`;
+        }
+
+        // Render Transport Charts
+        renderMultiTransportHeatmap(data);
+        renderMultiTransportVifChart(data);
+
+        // Render Transport Table
+        const tblTransBody = document.getElementById("tblMultiTransportBody");
+        if (tblTransBody) {
+          tblTransBody.innerHTML = "";
+          transVifs.forEach((item) => {
+            let badgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+            if (item.badge_color === 'red') {
+              badgeClass = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
+            } else if (item.badge_color === 'yellow') {
+              badgeClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
+            }
+
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+            tr.innerHTML = `
+              <td class="px-4 py-2.5 font-sans font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <i class="fa-solid ${item.indicator === 'Penumpang' ? 'fa-plane' : (item.indicator === 'Bagasi' ? 'fa-suitcase-rolling' : 'fa-box-open')} text-indigo-500"></i>
+                <span>${item.indicator}</span>
+              </td>
+              <td class="px-4 py-2.5 text-right font-bold ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
+              <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400">${item.tolerance.toFixed(4)}</td>
+              <td class="px-4 py-2.5 text-center font-sans">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] border ${badgeClass}">${item.status}</span>
+              </td>
+            `;
+            tblTransBody.appendChild(tr);
+          });
+        }
+
+        // Transport Recommendation Callout
+        const transRecEl = document.getElementById("multiTransportRecommendationText");
+        if (transRecEl) {
+          transRecEl.innerHTML = `<p class="leading-relaxed"><i class="fa-solid fa-circle-check text-purple-400 mr-1.5"></i> ${transObj.recommendation}</p>`;
+        }
+      }
+    }
+
+    function renderMultiHeatmap(data) {
+      const matrixObj = data.inter_sector_matrix;
+      if (!matrixObj || !matrixObj.matrix) return;
+
+      const labels = matrixObj.labels || [];
+      const zValues = matrixObj.matrix || [];
+      const shortLabels = labels.map(l => l.length > 20 ? l.substring(0, 18) + '...' : l);
+
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+
+      const textAnnotations = [];
+      for (let i = 0; i < labels.length; i++) {
+        for (let j = 0; j < labels.length; j++) {
+          const val = zValues[i][j];
+          const isHigh = Math.abs(val) >= 0.8;
+          textAnnotations.push({
+            xref: 'x1',
+            yref: 'y1',
+            x: shortLabels[j],
+            y: shortLabels[i],
+            text: val.toFixed(2),
+            font: {
+              family: 'Inter',
+              size: 11,
+              color: isHigh ? '#ffffff' : (isDarkMode ? '#e2e8f0' : '#1e293b'),
+              weight: isHigh ? 'bold' : 'normal'
+            },
+            showarrow: false
+          });
+        }
+      }
+
+      const trace = {
+        z: zValues,
+        x: shortLabels,
+        y: shortLabels,
+        type: 'heatmap',
+        colorscale: [
+          [0.0, '#3b82f6'],
+          [0.5, '#f8fafc'],
+          [0.8, '#f59e0b'],
+          [1.0, '#ef4444']
+        ],
+        zmin: -1.0,
+        zmax: 1.0,
+        hoverongaps: false,
+        hovertemplate: '<b>%{y}</b> ↔ <b>%{x}</b><br>Korelasi (r): <b>%{z:.4f}</b><extra></extra>',
+        colorbar: {
+          title: 'Koefisien (r)',
+          titleside: 'top',
+          tickvals: [-1.0, -0.5, 0.0, 0.5, 0.8, 1.0],
+          tickfont: { size: 10, color: textColor }
+        }
+      };
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: textColor, family: 'Inter' },
+        margin: { l: 120, r: 20, t: 20, b: 80 },
+        xaxis: { tickangle: -35, tickfont: { size: 10 } },
+        yaxis: { autorange: 'reversed', tickfont: { size: 10 } },
+        annotations: textAnnotations
+      };
+
+      Plotly.newPlot('chartMultiHeatmap', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function renderMultiVifChart(data) {
+      const vifs = data.vif_results || [];
+      if (vifs.length === 0) return;
+
+      const sectorsReversed = vifs.map(v => v.sector.length > 22 ? v.sector.substring(0, 20) + '...' : v.sector).reverse();
+      const vifValsReversed = vifs.map(v => v.vif).reverse();
+      const colorsReversed = vifs.map(v => v.vif >= 10 ? '#f43f5e' : (v.vif >= 5 ? '#f59e0b' : '#10b981')).reverse();
+
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+
+      const maxVal = Math.max(...vifValsReversed, 12);
+
+      const trace = {
+        type: 'bar',
+        orientation: 'h',
+        x: vifValsReversed,
+        y: sectorsReversed,
+        text: vifValsReversed.map(v => `VIF: ${v.toFixed(2)}`),
+        textposition: 'auto',
+        marker: {
+          color: colorsReversed,
+          line: { color: isDarkMode ? '#0f172a' : '#ffffff', width: 1.5 }
+        },
+        hovertemplate: '<b>%{y}</b><br>VIF: <b>%{x:.3f}</b><extra></extra>'
+      };
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: textColor, family: 'Inter' },
+        margin: { l: 130, r: 25, t: 20, b: 40 },
+        xaxis: {
+          title: 'Nilai Variance Inflation Factor (VIF)',
+          gridcolor: gridColor,
+          range: [0, maxVal * 1.15]
+        },
+        yaxis: {
+          tickfont: { size: 10 }
+        },
+        shapes: [
+          {
+            type: 'line',
+            x0: 5, x1: 5,
+            y0: -0.5, y1: sectorsReversed.length - 0.5,
+            line: { color: '#f59e0b', width: 2, dash: 'dash' }
+          },
+          {
+            type: 'line',
+            x0: 10, x1: 10,
+            y0: -0.5, y1: sectorsReversed.length - 0.5,
+            line: { color: '#f43f5e', width: 2, dash: 'dot' }
+          }
+        ],
+        annotations: [
+          {
+            x: 5, y: sectorsReversed.length - 0.5,
+            text: 'Batas VIF=5',
+            showarrow: false,
+            font: { size: 9, color: '#f59e0b', weight: 'bold' },
+            yshift: 12
+          },
+          {
+            x: 10, y: sectorsReversed.length - 0.5,
+            text: 'Batas VIF=10',
+            showarrow: false,
+            font: { size: 9, color: '#f43f5e', weight: 'bold' },
+            yshift: 12
+          }
+        ]
+      };
+
+      Plotly.newPlot('chartMultiVif', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function renderMultiCrossHeatmap(data) {
+      const crossObj = data.cross_transport_matrix;
+      if (!crossObj || !crossObj.matrix || !crossObj.sector_labels) return;
+
+      const labels = crossObj.sector_labels;
+      const transCols = ["✈️ Penumpang", "🧳 Bagasi", "📦 Barang"];
+      const zValues = crossObj.matrix;
+      const pValues = crossObj.p_values || [];
+      const shortLabels = labels.map(l => l.length > 20 ? l.substring(0, 18) + '...' : l);
+
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+
+      const textAnnotations = [];
+      for (let i = 0; i < labels.length; i++) {
+        for (let j = 0; j < 3; j++) {
+          const val = zValues[i]?.[j] || 0;
+          const p = pValues[i]?.[j] || 1;
+          const sigStar = p < 0.01 ? '***' : (p < 0.05 ? '**' : (p < 0.10 ? '*' : ''));
+          const isHigh = Math.abs(val) >= 0.7;
+
+          textAnnotations.push({
+            xref: 'x1',
+            yref: 'y1',
+            x: transCols[j],
+            y: shortLabels[i],
+            text: `${val.toFixed(2)}${sigStar}`,
+            font: {
+              family: 'Inter',
+              size: 11,
+              color: isHigh ? '#ffffff' : (isDarkMode ? '#e2e8f0' : '#1e293b'),
+              weight: isHigh ? 'bold' : 'normal'
+            },
+            showarrow: false
+          });
+        }
+      }
+
+      const trace = {
+        z: zValues,
+        x: transCols,
+        y: shortLabels,
+        type: 'heatmap',
+        colorscale: [
+          [0.0, '#3b82f6'],
+          [0.5, '#f8fafc'],
+          [0.8, '#f59e0b'],
+          [1.0, '#ef4444']
+        ],
+        zmin: -1.0,
+        zmax: 1.0,
+        hoverongaps: false,
+        hovertemplate: '<b>%{y}</b> → <b>%{x}</b><br>Korelasi (r): <b>%{z:.4f}</b><extra></extra>',
+        colorbar: {
+          title: 'Koefisien (r)',
+          titleside: 'top',
+          tickvals: [-1.0, -0.5, 0.0, 0.5, 0.8, 1.0],
+          tickfont: { size: 10, color: textColor }
+        }
+      };
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: textColor, family: 'Inter' },
+        margin: { l: 120, r: 20, t: 20, b: 40 },
+        xaxis: { tickfont: { size: 11, weight: 'bold' } },
+        yaxis: { autorange: 'reversed', tickfont: { size: 10 } },
+        annotations: textAnnotations
+      };
+
+      Plotly.newPlot('chartMultiCrossHeatmap', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function renderMultiCrossBarChart(data) {
+      const crossObj = data.cross_transport_matrix;
+      if (!crossObj || !crossObj.matrix || !crossObj.sector_labels) return;
+
+      const labels = crossObj.sector_labels;
+      const shortLabels = labels.map(l => l.length > 18 ? l.substring(0, 16) + '...' : l).reverse();
+      const zValues = crossObj.matrix;
+
+      const pVals = labels.map((_, idx) => zValues[idx]?.[0] || 0).reverse();
+      const bagVals = labels.map((_, idx) => zValues[idx]?.[1] || 0).reverse();
+      const barVals = labels.map((_, idx) => zValues[idx]?.[2] || 0).reverse();
+
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+
+      const traceP = {
+        name: 'Penumpang',
+        type: 'bar',
+        orientation: 'h',
+        x: pVals,
+        y: shortLabels,
+        marker: { color: '#0ea5e9' },
+        hovertemplate: '<b>%{y}</b> (Penumpang)<br>r = %{x:.4f}<extra></extra>'
+      };
+
+      const traceBag = {
+        name: 'Bagasi',
+        type: 'bar',
+        orientation: 'h',
+        x: bagVals,
+        y: shortLabels,
+        marker: { color: '#a855f7' },
+        hovertemplate: '<b>%{y}</b> (Bagasi)<br>r = %{x:.4f}<extra></extra>'
+      };
+
+      const traceBar = {
+        name: 'Barang',
+        type: 'bar',
+        orientation: 'h',
+        x: barVals,
+        y: shortLabels,
+        marker: { color: '#10b981' },
+        hovertemplate: '<b>%{y}</b> (Barang)<br>r = %{x:.4f}<extra></extra>'
+      };
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: textColor, family: 'Inter' },
+        margin: { l: 110, r: 20, t: 10, b: 40 },
+        barmode: 'group',
+        bargap: 0.2,
+        bargroupgap: 0.1,
+        xaxis: {
+          title: 'Korelasi Pearson (r)',
+          gridcolor: gridColor,
+          range: [-1.05, 1.05],
+          zeroline: true,
+          zerolinecolor: isDarkMode ? '#475569' : '#94a3b8'
+        },
+        yaxis: { tickfont: { size: 10 } },
+        showlegend: false
+      };
+
+      Plotly.newPlot('chartMultiCrossBar', [traceP, traceBag, traceBar], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function renderMultiTransportHeatmap(data) {
+      const transObj = data.transport_multicollinearity;
+      if (!transObj || !transObj.matrix || !transObj.matrix.matrix) return;
+
+      const matrix = transObj.matrix.matrix;
+      const transLabels = ["✈️ Penumpang", "🧳 Bagasi", "📦 Barang"];
+
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+
+      const textAnnotations = [];
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const val = matrix[i]?.[j] || 0;
+          const isHigh = Math.abs(val) >= 0.8;
+          textAnnotations.push({
+            xref: 'x1',
+            yref: 'y1',
+            x: transLabels[j],
+            y: transLabels[i],
+            text: val.toFixed(2),
+            font: {
+              family: 'Inter',
+              size: 13,
+              color: isHigh ? '#ffffff' : (isDarkMode ? '#e2e8f0' : '#1e293b'),
+              weight: 'bold'
+            },
+            showarrow: false
+          });
+        }
+      }
+
+      const trace = {
+        z: matrix,
+        x: transLabels,
+        y: transLabels,
+        type: 'heatmap',
+        colorscale: [
+          [0.0, '#3b82f6'],
+          [0.5, '#f8fafc'],
+          [0.8, '#f59e0b'],
+          [1.0, '#ef4444']
+        ],
+        zmin: -1.0,
+        zmax: 1.0,
+        hoverongaps: false,
+        hovertemplate: '<b>%{y}</b> ↔ <b>%{x}</b><br>Korelasi: <b>%{z:.4f}</b><extra></extra>',
+        colorbar: {
+          title: 'r',
+          titleside: 'top',
+          tickvals: [-1.0, -0.5, 0.0, 0.5, 0.8, 1.0],
+          tickfont: { size: 10, color: textColor }
+        }
+      };
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: textColor, family: 'Inter' },
+        margin: { l: 90, r: 20, t: 20, b: 40 },
+        xaxis: { tickfont: { size: 11, weight: 'bold' } },
+        yaxis: { autorange: 'reversed', tickfont: { size: 11, weight: 'bold' } },
+        annotations: textAnnotations
+      };
+
+      Plotly.newPlot('chartMultiTransportHeatmap', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function renderMultiTransportVifChart(data) {
+      const transObj = data.transport_multicollinearity;
+      if (!transObj || !transObj.vif_results || transObj.vif_results.length === 0) return;
+
+      const vifs = transObj.vif_results;
+      const inds = vifs.map(v => v.indicator).reverse();
+      const vifVals = vifs.map(v => v.vif).reverse();
+      const colors = vifs.map(v => v.vif >= 10 ? '#f43f5e' : (v.vif >= 5 ? '#f59e0b' : '#10b981')).reverse();
+
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+      const maxVal = Math.max(...vifVals, 12);
+
+      const trace = {
+        type: 'bar',
+        orientation: 'h',
+        x: vifVals,
+        y: inds,
+        text: vifVals.map(v => `VIF: ${v.toFixed(2)}`),
+        textposition: 'auto',
+        marker: {
+          color: colors,
+          line: { color: isDarkMode ? '#0f172a' : '#ffffff', width: 1.5 }
+        },
+        hovertemplate: '<b>%{y}</b><br>VIF: <b>%{x:.3f}</b><extra></extra>'
+      };
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: textColor, family: 'Inter' },
+        margin: { l: 90, r: 25, t: 20, b: 40 },
+        xaxis: {
+          title: 'Variance Inflation Factor (VIF)',
+          gridcolor: gridColor,
+          range: [0, maxVal * 1.15]
+        },
+        yaxis: { tickfont: { size: 11, weight: 'bold' } },
+        shapes: [
+          {
+            type: 'line',
+            x0: 5, x1: 5,
+            y0: -0.5, y1: 2.5,
+            line: { color: '#f59e0b', width: 2, dash: 'dash' }
+          },
+          {
+            type: 'line',
+            x0: 10, x1: 10,
+            y0: -0.5, y1: 2.5,
+            line: { color: '#f43f5e', width: 2, dash: 'dot' }
+          }
+        ],
+        annotations: [
+          {
+            x: 5, y: 2.5,
+            text: 'Batas VIF=5',
+            showarrow: false,
+            font: { size: 9, color: '#f59e0b', weight: 'bold' },
+            yshift: 12
+          },
+          {
+            x: 10, y: 2.5,
+            text: 'Batas VIF=10',
+            showarrow: false,
+            font: { size: 9, color: '#f43f5e', weight: 'bold' },
+            yshift: 12
+          }
+        ]
+      };
+
+      Plotly.newPlot('chartMultiTransportVif', [trace], layout, { responsive: true, displayModeBar: false });
     }
   </script>
 </body>

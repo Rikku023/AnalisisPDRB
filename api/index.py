@@ -17,6 +17,7 @@ from fastapi import FastAPI, Request, Query, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 from scipy.stats import pearsonr
@@ -1125,6 +1126,474 @@ async def get_raw_sheet(
 
 
 # ======================================================================================
+# MULTICOLLINEARITY & VIF DIAGNOSTIC ENGINE (Pure NumPy Matrix Algebra)
+# ======================================================================================
+
+def _normalize_name(s: str) -> str:
+    """Membersihkan dan menormalisasi string nama sektor untuk pencocokan toleran tanda baca."""
+    s = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', s, flags=re.IGNORECASE)
+    s = re.sub(r'[^\w\s]', ' ', s).lower()
+    return ' '.join(s.split())
+
+
+_SECTOR_ALIASES: Dict[str, str] = {
+    'ekspor luar negeri': 'ekspor barang dan jasa',
+    'impor luar negeri': 'impor barang dan jasa',
+}
+
+
+class MulticoRequest(BaseModel):
+    """Schema input untuk endpoint POST multikolinearitas."""
+    province: str = "sulawesi_selatan"
+    price_type: str = "HK"
+    analysis_mode: str = "growth_yoy"
+    category: str = "lu"
+    sectors: Optional[List[str]] = None
+
+
+@functools.lru_cache(maxsize=256)
+def _compute_multicollinearity_cached(
+    province: str,
+    price_type: str,
+    analysis_mode: str,
+    category: str,
+    sectors_tuple: Tuple[str, ...]
+) -> Dict[str, Any]:
+    """
+    Kalkulasi Diagnostik Multikolinearitas Antar-Sektor:
+    1. Matriks Korelasi Pearson R (k x k)
+    2. Invers Matriks Korelasi R^-1 via np.linalg.pinv(R)
+    3. Variance Inflation Factor (VIF_j = diag(R^-1)_jj)
+    4. Tolerance (1 / VIF_j)
+    5. Condition Number (np.linalg.cond(R))
+    6. Rekomendasi Ekonometrika Otomatis
+    """
+    sectors = list(sectors_tuple)
+    if not sectors or len(sectors) < 2:
+        return {
+            "status": "error",
+            "message": "Minimal 2 sektor harus dipilih untuk kalkulasi multikolinearitas (VIF & Korelasi Antar-Sektor)."
+        }
+
+    is_growth = analysis_mode.startswith("growth_")
+    periods = 4 if "yoy" in analysis_mode else 1
+    pt = "HB" if (price_type.upper() == "HB" or analysis_mode.endswith("_hb") or analysis_mode == "abs_hb") else "HK"
+
+    if is_growth:
+        df_data = _get_growth_df_cached(province, periods)
+    else:
+        df_data, _ = _build_multi_year_df_cached(province)
+
+    if df_data.empty:
+        return {
+            "status": "error",
+            "message": f"Data multi-tahun untuk provinsi {province} tidak ditemukan."
+        }
+
+    prefix = ("LU (HB)" if pt == "HB" else "LU (HK)") if category == "lu" else ("Peng (HB)" if pt == "HB" else "Peng (HK)")
+    available_cols = [c for c in df_data.columns if c.lower().startswith(prefix.lower())]
+
+    # Pencocokan nama sektor dengan kolom aktual pada DataFrame secara toleran tanda baca (koma, titik koma, dsb.)
+    matched_cols = []
+    matched_labels = []
+
+    for sec in sectors:
+        norm_sec = _normalize_name(sec)
+        alias_sec = _SECTOR_ALIASES.get(norm_sec, norm_sec)
+
+        found_col = None
+        # 1. Exact match setelah normalisasi
+        for c in available_cols:
+            norm_c = _normalize_name(c)
+            if norm_sec == norm_c or alias_sec == norm_c:
+                found_col = c
+                break
+
+        # 2. Contains match fallback
+        if not found_col:
+            for c in available_cols:
+                norm_c = _normalize_name(c)
+                if norm_sec in norm_c or norm_c in norm_sec or alias_sec in norm_c or norm_c in alias_sec:
+                    found_col = c
+                    break
+
+        if found_col and found_col not in matched_cols:
+            matched_cols.append(found_col)
+            # Format label bersih
+            clean_label = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', found_col).strip()
+            matched_labels.append(clean_label)
+
+    if len(matched_cols) < 2:
+        return {
+            "status": "error",
+            "message": f"Hanya ditemukan {len(matched_cols)} kolom valid dari {len(sectors)} sektor yang dipilih. Minimal dibutuhkan 2 sektor yang cocok."
+        }
+
+    sub_df = df_data[matched_cols].dropna()
+    if len(sub_df) < 3:
+        return {
+            "status": "error",
+            "message": f"Jumlah observasi valid ({len(sub_df)} baris) tidak mencukupi untuk estimasi matriks korelasi."
+        }
+
+    # 1. Matriks Korelasi Pearson R (k x k)
+    R = sub_df.corr().values
+    R = np.nan_to_num(R, nan=0.0)
+    np.fill_diagonal(R, 1.0)
+
+    # 2. Invers Matriks Korelasi R^-1 menggunakan Moore-Penrose Pseudo-Inverse
+    try:
+        R_inv = np.linalg.pinv(R)
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Gagal menghitung invers matriks korelasi: {e}"
+        }
+
+    # 3. VIF = Diagonal Elemen dari R^-1
+    vifs = np.diag(R_inv)
+
+    # 4. Condition Number
+    try:
+        cond_num = float(np.linalg.cond(R))
+    except Exception:
+        cond_num = 1.0
+
+    k = len(matched_labels)
+    vif_results = []
+    has_multicollinearity = False
+    high_corr_pairs = []
+
+    for i in range(k):
+        vif_val = float(vifs[i])
+        # Secara teoritis VIF >= 1.0; koreksi anomali floating point
+        if vif_val < 1.0:
+            vif_val = 1.0
+        tol_val = float(1.0 / vif_val) if vif_val > 0 else 0.0
+
+        if vif_val >= 10.0:
+            status_str = "Multiko Berat (≥ 10)"
+            badge_color = "red"
+            has_multicollinearity = True
+        elif vif_val >= 5.0:
+            status_str = "Multiko Sedang (5 - 10)"
+            badge_color = "yellow"
+            has_multicollinearity = True
+        else:
+            status_str = "Aman (< 5)"
+            badge_color = "green"
+
+        vif_results.append({
+            "sector": matched_labels[i],
+            "vif": round(vif_val, 3),
+            "tolerance": round(tol_val, 4),
+            "status": status_str,
+            "badge_color": badge_color
+        })
+
+    # Evaluasi Condition Number
+    if cond_num > 30.0:
+        has_multicollinearity = True
+    elif cond_num > 15.0 and any(v["vif"] >= 5.0 for v in vif_results):
+        has_multicollinearity = True
+
+    # 5. Deteksi Pasangan Sektor Berkorelasi Sangat Tinggi (|r| >= 0.80)
+    for i in range(k):
+        for j in range(i + 1, k):
+            r_val = float(R[i, j])
+            if abs(r_val) >= 0.80:
+                high_corr_pairs.append({
+                    "sector_a": matched_labels[i],
+                    "sector_b": matched_labels[j],
+                    "r": round(r_val, 4)
+                })
+
+    # 6. Formulasi Rekomendasi Ekonometrika
+    recommendations = []
+    if cond_num > 30.0:
+        recommendations.append(
+            f"Condition Number bernilai {cond_num:.2f} (> 30), mengindikasikan struktur data mengalami multikolinearitas berat."
+        )
+    elif cond_num > 15.0:
+        recommendations.append(
+            f"Condition Number bernilai {cond_num:.2f} (15–30), mengindikasikan gejala multikolinearitas moderat."
+        )
+
+    if high_corr_pairs:
+        # Urutkan berdasarkan nilai korelasi absolut tertinggi
+        high_corr_pairs.sort(key=lambda x: abs(x["r"]), reverse=True)
+        top_pair = high_corr_pairs[0]
+        recommendations.append(
+            f"Sektor '{top_pair['sector_a']}' dan '{top_pair['sector_b']}' memiliki korelasi sangat tinggi (r = {top_pair['r']:.2f}). "
+            f"Disarankan hanya memasukkan salah satu sektor ke dalam model regresi berganda."
+        )
+        if len(high_corr_pairs) > 1:
+            other_pairs_str = ", ".join([f"'{p['sector_a']}' & '{p['sector_b']}' (r={p['r']:.2f})" for p in high_corr_pairs[1:3]])
+            recommendations.append(f"Pasangan lain dengan korelasi tinggi: {other_pairs_str}.")
+
+    # Rekomendasi sektor VIF tertinggi jika ada multiko berat
+    severe_vifs = [v for v in vif_results if v["vif"] >= 10.0]
+    if severe_vifs:
+        max_vif_sec = max(severe_vifs, key=lambda x: x["vif"])
+        recommendations.append(
+            f"Sektor '{max_vif_sec['sector']}' memiliki VIF tertinggi ({max_vif_sec['vif']:.2f}). "
+            f"Pertimbangkan untuk mengeluarkan variabel ini atau menggunakan metode regularisasi (Ridge/Lasso Regression)."
+        )
+
+    if not has_multicollinearity and not high_corr_pairs:
+        recommendation_str = (
+            "Tidak ditemukan gejala multikolinearitas yang signifikan (seluruh VIF < 5 dan Condition Number aman). "
+            "Seluruh sektor yang dipilih dapat diikutsertakan bersamaan dalam model regresi berganda."
+        )
+    else:
+        recommendation_str = " ".join(recommendations)
+
+    # 7. Kalkulasi Multikolinearitas Antar-Indikator Transportasi (Penumpang, Bagasi, Barang)
+    p_col = next((c for c in df_data.columns if "penumpang" in c.lower()), None)
+    bag_col = next((c for c in df_data.columns if "bagasi" in c.lower()), None)
+    bar_col = next((c for c in df_data.columns if "barang" in c.lower()), None)
+
+    valid_trans = [("Penumpang", p_col), ("Bagasi", bag_col), ("Barang", bar_col)]
+    trans_labels = [l for l, c in valid_trans if c is not None and c in df_data.columns]
+    trans_cols = [c for l, c in valid_trans if c is not None and c in df_data.columns]
+
+    transport_multicollinearity = {
+        "condition_number": 1.0,
+        "has_multicollinearity": False,
+        "vif_results": [],
+        "matrix": {
+            "labels": trans_labels,
+            "matrix": []
+        },
+        "recommendation": "Data indikator transportasi tidak mencukupi untuk evaluasi multikolinearitas."
+    }
+
+    if len(trans_cols) >= 2:
+        sub_t = df_data[trans_cols].dropna()
+        if len(sub_t) >= 3:
+            R_t = sub_t.corr().values
+            R_t = np.nan_to_num(R_t, nan=0.0)
+            np.fill_diagonal(R_t, 1.0)
+            try:
+                R_t_inv = np.linalg.pinv(R_t)
+                vifs_t = np.diag(R_t_inv)
+            except Exception:
+                vifs_t = [1.0] * len(trans_cols)
+
+            try:
+                cond_num_t = float(np.linalg.cond(R_t))
+            except Exception:
+                cond_num_t = 1.0
+
+            trans_vif_results = []
+            has_multi_t = False
+            for idx_t, t_label in enumerate(trans_labels):
+                val_t = float(vifs_t[idx_t])
+                if val_t < 1.0:
+                    val_t = 1.0
+                tol_t = float(1.0 / val_t) if val_t > 0 else 0.0
+
+                if val_t >= 10.0:
+                    status_t = "Multiko Berat (≥ 10)"
+                    badge_t = "red"
+                    has_multi_t = True
+                elif val_t >= 5.0:
+                    status_t = "Multiko Sedang (5 - 10)"
+                    badge_t = "yellow"
+                    has_multi_t = True
+                else:
+                    status_t = "Aman (< 5)"
+                    badge_t = "green"
+
+                trans_vif_results.append({
+                    "indicator": t_label,
+                    "vif": round(val_t, 3),
+                    "tolerance": round(tol_t, 4),
+                    "status": status_t,
+                    "badge_color": badge_t
+                })
+
+            if cond_num_t > 30.0 or (cond_num_t > 15.0 and any(v["vif"] >= 5.0 for v in trans_vif_results)):
+                has_multi_t = True
+
+            # Formulasi rekomendasi transportasi
+            rec_t = []
+            if has_multi_t:
+                rec_t.append(
+                    f"Terdeteksi multikolinearitas antar-indikator transportasi (Condition Number = {cond_num_t:.2f})."
+                )
+                r_pb = float(R_t[0, 1]) if len(trans_labels) >= 2 else 0.0
+                if abs(r_pb) >= 0.8:
+                    rec_t.append(
+                        f"Indikator '{trans_labels[0]}' dan '{trans_labels[1]}' memiliki korelasi linear sangat kuat (r = {r_pb:.2f}). "
+                        f"Hindari memasukkan keduanya secara bersamaan sebagai prediktor simultan dalam satu model regresi OLS; "
+                        f"disarankan memilih salah satu target atau menerapkan reduksi dimensi (PCA)."
+                    )
+            else:
+                rec_t.append(
+                    "Indikator transportasi (Penumpang, Bagasi, Barang) memiliki VIF < 5 dan Condition Number aman. "
+                    "Seluruh indikator aman digabungkan bersamaan dalam analisis regresi multivariat."
+                )
+
+            transport_multicollinearity = {
+                "condition_number": round(cond_num_t, 2),
+                "has_multicollinearity": has_multi_t,
+                "vif_results": trans_vif_results,
+                "matrix": {
+                    "labels": trans_labels,
+                    "matrix": [[round(float(val), 4) for val in row] for row in R_t]
+                },
+                "recommendation": " ".join(rec_t)
+            }
+
+    # 8. Matriks Korelasi Silang (PDRB Sektor × Indikator Transportasi)
+    cross_matrix = []
+    cross_p_values = []
+    strongest_targets = []
+
+    for idx_s, sec_col in enumerate(matched_cols):
+        sec_r_row = []
+        sec_p_row = []
+        best_t = None
+        best_r = None
+        best_p = 1.0
+
+        for t_col, t_label in zip(trans_cols, trans_labels):
+            sub_cross = df_data[[sec_col, t_col]].dropna()
+            if len(sub_cross) >= 3:
+                r_cross, p_cross = pearsonr(sub_cross[sec_col], sub_cross[t_col])
+                if np.isnan(r_cross):
+                    r_cross = 0.0
+                    p_cross = 1.0
+            else:
+                r_cross, p_cross = 0.0, 1.0
+
+            r_val_rounded = round(float(r_cross), 4)
+            p_val_rounded = round(float(p_cross), 4)
+            sec_r_row.append(r_val_rounded)
+            sec_p_row.append(p_val_rounded)
+
+            if best_r is None or abs(r_cross) > abs(best_r):
+                best_r = r_cross
+                best_p = p_cross
+                best_t = t_label
+
+        cross_matrix.append(sec_r_row)
+        cross_p_values.append(sec_p_row)
+        strongest_targets.append({
+            "sector": matched_labels[idx_s],
+            "best_target": best_t or "Penumpang",
+            "r": round(float(best_r if best_r is not None else 0.0), 4),
+            "p": round(float(best_p), 4)
+        })
+
+    cross_transport_matrix = {
+        "sector_labels": matched_labels,
+        "transport_labels": trans_labels,
+        "matrix": cross_matrix,
+        "p_values": cross_p_values,
+        "strongest_targets": strongest_targets
+    }
+
+    return {
+        "status": "success",
+        "condition_number": round(cond_num, 2),
+        "has_multicollinearity": has_multicollinearity,
+        "vif_results": vif_results,
+        "inter_sector_matrix": {
+            "labels": matched_labels,
+            "matrix": [[round(float(val), 4) for val in row] for row in R]
+        },
+        "cross_transport_matrix": cross_transport_matrix,
+        "transport_multicollinearity": transport_multicollinearity,
+        "recommendation": recommendation_str
+    }
+
+
+def compute_multicollinearity(
+    province: str = "sulawesi_selatan",
+    price_type: str = "HK",
+    analysis_mode: str = "growth_yoy",
+    category: str = "lu",
+    sectors: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Public wrapper untuk kalkulasi multikolinearitas."""
+    if not sectors:
+        # Default core sectors
+        if category == "lu":
+            sectors = [
+                "Industri Pengolahan",
+                "Konstruksi",
+                "Perdagangan Besar dan Eceran, Reparasi Mobil dan Sepeda Motor",
+                "Transportasi dan Pergudangan",
+                "Penyediaan Akomodasi dan Makan Minum",
+                "Pengadaan Air, Pengelolaan Sampah, Limbah, dan Daur Ulang"
+            ]
+        else:
+            sectors = [
+                "Pengeluaran Konsumsi Rumah Tangga",
+                "Pembentukan Modal Tetap Bruto",
+                "Ekspor Barang dan Jasa",
+                "Impor Barang dan Jasa"
+            ]
+
+    # Filter empty / whitespace-only entries
+    clean_sectors = [s.strip() for s in sectors if s and s.strip()]
+
+    sectors_tuple = tuple(sorted(clean_sectors))
+    return _compute_multicollinearity_cached(
+        province=province,
+        price_type=price_type,
+        analysis_mode=analysis_mode,
+        category=category,
+        sectors_tuple=sectors_tuple
+    )
+
+
+@app.post("/api/multicollinearity")
+async def post_multicollinearity(req: MulticoRequest):
+    """
+    Endpoint POST Diagnostik Multikolinearitas (VIF & Korelasi Antar-Sektor).
+    Menerima body JSON dengan schema MulticoRequest agar nama sektor dengan tanda koma
+    tidak terpecah saat parsing.
+    """
+    res = compute_multicollinearity(
+        province=req.province,
+        price_type=req.price_type,
+        analysis_mode=req.analysis_mode,
+        category=req.category,
+        sectors=req.sectors
+    )
+    if res.get("status") == "error":
+        return JSONResponse(status_code=400, content=res, headers=CACHE_HEADERS)
+    return cached_json_response(res)
+
+
+@app.get("/api/multicollinearity")
+async def get_multicollinearity(
+    province: str = "sulawesi_selatan",
+    price_type: str = "HK",
+    analysis_mode: str = "growth_yoy",
+    category: str = "lu",
+    sectors: Optional[List[str]] = Query(default=None)
+):
+    """
+    Endpoint GET Diagnostik Multikolinearitas (VIF & Korelasi Antar-Sektor).
+    Mendukung query parameter untuk backward-compatibility.
+    """
+    res = compute_multicollinearity(
+        province=province,
+        price_type=price_type,
+        analysis_mode=analysis_mode,
+        category=category,
+        sectors=sectors
+    )
+    if res.get("status") == "error":
+        return JSONResponse(status_code=400, content=res, headers=CACHE_HEADERS)
+    return cached_json_response(res)
+
+
+# ======================================================================================
 # STARTUP CACHE PRE-WARMING
 # ======================================================================================
 
@@ -1141,9 +1610,17 @@ def prewarm_all_caches():
                 for pt in ["HK", "HB", "ALL"]:
                     _get_growth_correlation_matrix_cached(p, 4, cat, pt)
                     _get_growth_correlation_matrix_cached(p, 1, cat, pt)
-        print(f"⚡ In-memory cache pre-warmed for {len(prov_list)} provinces.")
+            # Prewarm default multicollinearity
+            compute_multicollinearity(province=p, price_type="HK", analysis_mode="growth_yoy", category="lu")
+        try:
+            print(f"⚡ In-memory cache pre-warmed for {len(prov_list)} provinces.")
+        except Exception:
+            pass
     except Exception as e:
-        print(f"⚠️ Cache pre-warming note: {e}")
+        try:
+            print(f"⚠️ Cache pre-warming note: {e}")
+        except Exception:
+            pass
 
 
 # Jalankan pre-warming saat startup aplikasi
@@ -1154,3 +1631,4 @@ def on_startup():
 
 # Jalankan synchronous warmup untuk lingkungan serverless cold-start
 prewarm_all_caches()
+
