@@ -1,22 +1,9 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": [
-          "data/**",
-          "templates/**",
-          "public/**"
-        ]
-      }
-    }
-  ],
   "functions": {
     "api/index.py": {
-      "memory": 1024,
-      "maxDuration": 30
+      "includeFiles": "{data/**,templates/**,public/**}",
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "headers": [
