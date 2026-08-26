@@ -33,7 +33,15 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+  <!-- KaTeX for crisp mathematical formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" onload="renderKatexMath()"></script>
+
   <style>
+    /* KaTeX Typography Polish */
+    .katex-display { margin: 0.3em 0 !important; }
+    .katex { font-size: 1.05em; text-rendering: auto; }
     body {
       font-family: 'Inter', sans-serif;
       transition: background-color 0.3s ease, color 0.3s ease;
@@ -986,6 +994,174 @@
           </div>
         </div>
 
+        <!-- Educational Formula & Econometric Foundation Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800/80 gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-base shrink-0">
+                <i class="fa-solid fa-square-root-variable"></i>
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Landasan Teori &amp; Rumus Perhitungan Diagnostik Multikolinearitas</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 font-mono font-normal">Metodologi Ekonometrika</span>
+                </h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Formulasi matematis dan hubungan keterkaitan antar-indikator: Koefisien Korelasi ($r$), Determinasi ($R_j^2$), Tolerance ($T_j$), dan Variance Inflation Factor ($\text{VIF}_j$).
+                </p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-mono font-semibold border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto shrink-0">
+              Derivasi Matriks OLS
+            </span>
+          </div>
+
+          <!-- 4 Formula Cards Grid (2x2) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- Card 1: Koefisien Korelasi Pearson (r) -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs">
+                  <i class="fa-solid fa-braille"></i> 1. Koefisien Korelasi Pearson ($r$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Rentang: $[-1.0, +1.0]$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-sky-600 dark:text-sky-300 font-semibold">
+                  $$r_{ij} = \frac{\text{Cov}(X_i, X_j)}{\sigma_{X_i} \cdot \sigma_{X_j}}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$r_{ij} = \frac{\sum_{t=1}^N (X_{it} - \bar{X}_i)(X_{jt} - \bar{X}_j)}{\sqrt{\sum_{t=1}^N (X_{it} - \bar{X}_i)^2 \cdot \sum_{t=1}^N (X_{jt} - \bar{X}_j)^2}}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Mengukur derajat asosiasi linear dan arah hubungan bivariat antara sektor $X_i$ dan $X_j$. Nilai $r_{ij}$ membentuk Matriks Korelasi Simetris $\mathbf{R}_{k \times k}$ dengan diagonal utama bernilai $1.0$.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Variabel:</strong> $X_{it}$: observasi sektor $i$ periode $t$; $\bar{X}_i$: rata-rata sampel; $\sigma$: standar deviasi sampel.</p>
+              </div>
+            </div>
+
+            <!-- Card 2: Koefisien Determinasi Parsial (R_j^2) -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                  <i class="fa-solid fa-chart-pie"></i> 2. Koefisien Determinasi Parsial ($R_j^2$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Rentang: $[0.0, 1.0)$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-amber-600 dark:text-amber-300 font-semibold">
+                  $$R_j^2 = 1 - \frac{1}{(\mathbf{R}^{-1})_{jj}}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$X_j = \alpha + \sum_{m \ne j} \beta_m X_m + e_j \implies R_j^2 = 1 - \frac{SS_{\text{res}}}{SS_{\text{tot}}}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Koefisien determinasi dari regresi pembantu (<em>auxiliary regression</em>), yaitu proporsi varians sektor $X_j$ yang dapat dijelaskan secara linier oleh kombinasi $(k - 1)$ sektor prediktor lainnya.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Implikasi:</strong> Semakin tinggi $R_j^2$ mendekati $1.0$, semakin besar redundansi informasi sektor $X_j$ terhadap sektor lainnya dalam model regresi.</p>
+              </div>
+            </div>
+
+            <!-- Card 3: Tolerance Value (T_j) -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                  <i class="fa-solid fa-shield-halved"></i> 3. Tolerance Value ($T_j$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Rentang: $(0.0, 1.0]$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-emerald-600 dark:text-emerald-300 font-semibold">
+                  $$\text{Tolerance}_j = 1 - R_j^2 = \frac{1}{(\mathbf{R}^{-1})_{jj}} = \frac{1}{\text{VIF}_j}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$T_j \ge 0.20 \;\text{(Aman)} \quad|\quad 0.10 \le T_j < 0.20 \;\text{(Waspada)} \quad|\quad T_j < 0.10 \;\text{(Kritis)}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Proporsi varians sektor $X_j$ yang benar-benar <em>independen</em> (unik) dan tidak terduplikasi oleh variabel prediktor lain dalam spesifikasi model.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Hubungan:</strong> Nilai <em>Tolerance</em> berbanding terbalik dengan <em>VIF</em>. Jika $T_j = 0.15$, berarti $85\%$ variasi sektor $X_j$ terduplikasi oleh sektor lain.</p>
+              </div>
+            </div>
+
+            <!-- Card 4: Variance Inflation Factor (VIF_j) -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                  <i class="fa-solid fa-gauge-high"></i> 4. Variance Inflation Factor ($\text{VIF}_j$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Rentang: $[1.0, \infty)$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-indigo-600 dark:text-indigo-300 font-semibold">
+                  $$\text{VIF}_j = \frac{1}{1 - R_j^2} = (\mathbf{R}^{-1})_{jj}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$\text{VIF}_{\text{ridge}, j} = \left[ (\mathbf{R} + \lambda \mathbf{I})^{-1} \mathbf{R} (\mathbf{R} + \lambda \mathbf{I})^{-1} \right]_{jj} \quad (\lambda = 0.05)$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Faktor pengali pembesaran varians estimator koefisien regresi OLS: $\text{Var}(\hat{\beta}_j) = \frac{\sigma^2}{\sum (X_{jt} - \bar{X}_j)^2} \times \text{VIF}_j$.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Standard Error Inflated:</strong> Standard error koefisien membesar sebanyak $\sqrt{\text{VIF}_j}$ kali lipat. VIF $\ge 5$ mengindikasikan inflasi varians yang mengancam reliabilitas uji-t signifikansi.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom: Notasi Variabel & Rantai Keterkaitan Matematis -->
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 text-xs text-slate-600 dark:text-slate-300 space-y-3">
+            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-diagram-project text-indigo-500"></i>
+              <span>Rantai Keterkaitan Matematis (Mathematical Dependency Chain):</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center font-mono">
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 1</div>
+                <div class="font-bold text-sky-500 text-xs mt-1">Matriks Korelasi ($\mathbf{R}$)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1 font-semibold">$$\mathbf{R} = \frac{\mathbf{X}^T \mathbf{X}}{N-1}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 2</div>
+                <div class="font-bold text-indigo-500 text-xs mt-1">Inversi Matriks ($\mathbf{R}^{-1}$)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1 font-semibold">$$\mathbf{R}^{-1} \;\text{atau}\; (\mathbf{R} + \lambda \mathbf{I})^{-1}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 3</div>
+                <div class="font-bold text-emerald-500 text-xs mt-1">Tolerance ($T_j$)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1 font-semibold">$$T_j = \frac{1}{(\mathbf{R}^{-1})_{jj}}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 4</div>
+                <div class="font-bold text-rose-500 text-xs mt-1">VIF &amp; Evaluasi OLS</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1 font-semibold">$$\text{VIF}_j = \frac{1}{T_j} = (\mathbf{R}^{-1})_{jj}$$</div>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
+              <span><i class="fa-solid fa-check-double text-emerald-400 mr-1"></i> <strong>Kaidah Ekonometrika:</strong> Jika $\text{VIF} < 5$ ($T_j > 0.20$) dan Condition Number $\kappa < 15$, matriks berada pada kondisi reguler (<em>well-conditioned</em>) sehingga estimator OLS memenuhi kriteria <strong>BLUE</strong> (<em>Best Linear Unbiased Estimator</em>).</span>
+              <span class="font-mono text-[11px] text-slate-400">$$\kappa = \sqrt{\frac{\lambda_{\max}(\mathbf{R})}{\lambda_{\min}(\mathbf{R})}}$$</span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- ========================================================================= -->
@@ -1077,31 +1253,64 @@
         </div>
 
         <!-- Table & Econometric Target Selection Guidance -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <i class="fa-solid fa-list-check text-sky-500"></i>
-              Tabel Korelasi Silang & Rekomendasi Target Y Optimal
-            </h4>
-            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-72">
-              <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
-                  <tr>
-                    <th class="px-3 py-2.5">Sektor PDRB</th>
-                    <th class="px-3 py-2.5 text-right">r Penumpang</th>
-                    <th class="px-3 py-2.5 text-right">r Bagasi</th>
-                    <th class="px-3 py-2.5 text-right">r Barang</th>
-                    <th class="px-3 py-2.5 text-center">Target Y Terkuat</th>
-                  </tr>
-                </thead>
-                <tbody id="tblMultiCrossBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
-                  <!-- Rendered via JS -->
-                </tbody>
-              </table>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 flex flex-col justify-between min-h-[460px]">
+            <div>
+              <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+                <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-list-check text-sky-500"></i>
+                  <span>Tabel Korelasi Silang &amp; Rekomendasi Target Y Optimal</span>
+                </h4>
+                <span class="text-[11px] text-slate-400 font-mono">Klik header untuk sort</span>
+              </div>
+              <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-[480px]">
+                <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                  <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 select-none">
+                    <tr>
+                      <th onclick="sortMultiCrossTable('sector')" class="px-4 py-3 min-w-[200px] cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Sektor">
+                        <div class="flex items-center gap-1.5">
+                          <span>Sektor PDRB</span>
+                          <span id="crossSortIcon_sector"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                      <th onclick="sortMultiCrossTable('rp')" class="px-3 py-3 text-right w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan korelasi Penumpang">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <span>r Penumpang</span>
+                          <span id="crossSortIcon_rp"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                      <th onclick="sortMultiCrossTable('rbag')" class="px-3 py-3 text-right w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan korelasi Bagasi">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <span>r Bagasi</span>
+                          <span id="crossSortIcon_rbag"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                      <th onclick="sortMultiCrossTable('rbar')" class="px-3 py-3 text-right w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan korelasi Barang">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <span>r Barang</span>
+                          <span id="crossSortIcon_rbar"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                      <th onclick="sortMultiCrossTable('target')" class="px-3 py-3 text-center w-36 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Target Y Terkuat">
+                        <div class="flex items-center justify-center gap-1.5">
+                          <span>Target Terkuat</span>
+                          <span id="crossSortIcon_target"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="tblMultiCrossBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
+                    <!-- Rendered via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+              <span><i class="fa-solid fa-info-circle mr-1 text-sky-400"></i> Koefisien korelasi linear Pearson runtun waktu multi-tahun (N observasi pooled).</span>
             </div>
           </div>
 
-          <div class="lg:col-span-5 bg-gradient-to-br from-sky-900/40 via-slate-900 to-slate-950 border border-sky-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+          <div class="lg:col-span-5 bg-gradient-to-br from-sky-900/40 via-slate-900 to-slate-950 border border-sky-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 min-h-[460px]">
             <div class="space-y-3">
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-semibold">
                 <i class="fa-solid fa-bullseye"></i> Panduan Pemilihan Target (Y)
@@ -1112,14 +1321,181 @@
               </div>
             </div>
 
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1.5">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 text-[11px] text-slate-300 space-y-2">
               <div class="font-bold text-sky-400 flex items-center gap-1.5">
                 <i class="fa-solid fa-compass"></i> Pedoman Pemilihan Variabel Dependen:
               </div>
-              <ul class="list-disc list-inside space-y-1 text-slate-300">
-                <li><strong>Sektor Jasa/Akomodasi:</strong> Cenderung sensitif terhadap <em>Penumpang</em> dan <em>Bagasi</em>.</li>
-                <li><strong>Sektor Pertanian & Industri:</strong> Cenderung sensitif terhadap logistik <em>Barang (Kargo)</em>.</li>
+              <ul class="list-disc list-inside space-y-1.5 text-slate-300 leading-relaxed">
+                <li><strong>Sektor Jasa &amp; Pariwisata:</strong> Cenderung sensitif terhadap mobilitas <em>Penumpang</em> dan <em>Bagasi</em>.</li>
+                <li><strong>Sektor Primer &amp; Manufaktur:</strong> Cenderung sensitif terhadap logistik angkutan <em>Barang (Kargo)</em>.</li>
               </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Educational Formula & Econometric Foundation Card for Cross-Correlation -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800/80 gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-base shrink-0">
+                <i class="fa-solid fa-arrows-split-up-and-left"></i>
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Landasan Teori &amp; Formulasi Korelasi Silang Sektoral ($X \times Y$)</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 font-mono font-normal">Cross-Sectoral Association</span>
+                </h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Prinsip pengukuran transmisi output sektoral PDRB ($X_i$) terhadap indikator aktivitas transportasi ($Y_j$: Penumpang, Bagasi, dan Kargo).
+                </p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-mono font-semibold border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto shrink-0">
+              Analisis Bivariat Silang
+            </span>
+          </div>
+
+          <!-- 4 Formula Cards Grid (2x2) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- Card 1: Matriks Korelasi Silang -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs">
+                  <i class="fa-solid fa-table-cells"></i> 1. Matriks Korelasi Silang ($\mathbf{R}_{XY}$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Dimensi: $k \times 3$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-sky-600 dark:text-sky-300 font-semibold">
+                  $$\mathbf{R}_{XY} = \frac{\mathbf{Z}_X^T \mathbf{Z}_Y}{N - 1} = \left[ r(X_i, Y_j) \right]_{k \times 3}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$r(X_i, Y_j) = \frac{\sum_{t=1}^N (X_{it} - \bar{X}_i)(Y_{jt} - \bar{Y}_j)}{\sqrt{\sum_{t=1}^N (X_{it} - \bar{X}_i)^2 \cdot \sum_{t=1}^N (Y_{jt} - \bar{Y}_j)^2}}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Mengukur keeratan asosiasi linear langsung antara pertumbuhan/nilai output sektor PDRB ke-$i$ dengan moda transportasi ke-$j$.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Dimensi:</strong> $\mathbf{Z}_X$ matriks $N \times k$ data PDRB terstandarisasi, $\mathbf{Z}_Y$ matriks $N \times 3$ data transportasi terstandarisasi.</p>
+              </div>
+            </div>
+
+            <!-- Card 2: Uji-t Signifikansi Student -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold text-xs">
+                  <i class="fa-solid fa-calculator"></i> 2. Uji Signifikansi Student's $t$ ($p$-value)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">df = $N - 2$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-purple-600 dark:text-purple-300 font-semibold">
+                  $$t = \frac{r \sqrt{N - 2}}{\sqrt{1 - r^2}} \sim t_{(N-2)}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$p\text{-value} = 2 \times \left(1 - F_t(|t|;\, N-2)\right)$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Uji Hipotesis:</strong> $H_0: \rho = 0$ (tidak berkorelasi) vs $H_1: \rho \ne 0$. Jika $p < 0.05$, hubungan korelasi dinyatakan signifikan secara statistik.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Level:</strong> $^{***}\; p<0.01$ (Sangat Kuat), $^{**}\; p<0.05$ (Signifikan), $^{*}\; p<0.10$ (Moderat).</p>
+              </div>
+            </div>
+
+            <!-- Card 3: Koefisien Determinasi Parsial Sektoral -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                  <i class="fa-solid fa-chart-pie"></i> 3. Daya Penjelas Sektoral ($r^2$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Rentang: $[0.0, 1.0]$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-emerald-600 dark:text-emerald-300 font-semibold">
+                  $$r_{ij}^2 = \frac{[\text{Cov}(X_i, Y_j)]^2}{\text{Var}(X_i) \cdot \text{Var}(Y_j)}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$\text{Kontribusi Varians: } \Delta Y_j\% \propto r_{ij}^2 \times 100\%$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Mengukur persentase fluktuasi moda transportasi $Y_j$ yang dapat diterangkan langsung oleh pergerakan tunggal sektor $X_i$.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Interpretasi:</strong> Jika $r = 0.85 \implies r^2 = 0.7225$, berarti $72.25\%$ variasi volume transportasi bergerak selaras dengan sektor tersebut.</p>
+              </div>
+            </div>
+
+            <!-- Card 4: Seleksi Target Dependen Optimal -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                  <i class="fa-solid fa-bullseye"></i> 4. Seleksi Target Optimal ($Y^*$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Argmax $|r|$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-indigo-600 dark:text-indigo-300 font-semibold">
+                  $$Y^*_i = \arg\max_{j \in \{P, B, C\}} |r(X_i, Y_j)|$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$P = \text{Penumpang}, \quad B = \text{Bagasi}, \quad C = \text{Barang / Kargo}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Kaidah Pemilihan:</strong> Menetapkan indikator transportasi sasaran yang memiliki responsivitas elastisitas tertinggi terhadap pertumbuhan sektor.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Implikasi Kebijakan:</strong> Membantu penentuan variabel dependen prioritas dalam formulasi regresi spesifik per sektor.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom: Dependency Chain -->
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 text-xs text-slate-600 dark:text-slate-300 space-y-3">
+            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-diagram-project text-sky-500"></i>
+              <span>Alur Metodologi Pemilihan Target Dependen ($X \times Y$ Modeling Pipeline):</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center font-mono">
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 1</div>
+                <div class="font-bold text-sky-500 text-xs mt-1">Standardisasi Variabel</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\mathbf{Z}_X, \mathbf{Z}_Y$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 2</div>
+                <div class="font-bold text-purple-500 text-xs mt-1">Korelasi Silang ($\mathbf{R}_{XY}$)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\frac{\mathbf{Z}_X^T \mathbf{Z}_Y}{N-1}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 3</div>
+                <div class="font-bold text-emerald-500 text-xs mt-1">Uji Signifikansi ($p$-val)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$t_{(N-2)} < t_{\text{crit}}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 4</div>
+                <div class="font-bold text-indigo-500 text-xs mt-1">Penetapan Target $Y^*$</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\arg\max |r|$$</div>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
+              <span><i class="fa-solid fa-check-double text-sky-400 mr-1"></i> <strong>Rekomendasi Ekonometrika:</strong> Sektor primer/sekunder (Pertanian &amp; Industri) umumnya berkorelasi linear paling kokoh dengan <em>Barang</em>, sedangkan sektor tersier (Jasa, Hotel &amp; Restoran) berkorelasi paling kokoh dengan <em>Penumpang &amp; Bagasi</em>.</span>
             </div>
           </div>
         </div>
@@ -1215,47 +1591,242 @@
         </div>
 
         <!-- Table & Econometric Guidelines for Transport Model -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div class="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <i class="fa-solid fa-table-list text-purple-500"></i>
-              Tabel Diagnostik VIF Indikator Transportasi
-            </h4>
-            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl">
-              <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
-                  <tr>
-                    <th class="px-4 py-3">Indikator Transportasi</th>
-                    <th class="px-4 py-3 text-right">VIF</th>
-                    <th class="px-4 py-3 text-right">Tolerance (1/VIF)</th>
-                    <th class="px-4 py-3 text-center">Status Evaluasi</th>
-                  </tr>
-                </thead>
-                <tbody id="tblMultiTransportBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
-                  <!-- Rendered via JS -->
-                </tbody>
-              </table>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <div class="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 flex flex-col justify-between min-h-[460px]">
+            <div>
+              <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+                <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-table-list text-purple-500"></i>
+                  <span>Tabel Diagnostik VIF Indikator Transportasi</span>
+                </h4>
+                <span class="text-[11px] text-slate-400 font-mono">Klik header untuk sort</span>
+              </div>
+              <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-[480px]">
+                <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                  <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 select-none">
+                    <tr>
+                      <th onclick="sortMultiTransportTable('indicator')" class="px-4 py-3 min-w-[180px] cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Indikator Transportasi">
+                        <div class="flex items-center gap-1.5">
+                          <span>Indikator Transportasi</span>
+                          <span id="transSortIcon_indicator"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                      <th onclick="sortMultiTransportTable('vif')" class="px-4 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan VIF Transport">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <span>VIF</span>
+                          <span id="transSortIcon_vif"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                      <th onclick="sortMultiTransportTable('tolerance')" class="px-4 py-3 text-right w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Nilai Tolerance">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <span>Tolerance</span>
+                          <span id="transSortIcon_tolerance"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                      <th onclick="sortMultiTransportTable('status')" class="px-4 py-3 text-center w-36 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Status Evaluasi">
+                        <div class="flex items-center justify-center gap-1.5">
+                          <span>Status Evaluasi</span>
+                          <span id="transSortIcon_status"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="tblMultiTransportBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
+                    <!-- Rendered via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+              <span><i class="fa-solid fa-shield-check mr-1 text-purple-400"></i> Standar Evaluasi: VIF &lt; 5.0 (Aman), Tolerance &ge; 0.20.</span>
             </div>
           </div>
 
-          <div class="lg:col-span-6 bg-gradient-to-br from-purple-900/40 via-slate-900 to-slate-950 border border-purple-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+          <div class="lg:col-span-6 bg-gradient-to-br from-purple-900/40 via-slate-900 to-slate-950 border border-purple-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 min-h-[460px]">
             <div class="space-y-3">
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-300 text-xs font-semibold">
                 <i class="fa-solid fa-lightbulb"></i> Rekomendasi Model Prediksi Gabungan
               </div>
-              <h4 class="font-heading font-bold text-base text-white">Kelayakan Penggabungan Penumpang, Bagasi & Barang</h4>
+              <h4 class="font-heading font-bold text-base text-white">Kelayakan Penggabungan Penumpang, Bagasi &amp; Barang</h4>
               <div id="multiTransportRecommendationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-purple-500/20 space-y-2">
                 Memuat evaluasi multikolinearitas transportasi...
               </div>
             </div>
 
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1.5">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 text-[11px] text-slate-300 space-y-2">
               <div class="font-bold text-purple-400 flex items-center gap-1.5">
                 <i class="fa-solid fa-lightbulb"></i> Implikasi Multikolinearitas Transportasi:
               </div>
               <p class="text-slate-300 text-[11px] leading-relaxed">
                 Jika Penumpang dan Bagasi memiliki VIF tinggi (&gt; 10) akibat korelasi kuasi-sempurna, memasukkan keduanya bersamaan dalam satu model regresi berganda akan menyebabkan pembengkakan varians (inflasi standard error) dan tanda koefisien tidak stabil. Disarankan memilih salah satu metrik atau menggunakan regresi komponen utama (PCA).
               </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Educational Formula & Econometric Foundation Card for Transport Multicollinearity -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800/80 gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-base shrink-0">
+                <i class="fa-solid fa-arrows-to-circle"></i>
+              </div>
+              <div>
+                <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Landasan Teori &amp; Rumus Diagnostik Multikolinearitas Transportasi ($Y \times Y$)</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 font-mono font-normal">Joint Target Diagnostics</span>
+                </h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Evaluasi redundansi kolinearitas antar-moda lalu lintas transportasi (Penumpang, Bagasi, dan Barang) saat digabungkan dalam satu model peramalan simultan.
+                </p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-mono font-semibold border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto shrink-0">
+              Evaluasi Kovariansi $3 \times 3$
+            </span>
+          </div>
+
+          <!-- 4 Formula Cards Grid (2x2) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- Card 1: Matriks Korelasi Transportasi -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold text-xs">
+                  <i class="fa-solid fa-braille"></i> 1. Matriks Korelasi Transportasi ($\mathbf{R}_T$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Ordo $3 \times 3$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-purple-600 dark:text-purple-300 font-semibold">
+                  $$\mathbf{R}_T = \begin{bmatrix} 1 & r_{PB} & r_{PC} \\ r_{PB} & 1 & r_{BC} \\ r_{PC} & r_{BC} & 1 \end{bmatrix}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$P = \text{Penumpang}, \quad B = \text{Bagasi}, \quad C = \text{Barang}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Mengukur interkorelasi antar-komponen lalu lintas bandar udara/pelabuhan. Koefisien $r_{PB} > 0.85$ lazim ditemukan karena volume bagasi berbanding lurus dengan jumlah penumpang.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Dampak:</strong> Kolinearitas tinggi antar $Y$ menimbulkan multikolinearitas struktural jika dijadikan regressor bersama.</p>
+              </div>
+            </div>
+
+            <!-- Card 2: VIF Transportasi -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                  <i class="fa-solid fa-gauge-high"></i> 2. Variance Inflation Factor ($\text{VIF}_{T, j}$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Rentang: $[1.0, \infty)$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-indigo-600 dark:text-indigo-300 font-semibold">
+                  $$\text{VIF}_{T, j} = (\mathbf{R}_T^{-1})_{jj} = \frac{1}{1 - R_{Y_j | Y_{-j}}^2}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$\text{Inflasi Varians Regresi: } \text{Var}(\hat{\gamma}_j) \propto \text{VIF}_{T, j}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Mengukur tingkat inflasi varians jika moda $Y_j$ diprediksi secara simultan bersama moda lainnya. Nilai $\text{VIF}_T > 10$ menandakan redundansi informasi yang sangat parah.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Batas Aman:</strong> $\text{VIF} < 5$ (Aman), $5 \le \text{VIF} < 10$ (Moderat), $\text{VIF} \ge 10$ (Multiko Berat).</p>
+              </div>
+            </div>
+
+            <!-- Card 3: Tolerance Value Transport -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                  <i class="fa-solid fa-shield-halved"></i> 3. Tolerance Value Transport ($T_{T, j}$)
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Rentang: $(0.0, 1.0]$</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-emerald-600 dark:text-emerald-300 font-semibold">
+                  $$T_{T, j} = 1 - R_{Y_j | Y_{-j}}^2 = \frac{1}{\text{VIF}_{T, j}}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$T_{T, j} \ge 0.20 \;\text{(Aman)} \quad|\quad T_{T, j} < 0.10 \;\text{(Kritis)}$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Makna:</strong> Fraksi variabilitas independen unik dari indikator transportasi yang tidak dapat diterangkan oleh kedua indikator transportasi lainnya.</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Implikasi:</strong> Jika $T_{T, \text{Bagasi}} = 0.05$, maka $95\%$ fluktuasi bagasi sudah diwakili oleh penumpang.</p>
+              </div>
+            </div>
+
+            <!-- Card 4: Condition Number & PCA Remedy -->
+            <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                  <i class="fa-solid fa-scale-balanced"></i> 4. Condition Number &amp; Solusi PCA
+                </span>
+                <span class="text-[11px] font-mono text-slate-400">Ill-Conditioning Index</span>
+              </div>
+              
+              <!-- Formula Box -->
+              <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+                <div class="text-amber-600 dark:text-amber-300 font-semibold">
+                  $$\kappa_T = \sqrt{\frac{\lambda_{\max}(\mathbf{R}_T)}{\lambda_{\min}(\mathbf{R}_T)}}$$
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                  $$\text{Indeks Komposit: } \mathbf{PC}_1 = w_1 Y_P + w_2 Y_B + w_3 Y_C$$
+                </div>
+              </div>
+
+              <!-- Explanation -->
+              <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                <p><strong>Diagnosis:</strong> $\kappa_T > 15$ mengonfirmasi matriks ill-conditioned. Jika terjadi multiko berat antara Penumpang &amp; Bagasi, disarankan menggunakan salah satu target atau mereduksi dimensi via <strong>PCA</strong> (<em>Principal Component Analysis</em>).</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Rekomendasi:</strong> Model terpisah $Y_{\text{Penumpang}} = f(X)$ dan $Y_{\text{Barang}} = g(X)$.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom: Dependency Chain -->
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 text-xs text-slate-600 dark:text-slate-300 space-y-3">
+            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-diagram-project text-purple-500"></i>
+              <span>Alur Diagnostik &amp; Keputusan Model Gabungan Transportasi ($Y \times Y$ Decision Pipeline):</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center font-mono">
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 1</div>
+                <div class="font-bold text-purple-500 text-xs mt-1">Matriks Korelasi ($\mathbf{R}_T$)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\mathbf{R}_T = [r_{ij}]_{3 \times 3}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 2</div>
+                <div class="font-bold text-indigo-500 text-xs mt-1">Inversi Matriks ($\mathbf{R}_T^{-1}$)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$(\mathbf{R}_T)^{-1}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 3</div>
+                <div class="font-bold text-emerald-500 text-xs mt-1">Tolerance &amp; $\text{VIF}_T$</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$T_{T, j} = \frac{1}{\text{VIF}_{T, j}}$$</div>
+              </div>
+              <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 4</div>
+                <div class="font-bold text-amber-500 text-xs mt-1">Keputusan Model</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\text{Simultan / PCA / Terpisah}$$</div>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-800/80 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
+              <span><i class="fa-solid fa-check-double text-purple-400 mr-1"></i> <strong>Kaidah Ekonometrika Transportasi:</strong> Karena Penumpang dan Bagasi hampir selalu menunjukkan multikolinearitas ekstrim ($\text{VIF} > 10$), model ekonometrika yang andal harus memisahkan persamaan regresi atau menggabungkan keduanya menjadi indeks komposit mobilitas manusia.</span>
             </div>
           </div>
         </div>
@@ -1422,6 +1993,19 @@
       }
     }
 
+    // KaTeX Auto-Render Helper
+    function renderKatexMath() {
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      }
+    }
+
     // Init App
     document.addEventListener("DOMContentLoaded", async () => {
       // Bangunkan container serverless di latar belakang (cold start pre-warm)
@@ -1431,6 +2015,7 @@
       renderMultiSectorCheckboxes();
       await loadInitialManifest();
       await refreshData();
+      renderKatexMath();
     });
 
     // Theme Management (Light / Dark)
@@ -2533,10 +3118,16 @@
         } else if (subTab === 'cross') {
           renderMultiCrossHeatmap(activeMulticollinearityData);
           renderMultiCrossBarChart(activeMulticollinearityData);
+          renderMultiCrossTableBody();
         } else if (subTab === 'transport') {
           renderMultiTransportHeatmap(activeMulticollinearityData);
           renderMultiTransportVifChart(activeMulticollinearityData);
+          renderMultiTransportTableBody();
         }
+      }
+
+      if (typeof renderKatexMath === 'function') {
+        setTimeout(renderKatexMath, 50);
       }
 
       window.dispatchEvent(new Event('resize'));
@@ -2703,6 +3294,183 @@
             </div>
           </td>
           <td class="px-4 py-2.5 text-right font-bold align-middle font-mono ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
+          <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 font-mono align-middle">${item.tolerance.toFixed(4)}</td>
+          <td class="px-4 py-2.5 text-center font-sans align-middle whitespace-nowrap">
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] border inline-block whitespace-nowrap ${badgeClass}">${item.status}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =========================================================================
+    // CROSS-CORRELATION (X × Y) TABLE SORTING
+    // =========================================================================
+    let multiCrossSortCol = 'rp';
+    let multiCrossSortDir = 'desc';
+
+    function sortMultiCrossTable(col) {
+      if (multiCrossSortCol === col) {
+        multiCrossSortDir = multiCrossSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        multiCrossSortCol = col;
+        multiCrossSortDir = (col === 'sector' || col === 'target') ? 'asc' : 'desc';
+      }
+      renderMultiCrossTableBody();
+    }
+
+    function updateMultiCrossSortIcons() {
+      const cols = ['sector', 'rp', 'rbag', 'rbar', 'target'];
+      cols.forEach(c => {
+        const iconSpan = document.getElementById(`crossSortIcon_${c}`);
+        if (!iconSpan) return;
+        if (multiCrossSortCol === c) {
+          iconSpan.innerHTML = multiCrossSortDir === 'asc' 
+            ? '<i class="fa-solid fa-sort-up text-sky-400 text-xs"></i>'
+            : '<i class="fa-solid fa-sort-down text-sky-400 text-xs"></i>';
+        } else {
+          iconSpan.innerHTML = '<i class="fa-solid fa-sort text-slate-400/40 hover:text-slate-300 text-[10px]"></i>';
+        }
+      });
+    }
+
+    function renderMultiCrossTableBody() {
+      if (!activeMulticollinearityData || !activeMulticollinearityData.cross_transport_matrix) return;
+      const crossObj = activeMulticollinearityData.cross_transport_matrix;
+      const secLabels = crossObj.sector_labels || [];
+      const crossMat = crossObj.matrix || [];
+      const tbody = document.getElementById("tblMultiCrossBody");
+      if (!tbody) return;
+
+      updateMultiCrossSortIcons();
+
+      let rows = secLabels.map((sec, idx) => {
+        const rp = crossMat[idx]?.[0] || 0;
+        const rbag = crossMat[idx]?.[1] || 0;
+        const rbar = crossMat[idx]?.[2] || 0;
+        const bestTarget = crossObj.strongest_targets?.[idx]?.best_target || 'Penumpang';
+        return { sec, rp, rbag, rbar, bestTarget, originalIndex: idx };
+      });
+
+      if (multiCrossSortCol === 'sector') {
+        rows.sort((a, b) => multiCrossSortDir === 'asc' 
+          ? a.sec.localeCompare(b.sec, 'id') 
+          : b.sec.localeCompare(a.sec, 'id')
+        );
+      } else if (multiCrossSortCol === 'rp') {
+        rows.sort((a, b) => multiCrossSortDir === 'asc' ? a.rp - b.rp : b.rp - a.rp);
+      } else if (multiCrossSortCol === 'rbag') {
+        rows.sort((a, b) => multiCrossSortDir === 'asc' ? a.rbag - b.rbag : b.rbag - a.rbag);
+      } else if (multiCrossSortCol === 'rbar') {
+        rows.sort((a, b) => multiCrossSortDir === 'asc' ? a.rbar - b.rbar : b.rbar - a.rbar);
+      } else if (multiCrossSortCol === 'target') {
+        rows.sort((a, b) => multiCrossSortDir === 'asc' 
+          ? a.bestTarget.localeCompare(b.bestTarget, 'id') 
+          : b.bestTarget.localeCompare(a.bestTarget, 'id')
+        );
+      }
+
+      tbody.innerHTML = "";
+      rows.forEach((item, idx) => {
+        let targetBadgeClass = "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20";
+        if (item.bestTarget === 'Bagasi') targetBadgeClass = "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
+        else if (item.bestTarget === 'Barang') targetBadgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+        tr.innerHTML = `
+          <td class="px-4 py-2.5 font-sans text-slate-800 dark:text-slate-200 align-top">
+            <div class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono shrink-0 mt-0.5">${idx + 1}</span>
+              <span class="leading-tight font-medium">${item.sec}</span>
+            </div>
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.abs(item.rp) >= 0.7 ? 'font-bold text-sky-600 dark:text-sky-400' : 'text-slate-700 dark:text-slate-300'}">${item.rp.toFixed(4)}</td>
+          <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.abs(item.rbag) >= 0.7 ? 'font-bold text-purple-600 dark:text-purple-400' : 'text-slate-700 dark:text-slate-300'}">${item.rbag.toFixed(4)}</td>
+          <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.abs(item.rbar) >= 0.7 ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}">${item.rbar.toFixed(4)}</td>
+          <td class="px-3 py-2.5 text-center font-sans align-middle whitespace-nowrap">
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] border font-semibold inline-block whitespace-nowrap ${targetBadgeClass}">${item.bestTarget}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =========================================================================
+    // TRANSPORT MULTICOLLINEARITY (Y × Y) TABLE SORTING
+    // =========================================================================
+    let multiTransSortCol = 'vif';
+    let multiTransSortDir = 'desc';
+
+    function sortMultiTransportTable(col) {
+      if (multiTransSortCol === col) {
+        multiTransSortDir = multiTransSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        multiTransSortCol = col;
+        multiTransSortDir = col === 'indicator' ? 'asc' : 'desc';
+      }
+      renderMultiTransportTableBody();
+    }
+
+    function updateMultiTransportSortIcons() {
+      const cols = ['indicator', 'vif', 'tolerance', 'status'];
+      cols.forEach(c => {
+        const iconSpan = document.getElementById(`transSortIcon_${c}`);
+        if (!iconSpan) return;
+        if (multiTransSortCol === c) {
+          iconSpan.innerHTML = multiTransSortDir === 'asc' 
+            ? '<i class="fa-solid fa-sort-up text-purple-400 text-xs"></i>'
+            : '<i class="fa-solid fa-sort-down text-purple-400 text-xs"></i>';
+        } else {
+          iconSpan.innerHTML = '<i class="fa-solid fa-sort text-slate-400/40 hover:text-slate-300 text-[10px]"></i>';
+        }
+      });
+    }
+
+    function renderMultiTransportTableBody() {
+      if (!activeMulticollinearityData || !activeMulticollinearityData.transport_multicollinearity) return;
+      const transObj = activeMulticollinearityData.transport_multicollinearity;
+      const transVifs = transObj.vif_results || [];
+      const tbody = document.getElementById("tblMultiTransportBody");
+      if (!tbody) return;
+
+      updateMultiTransportSortIcons();
+
+      let sorted = [...transVifs];
+      if (multiTransSortCol === 'indicator') {
+        sorted.sort((a, b) => multiTransSortDir === 'asc' 
+          ? a.indicator.localeCompare(b.indicator, 'id') 
+          : b.indicator.localeCompare(a.indicator, 'id')
+        );
+      } else if (multiTransSortCol === 'vif') {
+        sorted.sort((a, b) => multiTransSortDir === 'asc' ? a.vif - b.vif : b.vif - a.vif);
+      } else if (multiTransSortCol === 'tolerance') {
+        sorted.sort((a, b) => multiTransSortDir === 'asc' ? a.tolerance - b.tolerance : b.tolerance - a.tolerance);
+      } else if (multiTransSortCol === 'status') {
+        const getSeverity = (item) => item.vif >= 10 ? 3 : (item.vif >= 5 ? 2 : 1);
+        sorted.sort((a, b) => multiTransSortDir === 'asc' ? getSeverity(a) - getSeverity(b) : getSeverity(b) - getSeverity(a));
+      }
+
+      tbody.innerHTML = "";
+      sorted.forEach((item, idx) => {
+        let badgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+        if (item.badge_color === 'red') {
+          badgeClass = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
+        } else if (item.badge_color === 'yellow') {
+          badgeClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
+        }
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+        tr.innerHTML = `
+          <td class="px-4 py-2.5 font-sans text-slate-800 dark:text-slate-200 align-middle">
+            <div class="flex items-center gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono shrink-0">${idx + 1}</span>
+              <i class="fa-solid ${item.indicator === 'Penumpang' ? 'fa-plane' : (item.indicator === 'Bagasi' ? 'fa-suitcase-rolling' : 'fa-box-open')} text-purple-500"></i>
+              <span class="font-medium">${item.indicator}</span>
+            </div>
+          </td>
+          <td class="px-4 py-2.5 text-right font-bold font-mono align-middle ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
           <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 font-mono align-middle">${item.tolerance.toFixed(4)}</td>
           <td class="px-4 py-2.5 text-center font-sans align-middle whitespace-nowrap">
             <span class="px-2.5 py-0.5 rounded-full text-[11px] border inline-block whitespace-nowrap ${badgeClass}">${item.status}</span>
@@ -3007,35 +3775,7 @@
         // Render Cross Heatmap & Bar Chart
         renderMultiCrossHeatmap(data);
         renderMultiCrossBarChart(data);
-
-        // Render Cross Table
-        const tblCrossBody = document.getElementById("tblMultiCrossBody");
-        if (tblCrossBody) {
-          tblCrossBody.innerHTML = "";
-          secLabels.forEach((sec, idx) => {
-            const rp = crossMat[idx]?.[0] || 0;
-            const rbag = crossMat[idx]?.[1] || 0;
-            const rbar = crossMat[idx]?.[2] || 0;
-            const bestTarget = crossObj.strongest_targets?.[idx]?.best_target || 'Penumpang';
-
-            let targetBadgeClass = "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20";
-            if (bestTarget === 'Bagasi') targetBadgeClass = "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
-            else if (bestTarget === 'Barang') targetBadgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
-            tr.innerHTML = `
-              <td class="px-3 py-2.5 font-sans text-slate-800 dark:text-slate-200">${sec}</td>
-              <td class="px-3 py-2.5 text-right ${rp >= 0.7 ? 'font-bold text-sky-600 dark:text-sky-400' : ''}">${rp.toFixed(4)}</td>
-              <td class="px-3 py-2.5 text-right ${rbag >= 0.7 ? 'font-bold text-purple-600 dark:text-purple-400' : ''}">${rbag.toFixed(4)}</td>
-              <td class="px-3 py-2.5 text-right ${rbar >= 0.7 ? 'font-bold text-emerald-600 dark:text-emerald-400' : ''}">${rbar.toFixed(4)}</td>
-              <td class="px-3 py-2.5 text-center font-sans">
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] border font-semibold ${targetBadgeClass}">${bestTarget}</span>
-              </td>
-            `;
-            tblCrossBody.appendChild(tr);
-          });
-        }
+        renderMultiCrossTableBody();
 
         // Cross Guidance Callout
         const crossRecEl = document.getElementById("crossRecommendationText");
@@ -3120,41 +3860,17 @@
         // Render Transport Charts
         renderMultiTransportHeatmap(data);
         renderMultiTransportVifChart(data);
-
-        // Render Transport Table
-        const tblTransBody = document.getElementById("tblMultiTransportBody");
-        if (tblTransBody) {
-          tblTransBody.innerHTML = "";
-          transVifs.forEach((item) => {
-            let badgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-            if (item.badge_color === 'red') {
-              badgeClass = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
-            } else if (item.badge_color === 'yellow') {
-              badgeClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
-            }
-
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
-            tr.innerHTML = `
-              <td class="px-4 py-2.5 font-sans font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                <i class="fa-solid ${item.indicator === 'Penumpang' ? 'fa-plane' : (item.indicator === 'Bagasi' ? 'fa-suitcase-rolling' : 'fa-box-open')} text-indigo-500"></i>
-                <span>${item.indicator}</span>
-              </td>
-              <td class="px-4 py-2.5 text-right font-bold ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
-              <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400">${item.tolerance.toFixed(4)}</td>
-              <td class="px-4 py-2.5 text-center font-sans">
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] border ${badgeClass}">${item.status}</span>
-              </td>
-            `;
-            tblTransBody.appendChild(tr);
-          });
-        }
+        renderMultiTransportTableBody();
 
         // Transport Recommendation Callout
         const transRecEl = document.getElementById("multiTransportRecommendationText");
         if (transRecEl) {
           transRecEl.innerHTML = `<p class="leading-relaxed"><i class="fa-solid fa-circle-check text-purple-400 mr-1.5"></i> ${transObj.recommendation}</p>`;
         }
+      }
+
+      if (typeof renderKatexMath === 'function') {
+        setTimeout(renderKatexMath, 50);
       }
     }
 
