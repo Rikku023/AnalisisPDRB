@@ -59,6 +59,183 @@
       cursor: pointer;
       color: #38bdf8 !important;
     }
+
+    /* ========== Province Mega-Menu Dropdown ========== */
+    .prov-dropdown { position: relative; z-index: 60; }
+    .prov-trigger {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 500; white-space: nowrap;
+      transition: all .2s ease;
+      user-select: none;
+    }
+    .dark .prov-trigger {
+      background: rgb(30 41 59); border: 1px solid rgb(51 65 85);
+      color: #e2e8f0;
+    }
+    .light .prov-trigger, html:not(.dark) .prov-trigger {
+      background: #f1f5f9; border: 1px solid #cbd5e1;
+      color: #1e293b;
+    }
+    .prov-trigger:hover { border-color: #38bdf8; }
+    .prov-trigger .chevron {
+      font-size: 10px; transition: transform .25s ease;
+    }
+    .prov-dropdown.open .prov-trigger .chevron { transform: rotate(180deg); }
+
+    /* Level-1 Panel (Island groups) - Size auto to content, no scroll */
+    .prov-panel {
+      position: absolute; top: calc(100% + 6px); left: 0;
+      width: max-content; min-width: 180px; border-radius: 12px;
+      padding: 6px 0;
+      opacity: 0; visibility: hidden;
+      transform: translateY(-8px); pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease, visibility .2s;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+      z-index: 70;
+    }
+    .dark .prov-panel {
+      background: rgba(15, 23, 42, .95);
+      border: 1px solid rgba(56,189,248,.15);
+      backdrop-filter: blur(16px) saturate(1.4);
+    }
+    .light .prov-panel, html:not(.dark) .prov-panel {
+      background: rgba(255,255,255,.97);
+      border: 1px solid #e2e8f0;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.12);
+    }
+    .prov-dropdown.open .prov-panel {
+      opacity: 1; visibility: visible;
+      transform: translateY(0); pointer-events: auto;
+    }
+
+    /* Island group item (level 1) */
+    .prov-group {
+      position: relative;
+      padding: 8px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      cursor: pointer; font-size: 13px; font-weight: 600;
+      white-space: nowrap;
+      border-radius: 8px; margin: 2px 6px;
+      transition: background .15s ease, color .15s ease;
+    }
+    .dark .prov-group { color: #e2e8f0; }
+    .dark .prov-group:hover { background: rgba(56,189,248,.12); color: #38bdf8; }
+    .light .prov-group, html:not(.dark) .prov-group { color: #334155; }
+    .light .prov-group:hover, html:not(.dark) .prov-group:hover { background: #f0f9ff; color: #0284c7; }
+    .prov-group .group-icon { font-size: 15px; margin-right: 8px; }
+    .prov-group .group-arrow {
+      font-size: 10px; opacity: .5; transition: transform .2s ease, opacity .2s;
+    }
+    .prov-group:hover .group-arrow { opacity: 1; transform: translateX(2px); }
+    .prov-group .group-count {
+      font-size: 10px; font-weight: 400; opacity: .5; margin-left: 4px;
+    }
+
+    /* Level-2 Sub-panel (Provinces) - Auto-sized to content, only scroll if list exceeds X items */
+    .prov-sub {
+      position: absolute; left: calc(100% + 4px); top: -6px;
+      width: max-content; min-width: 200px; border-radius: 12px;
+      padding: 6px 0;
+      opacity: 0; visibility: hidden;
+      transform: translateX(-6px); pointer-events: none;
+      /* Jeda transisi saat kursor keluar (grace period) */
+      transition: opacity .22s ease .18s, transform .22s ease .18s, visibility .22s ease .18s;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+      z-index: 80;
+    }
+    /* Invisible hover bridge antara panel pulau dan sub-panel daerah */
+    .prov-sub::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: -6px;
+      bottom: -6px;
+      width: 20px;
+    }
+    /* Scroll only when class .prov-sub-scroll is applied */
+    .prov-sub.prov-sub-scroll {
+      max-height: 280px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .dark .prov-sub {
+      background: rgba(15, 23, 42, .96);
+      border: 1px solid rgba(56,189,248,.12);
+      backdrop-filter: blur(16px) saturate(1.4);
+    }
+    .light .prov-sub, html:not(.dark) .prov-sub {
+      background: rgba(255,255,255,.98);
+      border: 1px solid #e2e8f0;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.12);
+    }
+    .prov-group:hover > .prov-sub {
+      opacity: 1; visibility: visible;
+      transform: translateX(0); pointer-events: auto;
+      /* Langsung muncul seketika saat di-hover */
+      transition: opacity .18s ease 0s, transform .18s ease 0s, visibility 0s 0s;
+    }
+
+    /* Province item (level 2) */
+    .prov-item {
+      padding: 7px 14px;
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; font-size: 12.5px; font-weight: 500;
+      white-space: nowrap;
+      border-radius: 8px; margin: 2px 6px;
+      transition: background .15s ease, color .15s ease;
+    }
+    .dark .prov-item { color: #cbd5e1; }
+    .dark .prov-item:hover { background: rgba(56,189,248,.15); color: #fff; }
+    .dark .prov-item.active { background: rgba(56,189,248,.2); color: #38bdf8; }
+    .light .prov-item, html:not(.dark) .prov-item { color: #475569; }
+    .light .prov-item:hover, html:not(.dark) .prov-item:hover { background: #e0f2fe; color: #0369a1; }
+    .light .prov-item.active, html:not(.dark) .prov-item.active { background: #e0f2fe; color: #0284c7; font-weight: 700; }
+    .prov-item .prov-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #64748b; flex-shrink: 0;
+      transition: background .15s;
+    }
+    .prov-item:hover .prov-dot { background: #38bdf8; }
+    .prov-item.active .prov-dot { background: #38bdf8; }
+
+    /* Sub-panel header */
+    .prov-sub-header {
+      padding: 6px 14px 4px; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+      white-space: nowrap;
+    }
+    .dark .prov-sub-header { color: rgba(56,189,248,.6); }
+    .light .prov-sub-header, html:not(.dark) .prov-sub-header { color: #0284c7; }
+    .prov-sub-divider {
+      height: 1px; margin: 4px 14px;
+    }
+    .dark .prov-sub-divider { background: rgba(51,65,85,.5); }
+    .light .prov-sub-divider, html:not(.dark) .prov-sub-divider { background: #e2e8f0; }
+
+    /* Responsive: on small screens sub-panel goes below */
+    @media (max-width: 640px) {
+      .prov-sub {
+        position: relative; left: 0; top: 0;
+        width: 100%; min-width: 100%; border: none;
+        box-shadow: none; border-radius: 0;
+        margin-top: 2px;
+        transform: none;
+      }
+      .prov-sub.prov-sub-scroll {
+        max-height: 220px;
+        overflow-y: auto;
+      }
+      .dark .prov-sub { background: rgba(15, 23, 42, .6); }
+      .light .prov-sub, html:not(.dark) .prov-sub { background: rgba(241,245,249,.8); }
+      .prov-group:hover > .prov-sub {
+        transform: none;
+      }
+      .prov-panel { width: 100%; min-width: 240px; }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 dark:bg-slate-950 dark:text-slate-100">
@@ -78,18 +255,16 @@
 
       <!-- Header Controls -->
       <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Province Selector -->
-        <div class="relative">
-          <select id="selProvince" onchange="onProvinceChange()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer">
-            {% if manifest and manifest.provinces %}
-              {% for p_key, p_val in manifest.provinces.items() %}
-                <option value="{{ p_key }}">📍 {{ p_val.name }}</option>
-              {% endfor %}
-            {% else %}
-              <option value="sulawesi_selatan">📍 Sulawesi Selatan</option>
-            {% endif %}
-          </select>
-          <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
+        <!-- Province Mega-Menu Selector -->
+        <div class="prov-dropdown" id="provDropdown">
+          <div class="prov-trigger" id="provTrigger" onclick="toggleProvDropdown()" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">
+            <span>📍</span>
+            <span id="provTriggerLabel">Sulawesi Selatan</span>
+            <i class="fa-solid fa-chevron-down chevron"></i>
+          </div>
+          <div class="prov-panel" id="provPanel" role="menu">
+            <!-- Dynamically populated by JS -->
+          </div>
         </div>
 
         <!-- Year Selector -->
@@ -1270,24 +1445,168 @@
       }
     }
 
-    function populateProvinceDropdown(manifest = currentManifest) {
-      const selProv = document.getElementById("selProvince");
-      if (!selProv) return;
-      
-      const provEntries = Object.entries(manifest.provinces || {});
-      if (provEntries.length > 0) {
-        selProv.innerHTML = "";
-        if (!manifest.provinces[currentProvince]) {
-          currentProvince = provEntries[0][0];
-        }
-        for (const [key, val] of provEntries) {
-          const opt = document.createElement("option");
-          opt.value = key;
-          opt.textContent = `📍 ${val.name}`;
-          if (key === currentProvince) opt.selected = true;
-          selProv.appendChild(opt);
-        }
+    // =========================================================================
+    // Island Grouping Map for Mega-Menu Province Selector
+    // =========================================================================
+    const ISLAND_GROUPS = [
+      {
+        id: 'sulawesi',
+        label: 'Sulawesi',
+        icon: '🏝️',
+        keys: ['gorontalo', 'sulawesi_selatan', 'sulawesi_utara']
+      },
+      {
+        id: 'kalimantan',
+        label: 'Kalimantan',
+        icon: '🌴',
+        keys: ['kalimantan_barat', 'kalimantan_selatan', 'kalimantan_tengah', 'kalimantan_timur']
+      },
+      {
+        id: 'sumatera',
+        label: 'Sumatera',
+        icon: '🌋',
+        keys: ['aceh', 'bengkulu', 'jambi', 'kep_bangka_belitung', 'kep_riau', 'lampung', 'riau', 'sumatera_barat', 'sumatera_selatan', 'sumatera_utara']
       }
+    ];
+
+    function toggleProvDropdown() {
+      const dd = document.getElementById('provDropdown');
+      const isOpen = dd.classList.contains('open');
+      if (isOpen) {
+        closeProvDropdown();
+      } else {
+        dd.classList.add('open');
+        dd.querySelector('#provTrigger')?.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    function closeProvDropdown() {
+      const dd = document.getElementById('provDropdown');
+      dd.classList.remove('open');
+      dd.querySelector('#provTrigger')?.setAttribute('aria-expanded', 'false');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dd = document.getElementById('provDropdown');
+      if (dd && !dd.contains(e.target)) {
+        closeProvDropdown();
+      }
+    });
+
+    // Keyboard support: Escape to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeProvDropdown();
+    });
+
+    function selectProvince(provKey) {
+      currentProvince = provKey;
+      closeProvDropdown();
+      updateProvTriggerLabel();
+      highlightActiveProvince();
+      populateYears(true);
+      refreshData();
+    }
+
+    function updateProvTriggerLabel() {
+      const label = document.getElementById('provTriggerLabel');
+      const provData = currentManifest.provinces?.[currentProvince];
+      if (label && provData) {
+        label.textContent = provData.name;
+      }
+    }
+
+    function highlightActiveProvince() {
+      document.querySelectorAll('.prov-item').forEach(el => {
+        if (el.dataset.key === currentProvince) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+    }
+
+    function populateProvinceDropdown(manifest = currentManifest) {
+      const panel = document.getElementById('provPanel');
+      if (!panel) return;
+
+      const provinces = manifest.provinces || {};
+      const provKeys = Object.keys(provinces);
+      if (provKeys.length === 0) return;
+
+      // Validate currentProvince
+      if (!provinces[currentProvince]) {
+        currentProvince = provKeys[0];
+      }
+
+      // Collect province keys that belong to known island groups
+      const assignedKeys = new Set();
+      ISLAND_GROUPS.forEach(g => g.keys.forEach(k => assignedKeys.add(k)));
+
+      // Build "Other" group for any provinces not in the predefined mapping
+      const otherKeys = provKeys.filter(k => !assignedKeys.has(k));
+
+      let html = '';
+
+      // Threshold: only scroll if list exceeds X items (e.g. > 6)
+      const SCROLL_THRESHOLD = 6;
+
+      // Render each island group
+      for (const group of ISLAND_GROUPS) {
+        // Only include provinces that exist in the manifest
+        const existingKeys = group.keys.filter(k => provinces[k]);
+        if (existingKeys.length === 0) continue;
+
+        // Sort provinces alphabetically by display name
+        existingKeys.sort((a, b) => provinces[a].name.localeCompare(provinces[b].name));
+
+        const isScrollable = existingKeys.length > SCROLL_THRESHOLD;
+        const subScrollClasses = isScrollable ? ' prov-sub-scroll custom-scrollbar' : '';
+
+        html += `<div class="prov-group" role="menuitem">`;
+        html += `  <span><span class="group-icon">${group.icon}</span>${group.label}<span class="group-count">(${existingKeys.length})</span></span>`;
+        html += `  <i class="fa-solid fa-chevron-right group-arrow"></i>`;
+        html += `  <div class="prov-sub${subScrollClasses}" role="menu">`;
+        html += `    <div class="prov-sub-header">${group.icon} ${group.label}</div>`;
+        html += `    <div class="prov-sub-divider"></div>`;
+        for (const key of existingKeys) {
+          const name = provinces[key].name;
+          const isActive = key === currentProvince;
+          html += `<div class="prov-item${isActive ? ' active' : ''}" data-key="${key}" onclick="selectProvince('${key}')" role="menuitem" tabindex="0">`;
+          html += `  <span class="prov-dot"></span>`;
+          html += `  <span>${name}</span>`;
+          html += `</div>`;
+        }
+        html += `  </div>`;
+        html += `</div>`;
+      }
+
+      // Render "Other" group if there are unassigned provinces
+      if (otherKeys.length > 0) {
+        otherKeys.sort((a, b) => provinces[a].name.localeCompare(provinces[b].name));
+        const isScrollableOther = otherKeys.length > SCROLL_THRESHOLD;
+        const subScrollClassesOther = isScrollableOther ? ' prov-sub-scroll custom-scrollbar' : '';
+
+        html += `<div class="prov-group" role="menuitem">`;
+        html += `  <span><span class="group-icon">🗺️</span>Lainnya<span class="group-count">(${otherKeys.length})</span></span>`;
+        html += `  <i class="fa-solid fa-chevron-right group-arrow"></i>`;
+        html += `  <div class="prov-sub${subScrollClassesOther}" role="menu">`;
+        html += `    <div class="prov-sub-header">🗺️ Lainnya</div>`;
+        html += `    <div class="prov-sub-divider"></div>`;
+        for (const key of otherKeys) {
+          const name = provinces[key].name;
+          const isActive = key === currentProvince;
+          html += `<div class="prov-item${isActive ? ' active' : ''}" data-key="${key}" onclick="selectProvince('${key}')" role="menuitem" tabindex="0">`;
+          html += `  <span class="prov-dot"></span>`;
+          html += `  <span>${name}</span>`;
+          html += `</div>`;
+        }
+        html += `  </div>`;
+        html += `</div>`;
+      }
+
+      panel.innerHTML = html;
+      updateProvTriggerLabel();
     }
 
     async function loadInitialManifest() {
@@ -1326,7 +1645,7 @@
     }
 
     function onProvinceChange() {
-      currentProvince = document.getElementById("selProvince").value;
+      // Legacy compat — now handled via selectProvince()
       populateYears(true);
       refreshData();
     }
