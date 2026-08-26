@@ -923,12 +923,32 @@
             </div>
             <div class="overflow-x-auto overflow-y-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl flex-1 max-h-[480px]">
               <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
+                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 select-none">
                   <tr>
-                    <th class="px-4 py-3 min-w-[220px]">Nama Sektor</th>
-                    <th class="px-4 py-3 text-right w-24 whitespace-nowrap">VIF</th>
-                    <th class="px-4 py-3 text-right w-28 whitespace-nowrap">Tolerance</th>
-                    <th class="px-4 py-3 text-center w-36 whitespace-nowrap">Status</th>
+                    <th onclick="sortMultiDiagnosticTable('sector')" class="px-4 py-3 min-w-[220px] cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Nama Sektor">
+                      <div class="flex items-center gap-1.5">
+                        <span>Nama Sektor</span>
+                        <span id="sortIcon_sector"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortMultiDiagnosticTable('vif')" class="px-4 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Nilai VIF">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <span>VIF</span>
+                        <span id="sortIcon_vif"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortMultiDiagnosticTable('tolerance')" class="px-4 py-3 text-right w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Nilai Tolerance">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <span>Tolerance</span>
+                        <span id="sortIcon_tolerance"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortMultiDiagnosticTable('status')" class="px-4 py-3 text-center w-36 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk mengurutkan berdasarkan Tingkat Multikolinearitas">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <span>Status</span>
+                        <span id="sortIcon_status"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody id="tblMultiDiagnosticBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
@@ -2600,6 +2620,98 @@
       loadMulticollinearityData();
     }
 
+    // =========================================================================
+    // VIF DIAGNOSTIC TABLE SORTING
+    // =========================================================================
+    let multiVifSortCol = 'vif';
+    let multiVifSortDir = 'desc';
+
+    function sortMultiDiagnosticTable(col) {
+      if (multiVifSortCol === col) {
+        multiVifSortDir = multiVifSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        multiVifSortCol = col;
+        multiVifSortDir = col === 'sector' ? 'asc' : 'desc';
+      }
+      renderMultiDiagnosticTableBody();
+    }
+
+    function updateMultiSortIcons() {
+      const cols = ['sector', 'vif', 'tolerance', 'status'];
+      cols.forEach(c => {
+        const iconSpan = document.getElementById(`sortIcon_${c}`);
+        if (!iconSpan) return;
+        if (multiVifSortCol === c) {
+          iconSpan.innerHTML = multiVifSortDir === 'asc' 
+            ? '<i class="fa-solid fa-sort-up text-indigo-400 text-xs"></i>'
+            : '<i class="fa-solid fa-sort-down text-indigo-400 text-xs"></i>';
+        } else {
+          iconSpan.innerHTML = '<i class="fa-solid fa-sort text-slate-400/40 hover:text-slate-300 text-[10px]"></i>';
+        }
+      });
+    }
+
+    function renderMultiDiagnosticTableBody() {
+      if (!activeMulticollinearityData || !activeMulticollinearityData.vif_results) return;
+      const vifs = activeMulticollinearityData.vif_results;
+      const tbody = document.getElementById("tblMultiDiagnosticBody");
+      if (!tbody) return;
+
+      updateMultiSortIcons();
+
+      let sorted = [...vifs];
+      if (multiVifSortCol === 'sector') {
+        sorted.sort((a, b) => multiVifSortDir === 'asc' 
+          ? a.sector.localeCompare(b.sector, 'id') 
+          : b.sector.localeCompare(a.sector, 'id')
+        );
+      } else if (multiVifSortCol === 'vif') {
+        sorted.sort((a, b) => multiVifSortDir === 'asc' 
+          ? a.vif - b.vif 
+          : b.vif - a.vif
+        );
+      } else if (multiVifSortCol === 'tolerance') {
+        sorted.sort((a, b) => multiVifSortDir === 'asc' 
+          ? a.tolerance - b.tolerance 
+          : b.tolerance - a.tolerance
+        );
+      } else if (multiVifSortCol === 'status') {
+        const getSeverity = (item) => item.vif >= 10 ? 3 : (item.vif >= 5 ? 2 : 1);
+        sorted.sort((a, b) => multiVifSortDir === 'asc' 
+          ? getSeverity(a) - getSeverity(b) 
+          : getSeverity(b) - getSeverity(a)
+        );
+      }
+
+      tbody.innerHTML = "";
+      sorted.forEach((item, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+        
+        let badgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+        if (item.badge_color === 'red') {
+          badgeClass = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
+        } else if (item.badge_color === 'yellow') {
+          badgeClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
+        }
+
+        tr.innerHTML = `
+          <td class="px-4 py-2.5 text-slate-800 dark:text-slate-200 font-sans align-top">
+            <div class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono shrink-0 mt-0.5">${idx + 1}</span>
+              <span class="leading-tight font-medium">${item.sector}</span>
+            </div>
+          </td>
+          <td class="px-4 py-2.5 text-right font-bold align-middle font-mono ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
+          <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 font-mono align-middle">${item.tolerance.toFixed(4)}</td>
+          <td class="px-4 py-2.5 text-center font-sans align-middle whitespace-nowrap">
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] border inline-block whitespace-nowrap ${badgeClass}">${item.status}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
     function renderMultiSectorCheckboxes() {
       const container = document.getElementById("multiSectorCheckboxes");
       if (!container) return;
@@ -2775,36 +2887,7 @@
       const tblCountEl = document.getElementById("txtMultiTableCount");
       if (tblCountEl) tblCountEl.textContent = `${vifs.length} Sektor Dievaluasi`;
 
-      const tbody = document.getElementById("tblMultiDiagnosticBody");
-      if (tbody) {
-        tbody.innerHTML = "";
-        vifs.forEach((item, idx) => {
-          const tr = document.createElement("tr");
-          tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
-          
-          let badgeClass = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-          if (item.badge_color === 'red') {
-            badgeClass = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
-          } else if (item.badge_color === 'yellow') {
-            badgeClass = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
-          }
-
-          tr.innerHTML = `
-            <td class="px-4 py-2.5 text-slate-800 dark:text-slate-200 font-sans align-top">
-              <div class="flex items-start gap-2.5">
-                <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono shrink-0 mt-0.5">${idx + 1}</span>
-                <span class="leading-tight font-medium">${item.sector}</span>
-              </div>
-            </td>
-            <td class="px-4 py-2.5 text-right font-bold align-middle font-mono ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
-            <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 font-mono align-middle">${item.tolerance.toFixed(4)}</td>
-            <td class="px-4 py-2.5 text-center font-sans align-middle whitespace-nowrap">
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] border inline-block whitespace-nowrap ${badgeClass}">${item.status}</span>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
+      renderMultiDiagnosticTableBody();
 
       const recEl = document.getElementById("multiRecommendationText");
       if (recEl) {
