@@ -778,6 +778,10 @@
                 <button onclick="setMultiPreset('all')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-300 dark:border-slate-700 transition">
                   📋 Pilih Semua
                 </button>
+                <button onclick="applyOptimalSubset()" id="btnApplyOptimalSubset" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-500/40 shadow-sm transition flex items-center gap-1.5" title="Otomatis pilih subset sektor yang bebas dari multikolinearitas (VIF < 5)">
+                  <i class="fa-solid fa-bolt text-amber-300"></i>
+                  <span id="btnApplyOptimalSubsetLabel">⚡ Pilih Otomatis Sektor Bebas Multiko (VIF &lt; 5)</span>
+                </button>
                 <button onclick="setMultiPreset('clear')" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-300 dark:border-slate-700 transition">
                   🔄 Reset
                 </button>
@@ -895,7 +899,7 @@
                 <i class="fa-solid fa-chart-column text-sky-500"></i>
                 Nilai VIF per Sektor & Ambang Batas
               </h4>
-              <span class="text-[11px] text-slate-500 dark:text-slate-400">VIF = (R⁻¹)ⱼⱼ</span>
+              <span id="txtMultiMethodBadge" class="text-[10px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-mono font-semibold">Ridge Regularized VIF (λ=0.05)</span>
             </div>
             <div id="chartMultiVif" class="w-full h-96"></div>
             <div class="mt-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
@@ -907,20 +911,24 @@
         </div>
 
         <!-- Table & Econometric Recommendations -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <i class="fa-solid fa-table-list text-indigo-500"></i>
-              Tabel Diagnostik VIF & Tolerance Sektor
-            </h4>
-            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-72">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <!-- Left: VIF Table Card -->
+          <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 min-h-[460px]">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-table-list text-indigo-500"></i>
+                Tabel Diagnostik VIF &amp; Tolerance Sektor
+              </h4>
+              <span id="txtMultiTableCount" class="text-xs font-mono font-medium text-slate-500 dark:text-slate-400"></span>
+            </div>
+            <div class="overflow-x-auto overflow-y-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl flex-1 max-h-[480px]">
               <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
                 <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th class="px-4 py-3">Nama Sektor</th>
-                    <th class="px-4 py-3 text-right">VIF</th>
-                    <th class="px-4 py-3 text-right">Tolerance (1/VIF)</th>
-                    <th class="px-4 py-3 text-center">Status Evaluasi</th>
+                    <th class="px-4 py-3 min-w-[220px]">Nama Sektor</th>
+                    <th class="px-4 py-3 text-right w-24 whitespace-nowrap">VIF</th>
+                    <th class="px-4 py-3 text-right w-28 whitespace-nowrap">Tolerance</th>
+                    <th class="px-4 py-3 text-center w-36 whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody id="tblMultiDiagnosticBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
@@ -930,25 +938,29 @@
             </div>
           </div>
 
-          <div class="lg:col-span-5 bg-gradient-to-br from-indigo-900/40 via-slate-900 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
-            <div class="space-y-3">
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
-                <i class="fa-solid fa-lightbulb"></i> Rekomendasi Sektor Multivariat
+          <!-- Right: Guidance & Recommendation Card -->
+          <div class="lg:col-span-5 bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 min-h-[460px]">
+            <div class="space-y-3 flex-1 flex flex-col">
+              <div class="flex items-center justify-between pb-2 border-b border-indigo-500/20">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
+                  <i class="fa-solid fa-lightbulb text-amber-300"></i> Rekomendasi Multivariat
+                </div>
+                <span class="text-[11px] text-slate-400 font-medium">Ekonometrika OLS</span>
               </div>
-              <h4 class="font-heading font-bold text-base text-white">Panduan Spesifikasi Model OLS</h4>
-              <div id="multiRecommendationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-indigo-500/20 space-y-2">
+              <h4 class="font-heading font-bold text-sm text-white">Panduan Spesifikasi Model OLS</h4>
+              <div id="multiRecommendationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/70 p-3.5 rounded-xl border border-indigo-500/25 space-y-2.5 flex-1 overflow-y-auto custom-scrollbar max-h-[320px]">
                 Memuat rekomendasi...
               </div>
             </div>
 
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-300 space-y-1.5">
-              <div class="font-bold text-indigo-400 flex items-center gap-1.5">
-                <i class="fa-solid fa-book-open"></i> Kaidah Ambang Batas VIF:
+            <div class="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3.5 text-[11px] text-slate-300 space-y-1.5 mt-auto">
+              <div class="font-bold text-indigo-300 flex items-center gap-1.5 pb-1 border-b border-slate-800">
+                <i class="fa-solid fa-book-open text-indigo-400"></i> Kaidah Ambang Batas VIF:
               </div>
-              <ul class="list-disc list-inside space-y-1 text-slate-300">
-                <li><strong class="text-emerald-400">VIF &lt; 5:</strong> Bebas multikolinearitas, varians OLS stabil.</li>
-                <li><strong class="text-amber-400">5 ≤ VIF &lt; 10:</strong> Multiko moderat, standard error membesar.</li>
-                <li><strong class="text-rose-400">VIF ≥ 10:</strong> Multiko parah; estimasi koefisien tidak reliabel.</li>
+              <ul class="space-y-1 text-slate-300 pt-1 font-sans">
+                <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span><span><strong class="text-emerald-300">VIF &lt; 5:</strong> Bebas multiko, varians OLS stabil &amp; efisien.</span></li>
+                <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span><span><strong class="text-amber-300">5 ≤ VIF &lt; 10:</strong> Multiko moderat, standard error membesar.</span></li>
+                <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span><span><strong class="text-rose-300">VIF ≥ 10:</strong> Multiko parah, koefisien tidak reliabel.</span></li>
               </ul>
             </div>
           </div>
@@ -2579,6 +2591,15 @@
       loadMulticollinearityData();
     }
 
+    function applyOptimalSubset() {
+      if (!activeMulticollinearityData || !activeMulticollinearityData.optimal_subset || activeMulticollinearityData.optimal_subset.length === 0) {
+        return;
+      }
+      currentMultiSectors = [...activeMulticollinearityData.optimal_subset];
+      renderMultiSectorCheckboxes();
+      loadMulticollinearityData();
+    }
+
     function renderMultiSectorCheckboxes() {
       const container = document.getElementById("multiSectorCheckboxes");
       if (!container) return;
@@ -2751,6 +2772,9 @@
       renderMultiHeatmap(data);
       renderMultiVifChart(data);
 
+      const tblCountEl = document.getElementById("txtMultiTableCount");
+      if (tblCountEl) tblCountEl.textContent = `${vifs.length} Sektor Dievaluasi`;
+
       const tbody = document.getElementById("tblMultiDiagnosticBody");
       if (tbody) {
         tbody.innerHTML = "";
@@ -2766,14 +2790,16 @@
           }
 
           tr.innerHTML = `
-            <td class="px-4 py-2.5 text-slate-800 dark:text-slate-200 font-sans flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono">${idx + 1}</span>
-              <span>${item.sector}</span>
+            <td class="px-4 py-2.5 text-slate-800 dark:text-slate-200 font-sans align-top">
+              <div class="flex items-start gap-2.5">
+                <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono shrink-0 mt-0.5">${idx + 1}</span>
+                <span class="leading-tight font-medium">${item.sector}</span>
+              </div>
             </td>
-            <td class="px-4 py-2.5 text-right font-bold ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
-            <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400">${item.tolerance.toFixed(4)}</td>
-            <td class="px-4 py-2.5 text-center font-sans">
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] border ${badgeClass}">${item.status}</span>
+            <td class="px-4 py-2.5 text-right font-bold align-middle font-mono ${item.vif >= 10 ? 'text-rose-600 dark:text-rose-400' : (item.vif >= 5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}">${item.vif.toFixed(3)}</td>
+            <td class="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 font-mono align-middle">${item.tolerance.toFixed(4)}</td>
+            <td class="px-4 py-2.5 text-center font-sans align-middle whitespace-nowrap">
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] border inline-block whitespace-nowrap ${badgeClass}">${item.status}</span>
             </td>
           `;
           tbody.appendChild(tr);
@@ -2782,7 +2808,67 @@
 
       const recEl = document.getElementById("multiRecommendationText");
       if (recEl) {
-        recEl.innerHTML = `<p class="leading-relaxed"><i class="fa-solid fa-circle-check text-indigo-400 mr-1.5"></i> ${data.recommendation}</p>`;
+        let itemsHtml = "";
+        const recList = data.recommendations_list || [data.recommendation];
+        
+        recList.forEach((recStr) => {
+          let iconClass = "fa-circle-info text-sky-400";
+          let itemBg = "bg-slate-900/80 border-slate-800";
+          if (recStr.includes("Condition Number") && (recStr.includes("berat") || recStr.includes("k="))) {
+            iconClass = "fa-triangle-exclamation text-amber-400";
+            itemBg = "bg-amber-950/30 border-amber-500/30";
+          } else if (recStr.includes("korelasi sangat tinggi") || recStr.includes("VIF tertinggi")) {
+            iconClass = "fa-shuffle text-rose-400";
+            itemBg = "bg-rose-950/25 border-rose-500/30";
+          } else if (recStr.includes("Subset rekomendasi")) {
+            iconClass = "fa-wand-magic-sparkles text-emerald-400";
+            itemBg = "bg-emerald-950/30 border-emerald-500/30";
+          } else if (recStr.includes("Tidak ditemukan gejala")) {
+            iconClass = "fa-shield-check text-emerald-400";
+            itemBg = "bg-emerald-950/30 border-emerald-500/30";
+          }
+          
+          itemsHtml += `
+            <div class="p-2.5 rounded-lg border ${itemBg} text-slate-200 leading-relaxed text-xs flex items-start gap-2.5">
+              <i class="fa-solid ${iconClass} mt-0.5 shrink-0 text-xs"></i>
+              <div class="flex-1">${recStr}</div>
+            </div>
+          `;
+        });
+
+        if (data.optimal_subset && data.optimal_subset.length > 0 && data.optimal_subset.length < currentMultiSectors.length) {
+          itemsHtml += `
+            <div class="mt-2 p-3 rounded-xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 border border-emerald-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-lg">
+              <div class="text-[11px] text-emerald-200">
+                <div class="font-bold text-white flex items-center gap-1.5 mb-0.5">
+                  <i class="fa-solid fa-bolt text-amber-300"></i> Rekomendasi Subset OLS (${data.optimal_subset.length} Sektor)
+                </div>
+                <span>Bebas dari multikolinearitas (seluruh VIF &lt; 5.0).</span>
+              </div>
+              <button onclick="applyOptimalSubset()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                <i class="fa-solid fa-check"></i> Terapkan Subset
+              </button>
+            </div>
+          `;
+        }
+        recEl.innerHTML = itemsHtml;
+      }
+
+      // Method badge update
+      const methodBadge = document.getElementById("txtMultiMethodBadge");
+      if (methodBadge && data.method) {
+        methodBadge.textContent = data.method;
+        if (data.method.includes('Ridge')) {
+          methodBadge.className = "text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-semibold";
+        } else {
+          methodBadge.className = "text-[10px] px-2 py-0.5 rounded bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/30 font-mono font-semibold";
+        }
+      }
+
+      // Update button label with count
+      const optBtnLabel = document.getElementById("btnApplyOptimalSubsetLabel");
+      if (optBtnLabel && data.optimal_subset) {
+        optBtnLabel.textContent = `⚡ Pilih Otomatis (${data.optimal_subset.length} Sektor Bebas Multiko)`;
       }
 
       // =======================================================================

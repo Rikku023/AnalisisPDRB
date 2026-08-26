@@ -1151,6 +1151,67 @@ class MulticoRequest(BaseModel):
     sectors: Optional[List[str]] = None
 
 
+def _find_optimal_vif_subset(
+    df_data: pd.DataFrame,
+    matched_cols: List[str],
+    matched_orig_sectors: List[str],
+    max_k: int
+) -> List[str]:
+    """
+    Secara iteratif mengeliminasi variabel dengan VIF tertinggi
+    hingga menyisakan subset sektor dengan seluruh VIF < 5 (maksimal k = max_k sektor).
+    """
+    cur_cols = list(matched_cols)
+    cur_orig = list(matched_orig_sectors)
+
+    if len(cur_cols) <= 2:
+        return cur_orig
+
+    while len(cur_cols) > 2:
+        sub = df_data[cur_cols].dropna()
+        if len(sub) < 3:
+            break
+
+        R_cur = sub.corr().values
+        R_cur = np.nan_to_num(R_cur, nan=0.0)
+        np.fill_diagonal(R_cur, 1.0)
+        k_cur = len(cur_cols)
+        N_cur = len(sub)
+
+        try:
+            cond_cur = float(np.linalg.cond(R_cur))
+        except Exception:
+            cond_cur = 1.0
+
+        use_ridge = (k_cur >= N_cur - 1) or (cond_cur > 1e3)
+        if use_ridge:
+            lam = 0.05
+            R_r = R_cur + lam * np.eye(k_cur)
+            inv_r = np.linalg.inv(R_r)
+            cur_vifs = np.diag(inv_r @ R_cur @ inv_r)
+        else:
+            try:
+                cur_vifs = np.diag(np.linalg.inv(R_cur))
+            except Exception:
+                lam = 0.05
+                R_r = R_cur + lam * np.eye(k_cur)
+                inv_r = np.linalg.inv(R_r)
+                cur_vifs = np.diag(inv_r @ R_cur @ inv_r)
+
+        max_idx = int(np.argmax(cur_vifs))
+        max_val = float(cur_vifs[max_idx])
+
+        # Kondisi berhenti: jika k <= max_k dan seluruh VIF < 5.0 dan cond <= 30.0
+        if k_cur <= max_k and max_val < 5.0 and cond_cur <= 30.0:
+            break
+
+        # Jika masih ada VIF >= 5.0 atau k > max_k, eliminasi sektor dengan VIF tertinggi
+        del cur_cols[max_idx]
+        del cur_orig[max_idx]
+
+    return cur_orig
+
+
 @functools.lru_cache(maxsize=256)
 def _compute_multicollinearity_cached(
     province: str,
@@ -1162,10 +1223,10 @@ def _compute_multicollinearity_cached(
     """
     Kalkulasi Diagnostik Multikolinearitas Antar-Sektor:
     1. Matriks Korelasi Pearson R (k x k)
-    2. Invers Matriks Korelasi R^-1 via np.linalg.pinv(R)
-    3. Variance Inflation Factor (VIF_j = diag(R^-1)_jj)
-    4. Tolerance (1 / VIF_j)
-    5. Condition Number (np.linalg.cond(R))
+    2. Generalized Ridge VIF (saat k >= N-1 atau matrix singular) vs Standard Inversion
+    3. Variance Inflation Factor (VIF_j) & Tolerance (1 / VIF_j)
+    4. Condition Number (np.linalg.cond(R))
+    5. Auto-Pruning Subset Bebas Multiko (VIF < 5)
     6. Rekomendasi Ekonometrika Otomatis
     """
     sectors = list(sectors_tuple)
@@ -1196,6 +1257,7 @@ def _compute_multicollinearity_cached(
     # Pencocokan nama sektor dengan kolom aktual pada DataFrame secara toleran tanda baca (koma, titik koma, dsb.)
     matched_cols = []
     matched_labels = []
+    matched_orig_sectors = []
 
     for sec in sectors:
         norm_sec = _normalize_name(sec)
@@ -1222,6 +1284,7 @@ def _compute_multicollinearity_cached(
             # Format label bersih
             clean_label = re.sub(r'^(LU|Peng)\s*\([A-Z]+\)\s*-\s*', '', found_col).strip()
             matched_labels.append(clean_label)
+            matched_orig_sectors.append(sec)
 
     if len(matched_cols) < 2:
         return {
@@ -1241,17 +1304,8 @@ def _compute_multicollinearity_cached(
     R = np.nan_to_num(R, nan=0.0)
     np.fill_diagonal(R, 1.0)
 
-    # 2. Invers Matriks Korelasi R^-1 menggunakan Moore-Penrose Pseudo-Inverse
-    try:
-        R_inv = np.linalg.pinv(R)
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Gagal menghitung invers matriks korelasi: {e}"
-        }
-
-    # 3. VIF = Diagonal Elemen dari R^-1
-    vifs = np.diag(R_inv)
+    k = len(matched_labels)
+    N = len(sub_df)
 
     # 4. Condition Number
     try:
@@ -1259,14 +1313,48 @@ def _compute_multicollinearity_cached(
     except Exception:
         cond_num = 1.0
 
-    k = len(matched_labels)
+    # 2. Invers Matriks Korelasi & Generalized Ridge VIF
+    # Saat k >= N - 1 atau Condition Number > 1e3, gunakan formula Generalized Ridge VIF
+    is_ridge = (k >= N - 1) or (cond_num > 1e3)
+    lam = 0.05
+
+    if is_ridge:
+        try:
+            R_ridge = R + lam * np.eye(k)
+            inv_ridge = np.linalg.inv(R_ridge)
+            vifs = np.diag(inv_ridge @ R @ inv_ridge)
+            method_str = "Ridge Regularized VIF (λ=0.05)"
+        except Exception:
+            inv_ridge = np.linalg.pinv(R + lam * np.eye(k))
+            vifs = np.diag(inv_ridge @ R @ inv_ridge)
+            method_str = "Ridge Regularized VIF (λ=0.05)"
+    else:
+        try:
+            R_inv = np.linalg.inv(R)
+            vifs = np.diag(R_inv)
+            method_str = "Standard Inversion OLS"
+        except np.linalg.LinAlgError:
+            R_ridge = R + lam * np.eye(k)
+            inv_ridge = np.linalg.inv(R_ridge)
+            vifs = np.diag(inv_ridge @ R @ inv_ridge)
+            method_str = "Ridge Regularized VIF (λ=0.05)"
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Gagal menghitung invers matriks korelasi: {e}"
+            }
+
+    # Hitung Auto-Pruning Subset Bebas Multikolinearitas (VIF < 5, max k = N - 2)
+    max_rec_k = max(2, min(N - 2, k))
+    optimal_subset = _find_optimal_vif_subset(df_data, matched_cols, matched_orig_sectors, max_rec_k)
+
     vif_results = []
-    has_multicollinearity = False
+    has_multicollinearity = is_ridge or (cond_num > 30.0)
     high_corr_pairs = []
 
     for i in range(k):
         vif_val = float(vifs[i])
-        # Secara teoritis VIF >= 1.0; koreksi anomali floating point
+        # Koreksi floating point
         if vif_val < 1.0:
             vif_val = 1.0
         tol_val = float(1.0 / vif_val) if vif_val > 0 else 0.0
@@ -1280,8 +1368,12 @@ def _compute_multicollinearity_cached(
             badge_color = "yellow"
             has_multicollinearity = True
         else:
-            status_str = "Aman (< 5)"
-            badge_color = "green"
+            if is_ridge:
+                status_str = "Ridge Terkoreksi (< 5)"
+                badge_color = "green"
+            else:
+                status_str = "Aman (< 5)"
+                badge_color = "green"
 
         vif_results.append({
             "sector": matched_labels[i],
@@ -1310,13 +1402,23 @@ def _compute_multicollinearity_cached(
 
     # 6. Formulasi Rekomendasi Ekonometrika
     recommendations = []
-    if cond_num > 30.0:
+    if is_ridge:
+        recommendations.append(
+            f"Jumlah prediktor (k={k}) mendekati/melebihi derajat bebas data (N={N}, Condition Number = {cond_num:.2e}). "
+            f"Perhitungan VIF distabilkan menggunakan formula Generalized Ridge Regularization (λ=0.05)."
+        )
+    elif cond_num > 30.0:
         recommendations.append(
             f"Condition Number bernilai {cond_num:.2f} (> 30), mengindikasikan struktur data mengalami multikolinearitas berat."
         )
     elif cond_num > 15.0:
         recommendations.append(
             f"Condition Number bernilai {cond_num:.2f} (15–30), mengindikasikan gejala multikolinearitas moderat."
+        )
+
+    if optimal_subset and len(optimal_subset) < k:
+        recommendations.append(
+            f"Subset rekomendasi bebas multiko ({len(optimal_subset)} sektor, VIF < 5): {', '.join(optimal_subset)}."
         )
 
     if high_corr_pairs:
@@ -1340,7 +1442,7 @@ def _compute_multicollinearity_cached(
             f"Pertimbangkan untuk mengeluarkan variabel ini atau menggunakan metode regularisasi (Ridge/Lasso Regression)."
         )
 
-    if not has_multicollinearity and not high_corr_pairs:
+    if not has_multicollinearity and not high_corr_pairs and not is_ridge:
         recommendation_str = (
             "Tidak ditemukan gejala multikolinearitas yang signifikan (seluruh VIF < 5 dan Condition Number aman). "
             "Seluruh sektor yang dipilih dapat diikutsertakan bersamaan dalam model regresi berganda."
@@ -1497,8 +1599,11 @@ def _compute_multicollinearity_cached(
 
     return {
         "status": "success",
+        "method": method_str,
         "condition_number": round(cond_num, 2),
         "has_multicollinearity": has_multicollinearity,
+        "is_rank_deficient": is_ridge,
+        "optimal_subset": optimal_subset,
         "vif_results": vif_results,
         "inter_sector_matrix": {
             "labels": matched_labels,
@@ -1506,7 +1611,8 @@ def _compute_multicollinearity_cached(
         },
         "cross_transport_matrix": cross_transport_matrix,
         "transport_multicollinearity": transport_multicollinearity,
-        "recommendation": recommendation_str
+        "recommendation": recommendation_str,
+        "recommendations_list": recommendations
     }
 
 
