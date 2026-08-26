@@ -2319,15 +2319,20 @@
     <p class="mt-1">Dataset Resmi Badan Pusat Statistik (BPS)</p>
   </footer>
 
+  <!-- Embedded Server Manifest (Zero-latency Instant Initial Render & Cold-Start Immunity) -->
+  <script id="server-manifest-data" type="application/json">
+    {{ manifest_json | safe }}
+  </script>
+
   <!-- Core Dashboard Logic -->
   <script>
     // =========================================================================
-    // Client-Side In-Memory Cache (0ms latency for visited views)
+    // Client-Side In-Memory Cache (0ms latency for visited views + Auto-Retry)
     // =========================================================================
     const apiCache = new Map();
     const MAX_CLIENT_CACHE = 150;
 
-    async function fetchWithCache(url, options = {}) {
+    async function fetchWithCache(url, options = {}, retries = 2, delayMs = 600) {
       const forceRefresh = options.bypassCache === true;
       const method = options.method || 'GET';
       const cacheKey = method === 'GET' ? url : `${method}:${url}:${options.body || ''}`;
@@ -2338,19 +2343,34 @@
       const fetchOptions = { ...options };
       delete fetchOptions.bypassCache;
 
-      const res = await fetch(url, fetchOptions);
-      if (!res.ok) {
-        throw new Error(`HTTP error ${res.status} for ${url}`);
-      }
-      const data = await res.json();
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const res = await fetch(url, fetchOptions);
+          if (res.status >= 500 && attempt < retries) {
+            // Cold start atau transient serverless timeout, tunggu sebentar lalu retry
+            await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+            continue;
+          }
+          if (!res.ok) {
+            throw new Error(`HTTP error ${res.status} for ${url}`);
+          }
+          const data = await res.json();
 
-      if (apiCache.size >= MAX_CLIENT_CACHE) {
-        const oldestKey = apiCache.keys().next().value;
-        apiCache.delete(oldestKey);
-      }
+          if (apiCache.size >= MAX_CLIENT_CACHE) {
+            const oldestKey = apiCache.keys().next().value;
+            apiCache.delete(oldestKey);
+          }
 
-      apiCache.set(cacheKey, data);
-      return data;
+          apiCache.set(cacheKey, data);
+          return data;
+        } catch (err) {
+          if (attempt < retries) {
+            await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+          } else {
+            throw err;
+          }
+        }
+      }
     }
 
     function clearClientCache() {
@@ -2484,9 +2504,6 @@
 
     // Init App
     document.addEventListener("DOMContentLoaded", async () => {
-      // Bangunkan container serverless di latar belakang (cold start pre-warm)
-      fetch('/api/options', { cache: 'no-store' }).catch(() => {});
-
       initTheme();
       renderMultiSectorCheckboxes();
       await loadInitialManifest();
@@ -2705,9 +2722,25 @@
       updateProvTriggerLabel();
     }
 
-    async function loadInitialManifest() {
+    async function loadInitialManifest(force = false) {
+      if (!force) {
+        // Cek inline server-rendered manifest terlebih dahulu (0ms latency, anti-cold start)
+        const embeddedEl = document.getElementById("server-manifest-data");
+        if (embeddedEl && embeddedEl.textContent.trim()) {
+          try {
+            const embeddedData = JSON.parse(embeddedEl.textContent);
+            if (embeddedData && embeddedData.provinces && Object.keys(embeddedData.provinces).length > 0) {
+              currentManifest = embeddedData;
+              populateProvinceDropdown(currentManifest);
+              populateYears(true);
+              return currentManifest;
+            }
+          } catch (e) {}
+        }
+      }
+
       try {
-        currentManifest = await fetchWithCache("/api/manifest");
+        currentManifest = await fetchWithCache("/api/manifest", { bypassCache: force });
         populateProvinceDropdown(currentManifest);
         populateYears(true);
       } catch (err) {

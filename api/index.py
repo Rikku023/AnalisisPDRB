@@ -396,24 +396,49 @@ def _get_growth_correlation_matrix_cached(
 # API ENDPOINTS (with Caching & High Performance)
 # ======================================================================================
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    err_trace = traceback.format_exc()
+    print(f"⚠️ Unhandled Server Error at {request.url.path}: {exc}\n{err_trace}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "error",
+            "error": str(exc),
+            "type": exc.__class__.__name__,
+            "path": request.url.path,
+            "message": "Terjadi kesalahan internal pada serverless engine. Silakan muat ulang."
+        }
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index_page(request: Request):
     """Serve halaman dashboard utama."""
     manifest = load_manifest()
+    manifest_json = "{}"
+    try:
+        manifest_json = json.dumps(manifest)
+    except Exception as e:
+        print(f"⚠️ Error dumping manifest to JSON: {e}")
+
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
             "title": "Dashboard Analisis PDRB & Transportasi",
             "manifest": manifest,
+            "manifest_json": manifest_json,
             "data_dir": str(DATA_DIR)
         }
     )
 
 
 @app.get("/api/health")
+@app.get("/api/warmup")
 async def health_check():
-    """Health check dan diagnostic report."""
+    """Health check & pre-warm container serverless."""
     data_files = [f.name for f in DATA_DIR.glob("*")] if DATA_DIR.exists() else []
     return cached_json_response({
         "status": "ok",
