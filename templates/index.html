@@ -422,6 +422,9 @@
         <button onclick="switchTab('tab4')" id="nav-tab4" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap">
           <i class="fa-solid fa-shield-halved mr-2 text-indigo-500"></i> Diagnostik Multikolinearitas (VIF)
         </button>
+        <button onclick="switchTab('tab5')" id="nav-tab5" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap">
+          <i class="fa-solid fa-code-compare mr-2 text-amber-500"></i> ⚔️ Komparasi Antar-Wilayah
+        </button>
         <button onclick="switchTab('tab2')" id="nav-tab2" class="tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap">
           <i class="fa-solid fa-chart-area mr-2"></i> Tren Makro & Sektoral
         </button>
@@ -1835,6 +1838,479 @@
 
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- TAB 5: KOMPARASI ANTAR-WILAYAH (HEAD-TO-HEAD REGIONAL COMPARISON) -->
+    <!-- ========================================================================= -->
+    <div id="content-tab5" class="hidden space-y-6">
+
+      <!-- Section 1: Control Bar & Filter Komparasi -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800/80">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider mb-1.5">
+              <i class="fa-solid fa-code-compare"></i> Analisis Komparatif Regional
+            </div>
+            <h3 class="text-lg font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span>Komparasi Antar-Wilayah: Sensitivitas Output PDRB vs Transportasi</span>
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Bandingkan profil elastisitas dan transmisi antara dua provinsi pada 17 Sektor Lapangan Usaha secara langsung.
+            </p>
+          </div>
+
+          <!-- Live Status Indicator -->
+          <div class="flex items-center gap-2 self-start lg:self-auto">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-mono font-medium border border-slate-200 dark:border-slate-700">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span id="txtCompStatusBadge">Komparasi 2 Wilayah</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Control Inputs Row -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          
+          <!-- Dropdown Provinsi A -->
+          <div class="md:col-span-3 space-y-1">
+            <label class="text-[11px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-sky-500"></span> Provinsi A (Aksen Biru)
+            </label>
+            <div class="relative">
+              <select id="compProvA" onchange="onCompProvChange()" class="w-full bg-slate-50 dark:bg-slate-950/80 border border-sky-300 dark:border-sky-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-3 py-2.5 pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer font-medium shadow-inner">
+                <!-- Populated dynamically via JS -->
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-sky-500 pointer-events-none"></i>
+            </div>
+          </div>
+
+          <!-- Swap Button -->
+          <div class="md:col-span-1 flex items-end justify-center pb-0.5">
+            <button onclick="swapCompProvinces()" class="p-2.5 w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition shadow-sm flex items-center justify-center" title="Tukar Posisi Provinsi A & B">
+              <i class="fa-solid fa-right-left text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Dropdown Provinsi B -->
+          <div class="md:col-span-3 space-y-1">
+            <label class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span> Provinsi B (Aksen Kuning)
+            </label>
+            <div class="relative">
+              <select id="compProvB" onchange="onCompProvChange()" class="w-full bg-slate-50 dark:bg-slate-950/80 border border-amber-300 dark:border-amber-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-3 py-2.5 pr-8 focus:ring-2 focus:ring-amber-500 outline-none appearance-none cursor-pointer font-medium shadow-inner">
+                <!-- Populated dynamically via JS -->
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-amber-500 pointer-events-none"></i>
+            </div>
+          </div>
+
+          <!-- Transport Indicator Selector (Button Group) -->
+          <div class="md:col-span-3 space-y-1">
+            <label class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Indikator Transportasi (Y)
+            </label>
+            <div class="inline-flex w-full rounded-xl bg-slate-100 dark:bg-slate-950/80 p-1 border border-slate-200 dark:border-slate-800 shadow-inner">
+              <button onclick="setCompIndicator('penumpang')" id="btnCompIndPenumpang" class="flex-1 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 shadow transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-plane text-[10px]"></i> Penumpang
+              </button>
+              <button onclick="setCompIndicator('bagasi')" id="btnCompIndBagasi" class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-suitcase-rolling text-[10px]"></i> Bagasi
+              </button>
+              <button onclick="setCompIndicator('barang')" id="btnCompIndBarang" class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-box-open text-[10px]"></i> Barang
+              </button>
+            </div>
+          </div>
+
+          <!-- Analysis Mode Selector -->
+          <div class="md:col-span-2 space-y-1">
+            <label class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Mode Analisis
+            </label>
+            <div class="relative">
+              <select id="compAnalysisMode" onchange="onCompModeChange()" class="w-full bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2 pr-7 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer font-medium shadow-inner">
+                <option value="growth_yoy" selected>YoY (%) HK Riil</option>
+                <option value="abs_hk">Absolut (HK 2010)</option>
+                <option value="growth_qoq">QoQ (%) HK Riil</option>
+                <option value="abs_hb">Absolut (HB Nominal)</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Head-to-Head KPI Summary Cards (4 Cards Grid) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- KPI 1: Volume Transportasi Head-to-Head -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-sky-500">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Volume Transportasi</span>
+            <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+              <i class="fa-solid fa-chart-simple text-sm"></i>
+            </div>
+          </div>
+          <div class="my-2 space-y-1 font-mono">
+            <div class="flex items-center justify-between text-xs">
+              <span id="lblCompProvAName1" class="text-sky-600 dark:text-sky-400 font-sans font-bold truncate max-w-[120px]">Prov A</span>
+              <span id="kpiCompTransA" class="font-bold text-slate-900 dark:text-white">-</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span id="lblCompProvBName1" class="text-amber-600 dark:text-amber-400 font-sans font-bold truncate max-w-[120px]">Prov B</span>
+              <span id="kpiCompTransB" class="font-bold text-slate-900 dark:text-white">-</span>
+            </div>
+          </div>
+          <div id="kpiCompTransRatio" class="text-[11px] text-slate-500 dark:text-slate-400">Rasio Perbandingan: -</div>
+        </div>
+
+        <!-- KPI 2: Total Output PDRB -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-indigo-500">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Output PDRB</span>
+            <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <i class="fa-solid fa-landmark text-sm"></i>
+            </div>
+          </div>
+          <div class="my-2 space-y-1 font-mono">
+            <div class="flex items-center justify-between text-xs">
+              <span id="lblCompProvAName2" class="text-sky-600 dark:text-sky-400 font-sans font-bold truncate max-w-[120px]">Prov A</span>
+              <span id="kpiCompPdrbA" class="font-bold text-slate-900 dark:text-white">-</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span id="lblCompProvBName2" class="text-amber-600 dark:text-amber-400 font-sans font-bold truncate max-w-[120px]">Prov B</span>
+              <span id="kpiCompPdrbB" class="font-bold text-slate-900 dark:text-white">-</span>
+            </div>
+          </div>
+          <div id="kpiCompPdrbScale" class="text-[11px] text-slate-500 dark:text-slate-400">Skala PDRB: -</div>
+        </div>
+
+        <!-- KPI 3: Top Sektor Terkorelasi -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-emerald-500">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Top Sektor Terkorelasi</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+            </div>
+          </div>
+          <div class="my-2 space-y-1 text-xs">
+            <div class="truncate">
+              <span class="text-sky-600 dark:text-sky-400 font-bold">A:</span>
+              <span id="kpiCompTopSecA" class="text-slate-800 dark:text-slate-200 font-medium ml-1" title="-">-</span>
+              <span id="kpiCompTopSecValA" class="font-mono font-bold text-sky-600 dark:text-sky-400 ml-1"></span>
+            </div>
+            <div class="truncate">
+              <span class="text-amber-600 dark:text-amber-400 font-bold">B:</span>
+              <span id="kpiCompTopSecB" class="text-slate-800 dark:text-slate-200 font-medium ml-1" title="-">-</span>
+              <span id="kpiCompTopSecValB" class="font-mono font-bold text-amber-600 dark:text-amber-400 ml-1"></span>
+            </div>
+          </div>
+          <div id="kpiCompTopStatus" class="text-[11px] text-slate-500 dark:text-slate-400">Sensitivitas Terkuat Sektoral</div>
+        </div>
+
+        <!-- KPI 4: Sektor Paling Divergen -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-rose-500">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sektor Paling Divergen</span>
+            <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <i class="fa-solid fa-arrows-split-up-and-left text-sm"></i>
+            </div>
+          </div>
+          <div class="my-2">
+            <div id="kpiCompMaxDeltaSec" class="text-xs font-heading font-bold text-slate-900 dark:text-white line-clamp-2" title="-">-</div>
+            <div class="flex items-center gap-2 mt-1 font-mono text-xs">
+              <span id="kpiCompMaxDeltaVal" class="font-bold text-rose-600 dark:text-rose-400">|Δr| = -</span>
+              <span id="kpiCompMaxDeltaDetails" class="text-slate-500 dark:text-slate-400 text-[11px]"></span>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400">Perbedaan transmisi paling ekstrem</div>
+        </div>
+
+      </div>
+
+      <!-- Section 3: Grouped Bar Chart Plotly -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 gap-2">
+          <div>
+            <h4 class="font-heading font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-chart-column text-amber-500"></i>
+              <span>Grouped Bar Chart: Komparasi Koefisien Korelasi ($r$) per Sektor</span>
+            </h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Visualisasi komparasi koefisien Pearson 17 Sektor Lapangan Usaha antara <span id="txtChartProvAName" class="text-sky-500 font-semibold">Provinsi A</span> vs <span id="txtChartProvBName" class="text-amber-500 font-semibold">Provinsi B</span>.
+            </p>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-medium">
+            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-sky-500"></span> <span id="legendProvAName">Provinsi A</span></span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-amber-500"></span> <span id="legendProvBName">Provinsi B</span></span>
+          </div>
+        </div>
+
+        <div id="chartComparisonBar" class="w-full h-[460px]"></div>
+
+        <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
+          <span><i class="fa-solid fa-asterisk text-amber-500 mr-1"></i> Garis horizontal putus-putus menandai batas korelasi kuat ($r = \pm 0.70$). Nilai positif menandakan pertumbuhan transportasi sejalan dengan pertumbuhan output sektor PDRB.</span>
+        </div>
+      </div>
+
+      <!-- Section 4: Table & Guidance Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- Table Column -->
+        <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 flex flex-col justify-between min-h-[480px]">
+          <div>
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-table-list text-amber-500"></i>
+                <span>Tabel Komparasi Korelasi &amp; Diagnostik Multikolinearitas</span>
+              </h4>
+              <span class="text-[11px] text-slate-400 font-mono">Klik header untuk sort</span>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-[500px]">
+              <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 select-none">
+                  <tr>
+                    <th onclick="sortCompTable('sector')" class="px-4 py-3 min-w-[200px] cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Sektor">
+                      <div class="flex items-center gap-1.5">
+                        <span>Nama Sektor PDRB</span>
+                        <span id="compSortIcon_sector"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortCompTable('r_a')" class="px-3 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Korelasi Prov A">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <span id="thCompProvAName">r Prov A</span>
+                        <span id="compSortIcon_r_a"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortCompTable('r_b')" class="px-3 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Korelasi Prov B">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <span id="thCompProvBName">r Prov B</span>
+                        <span id="compSortIcon_r_b"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortCompTable('delta')" class="px-3 py-3 text-center w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Selisih |Δr|">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <span>Selisih (|Δr|)</span>
+                        <span id="compSortIcon_delta"><i class="fa-solid fa-sort-down text-amber-500 text-xs"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortCompTable('vif_a')" class="px-3 py-3 text-center w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort VIF Prov A">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <span>VIF Prov A</span>
+                        <span id="compSortIcon_vif_a"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortCompTable('vif_b')" class="px-3 py-3 text-center w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort VIF Prov B">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <span>VIF Prov B</span>
+                        <span id="compSortIcon_vif_b"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="tblComparisonBody" class="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+            <span><i class="fa-solid fa-filter mr-1 text-amber-500"></i> Default diurutkan berdasarkan perbedaan transmisi korelasi terbesar ($|\Delta r|$) ke terkecil.</span>
+          </div>
+        </div>
+
+        <!-- Interpretasi & Rekomendasi Regional Column -->
+        <div class="lg:col-span-4 bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 min-h-[480px]">
+          <div class="space-y-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
+              <i class="fa-solid fa-lightbulb"></i> Wawasan Ekonometrika Regional
+            </div>
+            <h4 class="font-heading font-bold text-base text-white">Interpretasi Pola Spasial</h4>
+            <div id="compInterpretationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-amber-500/20 space-y-2">
+              Memuat analisis komparasi antar-wilayah...
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 text-[11px] text-slate-300 space-y-2">
+            <div class="font-bold text-amber-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-scale-balanced"></i> Tipologi Perbedaan Regional:
+            </div>
+            <ul class="list-disc list-inside space-y-1 text-slate-300 leading-relaxed">
+              <li><strong>Sektor Selaras ($|\Delta r| \le 0.20$):</strong> Menunjukkan elastisitas logistik yang homogen antar-wilayah.</li>
+              <li><strong>Sektor Divergen ($|\Delta r| \ge 0.50$):</strong> Mengindikasikan perbedaan ketergantungan moda (misal: pusat logistik hub vs kepulauan/pertambangan).</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Section 5: Educational Theory & Formula Card (KaTeX Math) -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800/80 gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-base shrink-0">
+              <i class="fa-solid fa-scale-unbalanced"></i>
+            </div>
+            <div>
+              <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Landasan Teori &amp; Formulasi Komparasi Antar-Wilayah</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 font-mono font-normal">Spatial Econometrics</span>
+              </h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Metode statistik pengujian perbedaan koefisien asosiasi bivariat dan keselarasan respon struktural regional.
+              </p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-mono font-semibold border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto shrink-0">
+            Uji Komparasi 2 Sampel
+          </span>
+        </div>
+
+        <!-- 4 Formula Cards Grid (2x2) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Card 1: Selisih Korelasi Absolut -->
+          <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                <i class="fa-solid fa-minus"></i> 1. Selisih Korelasi Absolut ($|\Delta r_k|$)
+              </span>
+              <span class="text-[11px] font-mono text-slate-400">Rentang: $[0.0, 2.0]$</span>
+            </div>
+            
+            <!-- Formula Box -->
+            <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+              <div class="text-amber-600 dark:text-amber-300 font-semibold">
+                $$|\Delta r_k| = \left| r_A(X_k, Y) - r_B(X_k, Y) \right|$$
+              </div>
+              <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                $$\text{Divergensi Tinggi: } |\Delta r_k| \ge 0.50 \quad|\quad \text{Homogen: } |\Delta r_k| \le 0.20$$
+              </div>
+            </div>
+
+            <!-- Explanation -->
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+              <p><strong>Makna:</strong> Mengukur besaran deviasi elastisitas transmisi sektor $X_k$ terhadap aktivitas transportasi antara Provinsi A dan Provinsi B.</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Implikasi:</strong> Nilai $|\Delta r|$ tinggi mengindikasikan bahwa perlakuan intervensi infrastruktur transportasi tidak dapat diseragamkan antar kedua provinsi.</p>
+            </div>
+          </div>
+
+          <!-- Card 2: Fisher's z-Transformation -->
+          <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs">
+                <i class="fa-solid fa-calculator"></i> 2. Uji Beda 2 Korelasi (Fisher's $z$)
+              </span>
+              <span class="text-[11px] font-mono text-slate-400">Uji Z Normal Baku</span>
+            </div>
+            
+            <!-- Formula Box -->
+            <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+              <div class="text-sky-600 dark:text-sky-300 font-semibold">
+                $$Z = \frac{z_A - z_B}{\sqrt{\frac{1}{N_A - 3} + \frac{1}{N_B - 3}}}$$
+              </div>
+              <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                $$z = \frac{1}{2} \ln\left(\frac{1 + r}{1 - r}\right) = \text{arctanh}(r)$$
+              </div>
+            </div>
+
+            <!-- Explanation -->
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+              <p><strong>Uji Hipotesis:</strong> $H_0: \rho_A = \rho_B$ (kekuatan korelasi identik). Jika $|Z| \ge 1.96$, perbedaan korelasi antar-wilayah terbukti signifikan pada taraf $\alpha = 5\%$.</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Asumsi:</strong> Observasi sampel runtun waktu kedua provinsi independen satu sama lain.</p>
+            </div>
+          </div>
+
+          <!-- Card 3: Keselarasan Struktur Respons (Cosine Similarity) -->
+          <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                <i class="fa-solid fa-arrows-to-dot"></i> 3. Keselarasan Vektor Respons ($S_{AB}$)
+              </span>
+              <span class="text-[11px] font-mono text-slate-400">Rentang: $[-1.0, +1.0]$</span>
+            </div>
+            
+            <!-- Formula Box -->
+            <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+              <div class="text-emerald-600 dark:text-emerald-300 font-semibold">
+                $$S_{AB} = \frac{\mathbf{r}_A \cdot \mathbf{r}_B}{\|\mathbf{r}_A\|_2 \cdot \|\mathbf{r}_B\|_2} = \frac{\sum_{k=1}^{17} r_{A,k} \cdot r_{B,k}}{\sqrt{\sum r_{A,k}^2} \cdot \sqrt{\sum r_{B,k}^2}}$$
+              </div>
+              <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                $$\mathbf{r}_A, \mathbf{r}_B \in \mathbb{R}^{17} \quad (\text{Vektor Korelasi Sektoral})$$
+              </div>
+            </div>
+
+            <!-- Explanation -->
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+              <p><strong>Makna:</strong> Mengukur kemiripan pola respon makroekonomi sektoral secara menyeluruh antara kedua wilayah.</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Interpretasi:</strong> $S_{AB} \to 1.0$ berarti kedua provinsi memiliki struktur ekonomi yang merespons transportasi secara simetris.</p>
+            </div>
+          </div>
+
+          <!-- Card 4: Diagnostik Multikolinearitas Komparatif -->
+          <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold text-xs">
+                <i class="fa-solid fa-gauge-high"></i> 4. Stabilitas Spesifikasi Model ($\text{VIF}_A \text{ vs } \text{VIF}_B$)
+              </span>
+              <span class="text-[11px] font-mono text-slate-400">BLUE Robustness</span>
+            </div>
+            
+            <!-- Formula Box -->
+            <div class="bg-white dark:bg-slate-900/90 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-2">
+              <div class="text-purple-600 dark:text-purple-300 font-semibold">
+                $$\text{VIF}_{j, \text{Prov}} = (\mathbf{R}_{\text{Prov}}^{-1})_{jj}$$
+              </div>
+              <div class="text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-2 text-xs">
+                $$\text{Evaluasi Kelayakan Model Regresi Lintas Provinsi}$$
+              </div>
+            </div>
+
+            <!-- Explanation -->
+            <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+              <p><strong>Makna:</strong> Memastikan apakah model regresi sektoral yang spesifik di Provinsi A dapat diaplikasikan ke Provinsi B tanpa terkena ancaman singularitas atau inflasi varians.</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400"><strong>Peringatan:</strong> Subset sektor bebas multiko di Provinsi A belum tentu bebas multiko di Provinsi B karena korelasi internal antar-sektor yang berlainan.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Pipeline -->
+        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 text-xs text-slate-600 dark:text-slate-300 space-y-3">
+          <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-diagram-project text-amber-500"></i>
+            <span>Alur Metodologi Komparasi Antar-Wilayah (Spatial Comparison Pipeline):</span>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center font-mono">
+            <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+              <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 1</div>
+              <div class="font-bold text-sky-500 text-xs mt-1">Ekstraksi Deret Waktu</div>
+              <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\mathbf{X}_A, \mathbf{Y}_A \text{ dan } \mathbf{X}_B, \mathbf{Y}_B$$</div>
+            </div>
+            <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+              <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 2</div>
+              <div class="font-bold text-amber-500 text-xs mt-1">Estimasi Korelasi</div>
+              <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\mathbf{r}_A, \mathbf{r}_B \in \mathbb{R}^{17}$$</div>
+            </div>
+            <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+              <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 3</div>
+              <div class="font-bold text-emerald-500 text-xs mt-1">Komputasi Selisih</div>
+              <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$|\Delta r| \text{ & } Z_{\text{diff}}$$</div>
+            </div>
+            <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+              <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 4</div>
+              <div class="font-bold text-purple-500 text-xs mt-1">Cross-Validation VIF</div>
+              <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$\text{Robust OLS Spec}$$</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
   </main>
 
   <!-- Footer -->
@@ -2059,6 +2535,9 @@
         renderMultiCrossBarChart(activeMulticollinearityData);
         renderMultiTransportHeatmap(activeMulticollinearityData);
         renderMultiTransportVifChart(activeMulticollinearityData);
+      }
+      if (activeComparisonData) {
+        renderComparisonChart(activeComparisonData);
       }
     }
 
@@ -3006,24 +3485,36 @@
     }
 
     function switchTab(tabId) {
-      document.getElementById("content-tab1").classList.add("hidden");
-      document.getElementById("content-tab2").classList.add("hidden");
-      document.getElementById("content-tab3").classList.add("hidden");
-      document.getElementById("content-tab4").classList.add("hidden");
+      document.getElementById("content-tab1")?.classList.add("hidden");
+      document.getElementById("content-tab2")?.classList.add("hidden");
+      document.getElementById("content-tab3")?.classList.add("hidden");
+      document.getElementById("content-tab4")?.classList.add("hidden");
+      document.getElementById("content-tab5")?.classList.add("hidden");
 
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.className = "tab-btn px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 whitespace-nowrap";
       });
 
-      document.getElementById(`content-${tabId}`).classList.remove("hidden");
-      const activeColorClass = tabId === 'tab4' 
-        ? "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-slate-800/60 whitespace-nowrap"
-        : "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60 whitespace-nowrap";
-      document.getElementById(`nav-${tabId}`).className = activeColorClass;
+      document.getElementById(`content-${tabId}`)?.classList.remove("hidden");
+      let activeColorClass = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-sky-500 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-slate-800/60 whitespace-nowrap";
+      if (tabId === 'tab4') {
+        activeColorClass = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-slate-800/60 whitespace-nowrap";
+      } else if (tabId === 'tab5') {
+        activeColorClass = "tab-btn active px-4 py-2.5 font-heading font-semibold text-sm rounded-t-lg border-b-2 border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-slate-800/60 whitespace-nowrap";
+      }
+      const navBtn = document.getElementById(`nav-${tabId}`);
+      if (navBtn) navBtn.className = activeColorClass;
 
       if (tabId === 'tab4') {
         renderMultiSectorCheckboxes();
         loadMulticollinearityData();
+      } else if (tabId === 'tab5') {
+        populateCompProvinceDropdowns();
+        loadComparisonData();
+      }
+
+      if (typeof renderKatexMath === 'function') {
+        setTimeout(renderKatexMath, 50);
       }
 
       window.dispatchEvent(new Event('resize'));
@@ -4298,6 +4789,525 @@
       };
 
       Plotly.newPlot('chartMultiTransportVif', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    // =========================================================================
+    // TAB 5: KOMPARASI ANTAR-WILAYAH (HEAD-TO-HEAD REGIONAL COMPARISON)
+    // =========================================================================
+    let compProvA = "sulawesi_selatan";
+    let compProvB = "gorontalo";
+    let compIndicator = "penumpang"; // "penumpang" | "bagasi" | "barang"
+    let compAnalysisMode = "growth_yoy";
+    let compSortCol = 'delta';
+    let compSortDir = 'desc';
+    let activeComparisonData = null;
+
+    function populateCompProvinceDropdowns() {
+      const selA = document.getElementById("compProvA");
+      const selB = document.getElementById("compProvB");
+      if (!selA || !selB) return;
+      if (selA.options.length > 0 && selB.options.length > 0) return;
+
+      const provinces = currentManifest.provinces || {};
+
+      let html = '';
+      ISLAND_GROUPS.forEach(grp => {
+        const matchingKeys = grp.keys.filter(k => provinces[k]);
+        if (matchingKeys.length === 0) return;
+        html += `<optgroup label="${grp.icon} Pulau ${grp.label}">`;
+        matchingKeys.forEach(k => {
+          const prov = provinces[k];
+          html += `<option value="${k}">${prov.name}</option>`;
+        });
+        html += `</optgroup>`;
+      });
+
+      if (html === '') {
+        Object.entries(provinces).forEach(([k, prov]) => {
+          html += `<option value="${k}">${prov.name}</option>`;
+        });
+      }
+
+      selA.innerHTML = html;
+      selB.innerHTML = html;
+
+      selA.value = compProvA;
+      selB.value = compProvB;
+    }
+
+    function swapCompProvinces() {
+      const temp = compProvA;
+      compProvA = compProvB;
+      compProvB = temp;
+
+      const selA = document.getElementById("compProvA");
+      const selB = document.getElementById("compProvB");
+      if (selA) selA.value = compProvA;
+      if (selB) selB.value = compProvB;
+
+      loadComparisonData();
+    }
+
+    function setCompIndicator(ind) {
+      compIndicator = ind;
+      const btnP = document.getElementById("btnCompIndPenumpang");
+      const btnBag = document.getElementById("btnCompIndBagasi");
+      const btnBar = document.getElementById("btnCompIndBarang");
+
+      const activeClass = "flex-1 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 shadow transition flex items-center justify-center gap-1";
+      const inactiveClass = "flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition flex items-center justify-center gap-1";
+
+      if (btnP) btnP.className = ind === 'penumpang' ? activeClass : inactiveClass;
+      if (btnBag) btnBag.className = ind === 'bagasi' ? activeClass : inactiveClass;
+      if (btnBar) btnBar.className = ind === 'barang' ? activeClass : inactiveClass;
+
+      loadComparisonData();
+    }
+
+    function onCompProvChange() {
+      const selA = document.getElementById("compProvA");
+      const selB = document.getElementById("compProvB");
+      if (selA) compProvA = selA.value;
+      if (selB) compProvB = selB.value;
+      loadComparisonData();
+    }
+
+    function onCompModeChange() {
+      const selMode = document.getElementById("compAnalysisMode");
+      if (selMode) compAnalysisMode = selMode.value;
+      loadComparisonData();
+    }
+
+    function _normalizeSectorName(s) {
+      if (!s) return '';
+      return s.toLowerCase().replace(/^(lu|peng)\s*\([a-z]+\)\s*-\s*/i, '').replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    async function loadComparisonData(force = false) {
+      const provAData = currentManifest.provinces?.[compProvA] || { name: compProvA };
+      const provBData = currentManifest.provinces?.[compProvB] || { name: compProvB };
+
+      // Update UI Header Labels
+      const lblA1 = document.getElementById("lblCompProvAName1");
+      const lblB1 = document.getElementById("lblCompProvBName1");
+      const lblA2 = document.getElementById("lblCompProvAName2");
+      const lblB2 = document.getElementById("lblCompProvBName2");
+      const chartA = document.getElementById("txtChartProvAName");
+      const chartB = document.getElementById("txtChartProvBName");
+      const legA = document.getElementById("legendProvAName");
+      const legB = document.getElementById("legendProvBName");
+      const thA = document.getElementById("thCompProvAName");
+      const thB = document.getElementById("thCompProvBName");
+
+      if (lblA1) lblA1.textContent = provAData.name;
+      if (lblB1) lblB1.textContent = provBData.name;
+      if (lblA2) lblA2.textContent = provAData.name;
+      if (lblB2) lblB2.textContent = provBData.name;
+      if (chartA) chartA.textContent = provAData.name;
+      if (chartB) chartB.textContent = provBData.name;
+      if (legA) legA.textContent = provAData.name;
+      if (legB) legB.textContent = provBData.name;
+      if (thA) thA.textContent = `r ${provAData.name}`;
+      if (thB) thB.textContent = `r ${provBData.name}`;
+
+      const statusBadge = document.getElementById("txtCompStatusBadge");
+      if (statusBadge) statusBadge.textContent = "Mengambil Data...";
+
+      try {
+        const priceType = compAnalysisMode === 'abs_hb' ? 'HB' : 'HK';
+        const urlCorrA = `/api/correlations?province=${encodeURIComponent(compProvA)}&pdrb_type=${priceType}&type=lu&analysis_mode=${compAnalysisMode}`;
+        const urlCorrB = `/api/correlations?province=${encodeURIComponent(compProvB)}&pdrb_type=${priceType}&type=lu&analysis_mode=${compAnalysisMode}`;
+        const urlDataA = `/api/data?province=${encodeURIComponent(compProvA)}&analysis_mode=${compAnalysisMode}`;
+        const urlDataB = `/api/data?province=${encodeURIComponent(compProvB)}&analysis_mode=${compAnalysisMode}`;
+
+        const payloadMultiA = {
+          province: compProvA,
+          price_type: priceType,
+          analysis_mode: compAnalysisMode,
+          category: 'lu',
+          sectors: ALL_LU_SECTORS
+        };
+        const payloadMultiB = {
+          province: compProvB,
+          price_type: priceType,
+          analysis_mode: compAnalysisMode,
+          category: 'lu',
+          sectors: ALL_LU_SECTORS
+        };
+
+        const [corrsAData, corrsBData, dashA, dashB, multiA, multiB] = await Promise.all([
+          fetchWithCache(urlCorrA, { bypassCache: force }),
+          fetchWithCache(urlCorrB, { bypassCache: force }),
+          fetchWithCache(urlDataA, { bypassCache: force }),
+          fetchWithCache(urlDataB, { bypassCache: force }),
+          fetchWithCache('/api/multicollinearity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadMultiA),
+            bypassCache: force
+          }),
+          fetchWithCache('/api/multicollinearity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadMultiB),
+            bypassCache: force
+          })
+        ]);
+
+        const getSectorCorr = (rowsList, secName) => {
+          const clean = _normalizeSectorName(secName);
+          const found = (rowsList || []).find(r => {
+            const rSec = r['Lapangan Usaha'] || r['Komponen Pengeluaran'] || r['sector'] || '';
+            const rClean = _normalizeSectorName(rSec);
+            return rClean === clean || rClean.includes(clean) || clean.includes(rClean);
+          });
+          if (!found) return { r: 0, p: 1 };
+          
+          let rVal = 0;
+          let pVal = 1;
+          if (compIndicator === 'bagasi') {
+            rVal = found['Korelasi dgn Bagasi'] !== undefined ? found['Korelasi dgn Bagasi'] : (found['r_bagasi'] || 0);
+            pVal = found['p-value Bagasi'] !== undefined ? found['p-value Bagasi'] : 1;
+          } else if (compIndicator === 'barang') {
+            rVal = found['Korelasi dgn Barang'] !== undefined ? found['Korelasi dgn Barang'] : (found['r_barang'] || 0);
+            pVal = found['p-value Barang'] !== undefined ? found['p-value Barang'] : 1;
+          } else {
+            rVal = found['Korelasi dgn Penumpang'] !== undefined ? found['Korelasi dgn Penumpang'] : (found['r_penumpang'] || 0);
+            pVal = found['p-value Penumpang'] !== undefined ? found['p-value Penumpang'] : 1;
+          }
+          return { r: Number(rVal) || 0, p: Number(pVal) || 1 };
+        };
+
+        const vifMapA = new Map((multiA.vif_results || []).map(v => [_normalizeSectorName(v.sector), v]));
+        const vifMapB = new Map((multiB.vif_results || []).map(v => [_normalizeSectorName(v.sector), v]));
+
+        const rows = ALL_LU_SECTORS.map((sec, idx) => {
+          const normSec = _normalizeSectorName(sec);
+          const itemA = getSectorCorr(corrsAData.rows || [], sec);
+          const itemB = getSectorCorr(corrsBData.rows || [], sec);
+          const vA = vifMapA.get(normSec) || { vif: 1, status: 'Bebas Multiko', badge_color: 'green' };
+          const vB = vifMapB.get(normSec) || { vif: 1, status: 'Bebas Multiko', badge_color: 'green' };
+          const delta = Math.abs(itemA.r - itemB.r);
+          return {
+            sector: sec,
+            r_a: itemA.r,
+            p_a: itemA.p,
+            r_b: itemB.r,
+            p_b: itemB.p,
+            delta: delta,
+            raw_delta: itemA.r - itemB.r,
+            vif_a: vA.vif,
+            status_a: vA.status,
+            badge_a: vA.badge_color,
+            vif_b: vB.vif,
+            status_b: vB.status,
+            badge_b: vB.badge_color,
+            idx: idx + 1
+          };
+        });
+
+        activeComparisonData = {
+          provA: compProvA,
+          provB: compProvB,
+          provAName: provAData.name,
+          provBName: provBData.name,
+          dashA,
+          dashB,
+          multiA,
+          multiB,
+          rows
+        };
+
+        renderComparisonKpis(activeComparisonData);
+        renderComparisonChart(activeComparisonData);
+        renderComparisonTableBody();
+        renderComparisonInterpretation(activeComparisonData);
+
+        if (statusBadge) statusBadge.textContent = `${provAData.name} vs ${provBData.name}`;
+        if (typeof renderKatexMath === 'function') {
+          setTimeout(renderKatexMath, 50);
+        }
+      } catch (err) {
+        console.error("Error loading comparison data:", err);
+        if (statusBadge) statusBadge.textContent = "Gagal memuat komparasi";
+      }
+    }
+
+    function renderComparisonKpis(compData) {
+      const { dashA, dashB, rows, provAName, provBName } = compData;
+      
+      // KPI 1: Transport
+      let transA = 0, transB = 0;
+      let unit = "Orang / Thn";
+      if (compIndicator === 'penumpang') {
+        transA = dashA?.kpi?.penumpang_total || 0;
+        transB = dashB?.kpi?.penumpang_total || 0;
+        unit = "Orang";
+      } else if (compIndicator === 'bagasi') {
+        transA = dashA?.kpi?.bagasi_total || 0;
+        transB = dashB?.kpi?.bagasi_total || 0;
+        unit = "Kg";
+      } else {
+        transA = dashA?.kpi?.barang_total || 0;
+        transB = dashB?.kpi?.barang_total || 0;
+        unit = "Kg";
+      }
+
+      const elTransA = document.getElementById("kpiCompTransA");
+      const elTransB = document.getElementById("kpiCompTransB");
+      const elTransRatio = document.getElementById("kpiCompTransRatio");
+      if (elTransA) elTransA.textContent = `${formatNumberID(transA)} ${unit}`;
+      if (elTransB) elTransB.textContent = `${formatNumberID(transB)} ${unit}`;
+      if (elTransRatio) {
+        const ratio = transB > 0 ? (transA / transB).toFixed(2) : '-';
+        elTransRatio.innerHTML = `Rasio: <strong class="font-mono text-slate-800 dark:text-slate-200">${ratio}×</strong> (${provAName} rel. ${provBName})`;
+      }
+
+      // KPI 2: PDRB
+      const pdrbA = dashA?.kpi?.pdrb_hk_total || dashA?.kpi?.pdrb_hb_total || dashA?.kpi?.pdrb_total || 0;
+      const pdrbB = dashB?.kpi?.pdrb_hk_total || dashB?.kpi?.pdrb_hb_total || dashB?.kpi?.pdrb_total || 0;
+      const elPdrbA = document.getElementById("kpiCompPdrbA");
+      const elPdrbB = document.getElementById("kpiCompPdrbB");
+      const elPdrbScale = document.getElementById("kpiCompPdrbScale");
+      if (elPdrbA) elPdrbA.textContent = `Rp ${formatNumberID(pdrbA)} M`;
+      if (elPdrbB) elPdrbB.textContent = `Rp ${formatNumberID(pdrbB)} M`;
+      if (elPdrbScale) {
+        const pdrbRatio = pdrbB > 0 ? (pdrbA / pdrbB).toFixed(2) : '-';
+        elPdrbScale.innerHTML = `Skala PDRB: <strong class="font-mono text-slate-800 dark:text-slate-200">${pdrbRatio}×</strong>`;
+      }
+
+      // KPI 3: Top Sectors
+      const sortedA = [...rows].sort((a, b) => b.r_a - a.r_a);
+      const sortedB = [...rows].sort((a, b) => b.r_b - a.r_b);
+      const topA = sortedA[0] || { sector: '-', r_a: 0 };
+      const topB = sortedB[0] || { sector: '-', r_b: 0 };
+
+      const elTopSecA = document.getElementById("kpiCompTopSecA");
+      const elTopValA = document.getElementById("kpiCompTopSecValA");
+      const elTopSecB = document.getElementById("kpiCompTopSecB");
+      const elTopValB = document.getElementById("kpiCompTopSecValB");
+      if (elTopSecA) { elTopSecA.textContent = topA.sector; elTopSecA.title = topA.sector; }
+      if (elTopValA) elTopValA.textContent = `(r = ${topA.r_a.toFixed(3)})`;
+      if (elTopSecB) { elTopSecB.textContent = topB.sector; elTopSecB.title = topB.sector; }
+      if (elTopValB) elTopValB.textContent = `(r = ${topB.r_b.toFixed(3)})`;
+
+      // KPI 4: Max Divergent Sector
+      const sortedDelta = [...rows].sort((a, b) => b.delta - a.delta);
+      const maxDelta = sortedDelta[0] || { sector: '-', delta: 0, r_a: 0, r_b: 0 };
+      const elMaxDeltaSec = document.getElementById("kpiCompMaxDeltaSec");
+      const elMaxDeltaVal = document.getElementById("kpiCompMaxDeltaVal");
+      const elMaxDeltaDet = document.getElementById("kpiCompMaxDeltaDetails");
+      if (elMaxDeltaSec) { elMaxDeltaSec.textContent = maxDelta.sector; elMaxDeltaSec.title = maxDelta.sector; }
+      if (elMaxDeltaVal) elMaxDeltaVal.textContent = `|Δr| = ${maxDelta.delta.toFixed(4)}`;
+      if (elMaxDeltaDet) elMaxDeltaDet.textContent = `(r_A: ${maxDelta.r_a.toFixed(2)} vs r_B: ${maxDelta.r_b.toFixed(2)})`;
+    }
+
+    function renderComparisonChart(compData) {
+      const { rows, provAName, provBName } = compData;
+      const chartEl = document.getElementById("chartComparisonBar");
+      if (!chartEl) return;
+
+      const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
+      const textColor = isDarkMode ? '#94a3b8' : '#475569';
+
+      const shortNames = rows.map(r => r.sector.length > 22 ? r.sector.substring(0, 20) + '...' : r.sector);
+
+      const traceA = {
+        x: shortNames,
+        y: rows.map(r => r.r_a),
+        name: provAName,
+        type: 'bar',
+        text: rows.map(r => `<b>${r.sector}</b><br>${provAName}: r = ${r.r_a.toFixed(4)}<br>p-val: ${r.p_a.toFixed(4)}`),
+        hoverinfo: 'text',
+        marker: {
+          color: '#0284c7',
+          line: { color: '#38bdf8', width: 1 }
+        }
+      };
+
+      const traceB = {
+        x: shortNames,
+        y: rows.map(r => r.r_b),
+        name: provBName,
+        type: 'bar',
+        text: rows.map(r => `<b>${r.sector}</b><br>${provBName}: r = ${r.r_b.toFixed(4)}<br>p-val: ${r.p_b.toFixed(4)}`),
+        hoverinfo: 'text',
+        marker: {
+          color: '#d97706',
+          line: { color: '#fbbf24', width: 1 }
+        }
+      };
+
+      const layout = {
+        barmode: 'group',
+        bargap: 0.22,
+        bargroupgap: 0.08,
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: textColor, family: 'Inter' },
+        margin: { l: 50, r: 20, t: 30, b: 120 },
+        xaxis: {
+          tickangle: -35,
+          gridcolor: gridColor,
+          tickfont: { size: 10 }
+        },
+        yaxis: {
+          title: 'Koefisien Korelasi (r)',
+          range: [-1.05, 1.05],
+          gridcolor: gridColor,
+          zeroline: true,
+          zerolinecolor: isDarkMode ? '#475569' : '#94a3b8',
+          zerolinewidth: 2
+        },
+        legend: {
+          orientation: 'h',
+          y: 1.12,
+          x: 0.5,
+          xanchor: 'center'
+        },
+        shapes: [
+          {
+            type: 'line',
+            xref: 'paper',
+            x0: 0,
+            x1: 1,
+            y0: 0.7,
+            y1: 0.7,
+            line: { color: isDarkMode ? 'rgba(56, 189, 248, 0.4)' : 'rgba(2, 132, 199, 0.4)', width: 1.5, dash: 'dot' }
+          },
+          {
+            type: 'line',
+            xref: 'paper',
+            x0: 0,
+            x1: 1,
+            y0: -0.7,
+            y1: -0.7,
+            line: { color: isDarkMode ? 'rgba(244, 63, 94, 0.4)' : 'rgba(225, 29, 72, 0.4)', width: 1.5, dash: 'dot' }
+          }
+        ]
+      };
+
+      Plotly.newPlot('chartComparisonBar', [traceA, traceB], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function sortCompTable(col) {
+      if (compSortCol === col) {
+        compSortDir = compSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        compSortCol = col;
+        compSortDir = col === 'sector' ? 'asc' : 'desc';
+      }
+      renderComparisonTableBody();
+    }
+
+    function updateCompSortIcons() {
+      const cols = ['sector', 'r_a', 'r_b', 'delta', 'vif_a', 'vif_b'];
+      cols.forEach(c => {
+        const iconSpan = document.getElementById(`compSortIcon_${c}`);
+        if (!iconSpan) return;
+        if (compSortCol === c) {
+          iconSpan.innerHTML = compSortDir === 'asc' 
+            ? '<i class="fa-solid fa-sort-up text-amber-500 text-xs"></i>'
+            : '<i class="fa-solid fa-sort-down text-amber-500 text-xs"></i>';
+        } else {
+          iconSpan.innerHTML = '<i class="fa-solid fa-sort text-slate-400/40 hover:text-slate-300 text-[10px]"></i>';
+        }
+      });
+    }
+
+    function renderComparisonTableBody() {
+      if (!activeComparisonData || !activeComparisonData.rows) return;
+      const { rows } = activeComparisonData;
+      const tbody = document.getElementById("tblComparisonBody");
+      if (!tbody) return;
+
+      updateCompSortIcons();
+
+      let sorted = [...rows];
+      if (compSortCol === 'sector') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.sector.localeCompare(b.sector, 'id') : b.sector.localeCompare(a.sector, 'id'));
+      } else if (compSortCol === 'r_a') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.r_a - b.r_a : b.r_a - a.r_a);
+      } else if (compSortCol === 'r_b') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.r_b - b.r_b : b.r_b - a.r_b);
+      } else if (compSortCol === 'delta') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.delta - b.delta : b.delta - a.delta);
+      } else if (compSortCol === 'vif_a') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.vif_a - b.vif_a : b.vif_a - a.vif_a);
+      } else if (compSortCol === 'vif_b') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.vif_b - b.vif_b : b.vif_b - a.vif_b);
+      }
+
+      tbody.innerHTML = "";
+      sorted.forEach((item, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+
+        const deltaPct = Math.min(100, Math.round((item.delta / 1.5) * 100));
+        let deltaColor = "bg-slate-400";
+        if (item.delta >= 0.7) deltaColor = "bg-rose-500";
+        else if (item.delta >= 0.4) deltaColor = "bg-amber-500";
+        else deltaColor = "bg-emerald-500";
+
+        const getVifBadge = (vif, status, badgeColor) => {
+          let c = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+          if (badgeColor === 'red') c = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
+          else if (badgeColor === 'yellow') c = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
+          return `<span class="px-2 py-0.5 rounded-full text-[10px] border inline-block whitespace-nowrap ${c}">${vif.toFixed(1)}</span>`;
+        };
+
+        tr.innerHTML = `
+          <td class="px-4 py-2.5 font-sans text-slate-800 dark:text-slate-200 align-top">
+            <div class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 text-[10px] flex items-center justify-center font-bold font-mono shrink-0 mt-0.5">${idx + 1}</span>
+              <span class="leading-tight font-medium">${item.sector}</span>
+            </div>
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.abs(item.r_a) >= 0.7 ? 'font-bold text-sky-600 dark:text-sky-400' : 'text-slate-700 dark:text-slate-300'}">
+            ${item.r_a.toFixed(4)}
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.abs(item.r_b) >= 0.7 ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}">
+            ${item.r_b.toFixed(4)}
+          </td>
+          <td class="px-3 py-2.5 text-center font-mono align-middle">
+            <div class="flex flex-col items-center gap-1">
+              <span class="font-bold ${item.delta >= 0.5 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}">${item.delta.toFixed(4)}</span>
+              <div class="w-16 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div class="${deltaColor} h-full rounded-full" style="width: ${deltaPct}%"></div>
+              </div>
+            </div>
+          </td>
+          <td class="px-3 py-2.5 text-center font-sans align-middle">
+            ${getVifBadge(item.vif_a, item.status_a, item.badge_a)}
+          </td>
+          <td class="px-3 py-2.5 text-center font-sans align-middle">
+            ${getVifBadge(item.vif_b, item.status_b, item.badge_b)}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderComparisonInterpretation(compData) {
+      const { rows, provAName, provBName } = compData;
+      const el = document.getElementById("compInterpretationText");
+      if (!el) return;
+
+      const synced = rows.filter(r => r.r_a >= 0.6 && r.r_b >= 0.6);
+      const divergent = [...rows].sort((a, b) => b.delta - a.delta).slice(0, 2);
+
+      let text = `<p>Berdasarkan komparasi antara <strong>${provAName}</strong> dan <strong>${provBName}</strong>:</p>`;
+      text += `<ul class="list-disc list-inside space-y-1.5 mt-2 text-slate-300">`;
+      if (synced.length > 0) {
+        text += `<li><strong>Sektor Selaras Simultan:</strong> Sektor <em>'${synced.map(s => s.sector).join("', '")}'</em> berkorelasi kuat positif di kedua wilayah ($r > 0.60$), menunjukkan sensitivitas logistik yang serupa.</li>`;
+      } else {
+        text += `<li><strong>Karakteristik Mandiri:</strong> Tidak ada sektor yang berkorelasi sangat kuat secara simultan di kedua provinsi ($r > 0.60$), mengindikasikan struktur output kedua daerah memiliki respon logistik yang independen.</li>`;
+      }
+      if (divergent.length > 0) {
+        text += `<li><strong>Divergensi Tertinggi:</strong> Perbedaan elastisitas terbesar terjadi pada sektor <em>'${divergent[0].sector}'</em> (|Δr| = ${divergent[0].delta.toFixed(4)}) dan <em>'${divergent[1].sector}'</em> (|Δr| = ${divergent[1].delta.toFixed(4)}).</li>`;
+      }
+      text += `</ul>`;
+      el.innerHTML = text;
     }
   </script>
 </body>
