@@ -2057,9 +2057,9 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
         <!-- Table Column -->
-        <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 flex flex-col justify-between min-h-[480px]">
-          <div>
-            <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+        <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+          <div class="flex-1 flex flex-col space-y-3 min-h-0">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
               <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                 <i class="fa-solid fa-table-list text-amber-500"></i>
                 <span>Tabel Komparasi Korelasi &amp; Diagnostik Multikolinearitas</span>
@@ -2067,7 +2067,7 @@
               <span class="text-[11px] text-slate-400 font-mono">Klik header untuk sort</span>
             </div>
 
-            <div class="overflow-x-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl max-h-[500px]">
+            <div class="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl min-h-[580px] max-h-[660px]">
               <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
                 <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-heading uppercase text-[11px] sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 select-none">
                   <tr>
@@ -2116,7 +2116,7 @@
             </div>
           </div>
           <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-            <span><i class="fa-solid fa-filter mr-1 text-amber-500"></i> Default diurutkan berdasarkan perbedaan transmisi korelasi terbesar ($|\Delta r|$) ke terkecil.</span>
+            <span><i class="fa-solid fa-filter mr-1 text-amber-500"></i> Default diurutkan berdasarkan perbedaan transmisi korelasi terbesar ($|\Delta r|$) ke terkecil • VIF dihitung pada 6 Sektor Inti ($k < N$).</span>
           </div>
         </div>
 
@@ -2143,12 +2143,17 @@
             <div id="insightCarouselTrack" class="flex w-[200%] h-full transition-transform duration-300 ease-in-out" style="transform: translateX(0%)">
 
               <!-- ========== PAGE 1: Wawasan Ekonometrika Regional ========== -->
-              <div class="w-1/2 flex flex-col justify-between space-y-4 pr-3">
-                <div class="space-y-3">
-                  <h4 class="font-heading font-bold text-base text-white">Interpretasi Pola Spasial & Tipologi Regional</h4>
+              <div class="w-1/2 flex flex-col justify-between space-y-3.5 pr-3">
+                <div class="space-y-2.5">
+                  <h4 class="font-heading font-bold text-base text-white">Interpretasi Pola Spasial &amp; Tipologi Regional</h4>
                   <div id="compInterpretationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-amber-500/20 space-y-2">
                     Memuat analisis komparasi antar-wilayah...
                   </div>
+                </div>
+
+                <!-- Middle Section: Distribusi Tipologi & Keselarasan Vektor Makro -->
+                <div id="compTypologyDistribution" class="space-y-2 my-1">
+                  <!-- Populated dynamically via JS -->
                 </div>
 
                 <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 text-[11px] text-slate-300 space-y-2">
@@ -2215,6 +2220,12 @@
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono font-semibold">$\text{VIF} < 5$ Aman</span>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-mono font-semibold">$\text{VIF} \ge 10$ Multiko Berat</span>
                   </div>
+                </div>
+
+                <!-- Footnote on VIF Core Subset -->
+                <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-200/90 leading-relaxed flex items-start gap-2">
+                  <i class="fa-solid fa-circle-info text-amber-400 mt-0.5 shrink-0"></i>
+                  <span><strong>Catatan Metodologi:</strong> Nilai VIF pada tabel diestimasi berbasis subset 6 Sektor Inti agar terhindar dari kendala over-parameterized ($k > N$).</span>
                 </div>
               </div>
 
@@ -3654,6 +3665,15 @@
     ];
     let activeMulticollinearityData = null;
 
+    const CORE_6_LU_SECTORS = [
+      "Industri Pengolahan",
+      "Pengadaan Air, Pengelolaan Sampah, Limbah dan Daur Ulang",
+      "Konstruksi",
+      "Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor",
+      "Transportasi dan Pergudangan",
+      "Penyediaan Akomodasi dan Makan Minum"
+    ];
+
     const ALL_LU_SECTORS = [
       "Pertanian, Kehutanan, dan Perikanan",
       "Pertambangan dan Penggalian",
@@ -5044,14 +5064,14 @@
           price_type: priceType,
           analysis_mode: compAnalysisMode,
           category: 'lu',
-          sectors: ALL_LU_SECTORS
+          sectors: CORE_6_LU_SECTORS
         };
         const payloadMultiB = {
           province: compProvB,
           price_type: priceType,
           analysis_mode: compAnalysisMode,
           category: 'lu',
-          sectors: ALL_LU_SECTORS
+          sectors: CORE_6_LU_SECTORS
         };
 
         const [corrsAData, corrsBData, dashA, dashB, multiA, multiB] = await Promise.all([
@@ -5104,8 +5124,8 @@
           const normSec = _normalizeSectorName(sec);
           const itemA = getSectorCorr(corrsAData.rows || [], sec);
           const itemB = getSectorCorr(corrsBData.rows || [], sec);
-          const vA = vifMapA.get(normSec) || { vif: 1, status: 'Bebas Multiko', badge_color: 'green' };
-          const vB = vifMapB.get(normSec) || { vif: 1, status: 'Bebas Multiko', badge_color: 'green' };
+          const vA = vifMapA.get(normSec);
+          const vB = vifMapB.get(normSec);
           const delta = Math.abs(itemA.r - itemB.r);
           return {
             sector: sec,
@@ -5115,12 +5135,12 @@
             p_b: itemB.p,
             delta: delta,
             raw_delta: itemA.r - itemB.r,
-            vif_a: vA.vif,
-            status_a: vA.status,
-            badge_a: vA.badge_color,
-            vif_b: vB.vif,
-            status_b: vB.status,
-            badge_b: vB.badge_color,
+            vif_a: vA ? vA.vif : null,
+            status_a: vA ? vA.status : null,
+            badge_a: vA ? vA.badge_color : null,
+            vif_b: vB ? vB.vif : null,
+            status_b: vB ? vB.status : null,
+            badge_b: vB ? vB.badge_color : null,
             idx: idx + 1
           };
         });
@@ -5352,9 +5372,17 @@
       } else if (compSortCol === 'delta') {
         sorted.sort((a, b) => compSortDir === 'asc' ? a.delta - b.delta : b.delta - a.delta);
       } else if (compSortCol === 'vif_a') {
-        sorted.sort((a, b) => compSortDir === 'asc' ? a.vif_a - b.vif_a : b.vif_a - a.vif_a);
+        sorted.sort((a, b) => {
+          const valA = a.vif_a !== null && a.vif_a !== undefined ? a.vif_a : (compSortDir === 'asc' ? Infinity : -Infinity);
+          const valB = b.vif_a !== null && b.vif_a !== undefined ? b.vif_a : (compSortDir === 'asc' ? Infinity : -Infinity);
+          return compSortDir === 'asc' ? valA - valB : valB - valA;
+        });
       } else if (compSortCol === 'vif_b') {
-        sorted.sort((a, b) => compSortDir === 'asc' ? a.vif_b - b.vif_b : b.vif_b - a.vif_b);
+        sorted.sort((a, b) => {
+          const valA = a.vif_b !== null && a.vif_b !== undefined ? a.vif_b : (compSortDir === 'asc' ? Infinity : -Infinity);
+          const valB = b.vif_b !== null && b.vif_b !== undefined ? b.vif_b : (compSortDir === 'asc' ? Infinity : -Infinity);
+          return compSortDir === 'asc' ? valA - valB : valB - valA;
+        });
       }
 
       tbody.innerHTML = "";
@@ -5369,10 +5397,13 @@
         else deltaColor = "bg-emerald-500";
 
         const getVifBadge = (vif, status, badgeColor) => {
+          if (vif === null || vif === undefined) {
+            return `<span class="text-slate-400 dark:text-slate-600 font-mono text-xs cursor-help select-none" title="VIF dievaluasi pada subset 6 Sektor Inti untuk menjaga kestabilan derajat bebas (k < N).">-</span>`;
+          }
           let c = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-          if (badgeColor === 'red') c = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
-          else if (badgeColor === 'yellow') c = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
-          return `<span class="px-2 py-0.5 rounded-full text-[10px] border inline-block whitespace-nowrap ${c}">${vif.toFixed(1)}</span>`;
+          if (badgeColor === 'red' || vif >= 10) c = "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 font-bold";
+          else if (badgeColor === 'yellow' || vif >= 5) c = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-semibold";
+          return `<span class="px-2 py-0.5 rounded-full text-[10px] border inline-block whitespace-nowrap ${c}" title="${status || ('VIF: ' + vif.toFixed(1))}">${vif.toFixed(1)}</span>`;
         };
 
         tr.innerHTML = `
@@ -5410,6 +5441,7 @@
     function renderComparisonInterpretation(compData) {
       const { rows, provAName, provBName } = compData;
       const el = document.getElementById("compInterpretationText");
+      const elDist = document.getElementById("compTypologyDistribution");
       if (!el) return;
 
       const synced = rows.filter(r => r.r_a >= 0.6 && r.r_b >= 0.6);
@@ -5427,6 +5459,61 @@
       }
       text += `</ul>`;
       el.innerHTML = text;
+
+      // Hitung Distribusi Tipologi & Keselarasan Vektor (Cosine Similarity)
+      if (elDist) {
+        const countSelaras = rows.filter(r => r.delta <= 0.20).length;
+        const countModerat = rows.filter(r => r.delta > 0.20 && r.delta < 0.50).length;
+        const countDivergen = rows.filter(r => r.delta >= 0.50).length;
+
+        // Cosine Similarity antar vektor korelasi
+        let dotProduct = 0, normA = 0, normB = 0;
+        rows.forEach(r => {
+          dotProduct += r.r_a * r.r_b;
+          normA += r.r_a * r.r_a;
+          normB += r.r_b * r.r_b;
+        });
+        const denom = Math.sqrt(normA) * Math.sqrt(normB);
+        const cosSim = denom > 0 ? (dotProduct / denom) : 0;
+        let simBadge = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+        let simStatus = "Respon Simetris";
+        if (cosSim < 0.3) {
+          simBadge = "bg-rose-500/20 text-rose-300 border-rose-500/30";
+          simStatus = "Respon Asimetris";
+        } else if (cosSim < 0.7) {
+          simBadge = "bg-amber-500/20 text-amber-300 border-amber-500/30";
+          simStatus = "Respon Moderat";
+        }
+
+        elDist.innerHTML = `
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-center">
+              <div class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Selaras</div>
+              <div class="text-base font-bold font-mono text-emerald-300 mt-0.5">${countSelaras} <span class="text-[10px] font-sans font-normal text-slate-400">Sektor</span></div>
+              <div class="text-[9px] text-slate-400 font-mono mt-0.5">|Δr| ≤ 0.20</div>
+            </div>
+            <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col justify-center">
+              <div class="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">Moderat</div>
+              <div class="text-base font-bold font-mono text-amber-300 mt-0.5">${countModerat} <span class="text-[10px] font-sans font-normal text-slate-400">Sektor</span></div>
+              <div class="text-[9px] text-slate-400 font-mono mt-0.5">&lt; 0.50</div>
+            </div>
+            <div class="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 flex flex-col justify-center">
+              <div class="text-[10px] text-rose-400 font-semibold uppercase tracking-wider">Divergen</div>
+              <div class="text-base font-bold font-mono text-rose-300 mt-0.5">${countDivergen} <span class="text-[10px] font-sans font-normal text-slate-400">Sektor</span></div>
+              <div class="text-[9px] text-slate-400 font-mono mt-0.5">|Δr| ≥ 0.50</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-amber-500/20 text-xs">
+            <span class="text-slate-300 font-medium flex items-center gap-1.5">
+              <i class="fa-solid fa-arrows-to-dot text-amber-400"></i> Keselarasan Vektor ($S_{AB}$):
+            </span>
+            <div class="flex items-center gap-2 font-mono">
+              <span class="font-bold text-white text-sm">${cosSim.toFixed(3)}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] border ${simBadge}">${simStatus}</span>
+            </div>
+          </div>
+        `;
+      }
     }
 
     // ── Insight Card Slider (2-page carousel) ──
