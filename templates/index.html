@@ -2120,27 +2120,113 @@
           </div>
         </div>
 
-        <!-- Interpretasi & Rekomendasi Regional Column -->
-        <div class="lg:col-span-4 bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4 min-h-[480px]">
-          <div class="space-y-3">
+        <!-- Interpretasi & Rekomendasi Regional Column (2-Page Slider) -->
+        <div class="lg:col-span-4 bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between min-h-[480px]">
+
+          <!-- Header with badge + navigation arrows -->
+          <div class="flex items-center justify-between mb-4">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
               <i class="fa-solid fa-lightbulb"></i> Wawasan Ekonometrika Regional
             </div>
-            <h4 class="font-heading font-bold text-base text-white">Interpretasi Pola Spasial</h4>
-            <div id="compInterpretationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-amber-500/20 space-y-2">
-              Memuat analisis komparasi antar-wilayah...
+            <div class="flex items-center gap-1.5">
+              <button onclick="switchInsightPage(Math.max(0, currentInsightPage - 1))" class="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-500/40 flex items-center justify-center transition-all duration-200 text-xs" aria-label="Halaman sebelumnya">
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <button onclick="switchInsightPage(Math.min(1, currentInsightPage + 1))" class="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:bg-amber-500/20 hover:text-amber-300 hover:border-amber-500/40 flex items-center justify-center transition-all duration-200 text-xs" aria-label="Halaman berikutnya">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
             </div>
           </div>
 
-          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 text-[11px] text-slate-300 space-y-2">
-            <div class="font-bold text-amber-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-scale-balanced"></i> Tipologi Perbedaan Regional:
+          <!-- Slider Container (overflow hidden) -->
+          <div class="overflow-hidden relative flex-1">
+            <div id="insightCarouselTrack" class="flex w-[200%] h-full transition-transform duration-300 ease-in-out" style="transform: translateX(0%)">
+
+              <!-- ========== PAGE 1: Wawasan Ekonometrika Regional ========== -->
+              <div class="w-1/2 flex flex-col justify-between space-y-4 pr-3">
+                <div class="space-y-3">
+                  <h4 class="font-heading font-bold text-base text-white">Interpretasi Pola Spasial & Tipologi Regional</h4>
+                  <div id="compInterpretationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/60 p-3.5 rounded-xl border border-amber-500/20 space-y-2">
+                    Memuat analisis komparasi antar-wilayah...
+                  </div>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 text-[11px] text-slate-300 space-y-2">
+                  <div class="font-bold text-amber-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-scale-balanced"></i> Tipologi Perbedaan Regional:
+                  </div>
+                  <ul class="list-disc list-inside space-y-1 text-slate-300 leading-relaxed">
+                    <li><strong>Sektor Selaras ($|\Delta r| \le 0.20$):</strong> Menunjukkan elastisitas logistik yang homogen antar-wilayah.</li>
+                    <li><strong>Sektor Divergen ($|\Delta r| \ge 0.50$):</strong> Mengindikasikan perbedaan ketergantungan moda (misal: pusat logistik hub vs kepulauan/pertambangan).</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- ========== PAGE 2: Glosarium & Panduan Metrik Komparasi ========== -->
+              <div class="w-1/2 flex flex-col space-y-3 pl-3">
+                <h4 class="font-heading font-bold text-base text-white flex items-center gap-2">
+                  <span>📖</span> Interpretasi Variabel & Ambang Batas
+                </h4>
+
+                <!-- Metric 1: Koefisien Korelasi -->
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-amber-500/20 space-y-1.5">
+                  <div class="font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-line text-[10px] shrink-0"></i>
+                    <span>1. Koefisien Korelasi ($R_{\text{Prov A}}$ &amp; $R_{\text{Prov B}}$)</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 leading-relaxed">
+                    Mengukur arah dan kekuatan hubungan pergerakan transportasi udara terhadap pertumbuhan sektor PDRB di masing-masing provinsi.
+                  </p>
+                  <div class="flex flex-wrap gap-1.5 mt-1">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono font-semibold">$r > 0.60$ Sensitif Positif</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-mono font-semibold">$r < 0$ Kontras</span>
+                  </div>
+                </div>
+
+                <!-- Metric 2: Selisih Elastisitas -->
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-amber-500/20 space-y-1.5">
+                  <div class="font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-left-right text-[10px] shrink-0"></i>
+                    <span>2. Selisih Elastisitas ($|\Delta r|$)</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 leading-relaxed">
+                    Mengukur kesenjangan transmisi logistik udara antar kedua wilayah:
+                  </p>
+                  <div class="flex flex-wrap gap-1.5 mt-1">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono font-semibold">$|\Delta r| \le 0.20$ Selaras</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-mono font-semibold">$|\Delta r| \ge 0.50$ Divergen</span>
+                  </div>
+                  <ul class="text-[10px] text-slate-400 list-disc list-inside space-y-0.5 mt-1 leading-relaxed">
+                    <li><strong class="text-slate-300">Selaras:</strong> Struktur ketergantungan moda transportasi antar-wilayah serupa.</li>
+                    <li><strong class="text-slate-300">Divergen/Asimetris:</strong> Perbedaan orientasi logistik (misal: satu wilayah bertumpu pada kargo udara, wilayah lain bertumpu pada pelabuhan laut/jalur darat).</li>
+                  </ul>
+                </div>
+
+                <!-- Metric 3: VIF -->
+                <div class="bg-slate-950/60 p-3 rounded-xl border border-amber-500/20 space-y-1.5">
+                  <div class="font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-magnifying-glass-chart text-[10px] shrink-0"></i>
+                    <span>3. Variance Inflation Factor ($\text{VIF}_{\text{Prov A}}$ &amp; $\text{VIF}_{\text{Prov B}}$)</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 leading-relaxed">
+                    Menguji apakah sektor tersebut independen atau redundan jika dimasukkan ke model regresi multivariat regional.
+                  </p>
+                  <div class="flex flex-wrap gap-1.5 mt-1">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono font-semibold">$\text{VIF} < 5$ Aman</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-mono font-semibold">$\text{VIF} \ge 10$ Multiko Berat</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
-            <ul class="list-disc list-inside space-y-1 text-slate-300 leading-relaxed">
-              <li><strong>Sektor Selaras ($|\Delta r| \le 0.20$):</strong> Menunjukkan elastisitas logistik yang homogen antar-wilayah.</li>
-              <li><strong>Sektor Divergen ($|\Delta r| \ge 0.50$):</strong> Mengindikasikan perbedaan ketergantungan moda (misal: pusat logistik hub vs kepulauan/pertambangan).</li>
-            </ul>
           </div>
+
+          <!-- Pagination Dots -->
+          <div class="flex items-center justify-center gap-2 pt-3">
+            <button id="insightDot0" onclick="switchInsightPage(0)" class="w-5 h-2 bg-blue-500 rounded-full transition-all duration-200" aria-label="Halaman 1"></button>
+            <button id="insightDot1" onclick="switchInsightPage(1)" class="w-2 h-2 bg-slate-600 rounded-full cursor-pointer hover:bg-slate-400 transition-all duration-200" aria-label="Halaman 2"></button>
+          </div>
+
         </div>
 
       </div>
@@ -2297,7 +2383,7 @@
             <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 3</div>
               <div class="font-bold text-emerald-500 text-xs mt-1">Komputasi Selisih</div>
-              <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$|\Delta r| \text{ & } Z_{\text{diff}}$$</div>
+              <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1.5 font-semibold">$$|\Delta r| \text{ dan } Z_{\text{diff}}$$</div>
             </div>
             <div class="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <div class="text-[10px] text-slate-400 uppercase font-sans font-bold">Langkah 4</div>
@@ -5341,6 +5427,29 @@
       }
       text += `</ul>`;
       el.innerHTML = text;
+    }
+
+    // ── Insight Card Slider (2-page carousel) ──
+    let currentInsightPage = 0;
+
+    function switchInsightPage(pageIndex) {
+      currentInsightPage = pageIndex;
+      const track = document.getElementById('insightCarouselTrack');
+      const dot0 = document.getElementById('insightDot0');
+      const dot1 = document.getElementById('insightDot1');
+
+      if (track) {
+        track.style.transform = `translateX(-${pageIndex * 50}%)`;
+      }
+      // Update active dot styling
+      if (dot0 && dot1) {
+        dot0.className = pageIndex === 0
+          ? 'w-5 h-2 bg-blue-500 rounded-full transition-all duration-200'
+          : 'w-2 h-2 bg-slate-600 rounded-full cursor-pointer hover:bg-slate-400 transition-all duration-200';
+        dot1.className = pageIndex === 1
+          ? 'w-5 h-2 bg-blue-500 rounded-full transition-all duration-200'
+          : 'w-2 h-2 bg-slate-600 rounded-full cursor-pointer hover:bg-slate-400 transition-all duration-200';
+      }
     }
   </script>
 </body>
