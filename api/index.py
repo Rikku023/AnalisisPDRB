@@ -6,6 +6,7 @@ v4.0 — Growth Rate Analysis (YoY/QoQ) + Pooled Multi-Year Correlation
 ========================================================================================
 """
 
+import io
 import os
 import sys
 import json
@@ -14,13 +15,16 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 
 from fastapi import FastAPI, Request, Query, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 from scipy.stats import pearsonr
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 
 # ======================================================================================
@@ -1722,6 +1726,927 @@ async def get_multicollinearity(
     if res.get("status") == "error":
         return JSONResponse(status_code=400, content=res, headers=CACHE_HEADERS)
     return cached_json_response(res)
+
+
+# ======================================================================================
+# MULTI-SHEET EXCEL REPORT GENERATOR (.xlsx with openpyxl)
+# ======================================================================================
+
+class ExportExcelRequest(BaseModel):
+    """Schema input untuk endpoint POST ekspor laporan Excel multi-sheet."""
+    province: str = "sulawesi_selatan"
+    compare_province: str = "gorontalo"
+    year: str = "2024"
+    analysis_mode: str = "growth_yoy"
+    transport_type: str = "penumpang"
+
+
+def generate_full_excel_report(
+    province: str = "sulawesi_selatan",
+    compare_province: str = "gorontalo",
+    year: str = "2024",
+    analysis_mode: str = "growth_yoy",
+    transport_type: str = "penumpang"
+) -> io.BytesIO:
+    """
+    Menghasilkan Workbook Excel multi-sheet (.xlsx) terintegrasi dengan 5 sheet analisis:
+    1. 1_Korelasi_PDRB (17 Sektor LU & 7 Pengeluaran vs Transportasi + R²)
+    2. 2_Diagnostik_VIF (VIF 6 Sektor Inti, Matriks Rx, & Multikolinearitas Transportasi)
+    3. 3_Komparasi_Wilayah (Head-to-Head Provinsi A vs B: r, R², |Δr|, VIF)
+    4. 4_Tren_Triwulanan (Time-Series 2020-2024: Level, YoY %, QoQ %)
+    5. 5_Data_Mentah (Tabel Nilai Riil 17 Sektor ADHK & ADHB)
+    """
+    manifest = load_manifest()
+    prov_dict = manifest.get("provinces", {})
+    prov_a_name = prov_dict.get(province, {}).get("name", province.replace("_", " ").title())
+    prov_b_name = prov_dict.get(compare_province, {}).get("name", compare_province.replace("_", " ").title())
+
+    mode_labels = {
+        "growth_yoy_all": "Pertumbuhan YoY (%) — HK & HB (Semua Tipe)",
+        "growth_yoy": "Pertumbuhan YoY (%) — Harga Konstan (Riil)",
+        "growth_yoy_hb": "Pertumbuhan YoY (%) — Harga Berlaku (Nominal)",
+        "growth_qoq_all": "Pertumbuhan QoQ (%) — HK & HB (Semua Tipe)",
+        "growth_qoq": "Pertumbuhan QoQ (%) — Harga Konstan (Riil)",
+        "growth_qoq_hb": "Pertumbuhan QoQ (%) — Harga Berlaku (Nominal)",
+        "abs_all": "Nilai Level / Absolut — Semua Tipe (HK & HB)",
+        "abs_hk": "Nilai Level / Absolut — Harga Konstan (Riil)",
+        "abs_hb": "Nilai Level / Absolut — Harga Berlaku (Nominal)"
+    }
+    analysis_label = mode_labels.get(analysis_mode, analysis_mode)
+
+    trans_labels = {
+        "penumpang": "✈️ Penumpang (Orang)",
+        "bagasi": "🧳 Bagasi (Kg)",
+        "barang": "📦 Barang / Kargo (Kg)"
+    }
+    trans_label = trans_labels.get(transport_type.lower(), transport_type.title())
+
+    # --- STYLING DEFINITIONS ---
+    navy_header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+    navy_title_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+    sky_section_fill = PatternFill(start_color="0284C7", end_color="0284C7", fill_type="solid")
+    indigo_section_fill = PatternFill(start_color="4F46E5", end_color="4F46E5", fill_type="solid")
+    amber_section_fill = PatternFill(start_color="D97706", end_color="D97706", fill_type="solid")
+    emerald_section_fill = PatternFill(start_color="059669", end_color="059669", fill_type="solid")
+    zebra_light_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+    white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+
+    title_font = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+    subtitle_font = Font(name="Calibri", size=9.5, italic=True, color="CBD5E1")
+    section_font = Font(name="Calibri", size=10.5, bold=True, color="FFFFFF")
+    header_font = Font(name="Calibri", size=9.5, bold=True, color="FFFFFF")
+    data_font = Font(name="Calibri", size=9.5, color="0F172A")
+    data_bold_font = Font(name="Calibri", size=9.5, bold=True, color="0F172A")
+
+    thin_border = Border(
+        left=Side(style='thin', color='CBD5E1'),
+        right=Side(style='thin', color='CBD5E1'),
+        top=Side(style='thin', color='CBD5E1'),
+        bottom=Side(style='thin', color='CBD5E1')
+    )
+    header_border = Border(
+        left=Side(style='thin', color='475569'),
+        right=Side(style='thin', color='475569'),
+        top=Side(style='medium', color='0F172A'),
+        bottom=Side(style='medium', color='0F172A')
+    )
+
+    align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    align_left = Alignment(horizontal="left", vertical="center")
+    align_right = Alignment(horizontal="right", vertical="center")
+
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    def autofit_columns(ws, max_cols=None):
+        cols_to_check = ws.columns if max_cols is None else list(ws.columns)[:max_cols]
+        for col in cols_to_check:
+            max_len = 0
+            col_letter = get_column_letter(col[0].column)
+            for cell in col:
+                if cell.row in [1, 2, 3, 4] and cell.coordinate in ws.merged_cells:
+                    continue
+                v = cell.value
+                if v is not None:
+                    s = str(v)
+                    if '\n' in s:
+                        s = max(s.split('\n'), key=len)
+                    if len(s) > max_len:
+                        max_len = len(s)
+            ws.column_dimensions[col_letter].width = max(max_len + 3, 11)
+
+    # =========================================================================
+    # SHEET 1: 1_Korelasi_PDRB
+    # =========================================================================
+    ws1 = wb.create_sheet(title="1_Korelasi_PDRB")
+    ws1.views.sheetView[0].showGridLines = True
+
+    ws1.merge_cells("A1:L1")
+    ws1["A1"] = "LAPORAN ANALISIS KORELASI PDRB DAN TRANSPORTASI UDARA"
+    ws1["A1"].font = title_font
+    ws1["A1"].fill = navy_title_fill
+    ws1["A1"].alignment = align_center
+    ws1.row_dimensions[1].height = 28
+
+    ws1.merge_cells("A2:L2")
+    ws1["A2"] = f"Provinsi: {prov_a_name} | Tahun: {year} | Mode: {analysis_label} | Sumber Data: BPS RI"
+    ws1["A2"].font = subtitle_font
+    ws1["A2"].fill = navy_header_fill
+    ws1["A2"].alignment = align_center
+    ws1.row_dimensions[2].height = 18
+
+    curr_row = 4
+
+    # Bagian A: 17 Sektor Lapangan Usaha
+    ws1.merge_cells(f"A{curr_row}:L{curr_row}")
+    ws1[f"A{curr_row}"] = "BAGIAN A: 17 SEKTOR PDRB MENURUT LAPANGAN USAHA (LU) VS TRANSPORTASI"
+    ws1[f"A{curr_row}"].font = section_font
+    ws1[f"A{curr_row}"].fill = sky_section_fill
+    ws1[f"A{curr_row}"].alignment = align_left
+    ws1.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    headers_correl = [
+        "No", "Sektor PDRB", "Tipe PDRB",
+        "r Penumpang", "R² Penumpang", "p-value Penumpang",
+        "r Bagasi", "R² Bagasi", "p-value Bagasi",
+        "r Barang", "R² Barang", "p-value Barang"
+    ]
+    for c_idx, h in enumerate(headers_correl, 1):
+        cell = ws1.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws1.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    corr_lu = _compute_correlations(province, year, type="lu", filter_mode="all", sort_by="default", pdrb_type="all", search="", analysis_mode=analysis_mode)
+    lu_rows = corr_lu.get("rows", [])
+
+    for idx, r in enumerate(lu_rows, 1):
+        sec_name = r.get("Lapangan Usaha", "-")
+        pt = r.get("Tipe PDRB", "HK")
+        rp = r.get("Korelasi dgn Penumpang")
+        r2p = (rp ** 2) if (rp is not None and not np.isnan(rp)) else None
+        pp = r.get("p-value Penumpang")
+
+        rbag = r.get("Korelasi dgn Bagasi")
+        r2bag = (rbag ** 2) if (rbag is not None and not np.isnan(rbag)) else None
+        pbag = r.get("p-value Bagasi")
+
+        rbar = r.get("Korelasi dgn Barang")
+        r2bar = (rbar ** 2) if (rbar is not None and not np.isnan(rbar)) else None
+        pbar = r.get("p-value Barang")
+
+        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
+        row_vals = [idx, sec_name, pt, rp, r2p, pp, rbag, r2bag, pbag, rbar, r2bar, pbar]
+
+        for c_idx, v in enumerate(row_vals, 1):
+            cell = ws1.cell(row=curr_row, column=c_idx, value=v)
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+            if c_idx == 1:
+                cell.alignment = align_center
+            elif c_idx in [2, 3]:
+                cell.alignment = align_left
+            else:
+                cell.alignment = align_right
+                if c_idx in [4, 7, 10]:
+                    cell.number_format = "0.0000"
+                elif c_idx in [5, 8, 11]:
+                    cell.number_format = "0.0%"
+                elif c_idx in [6, 9, 12]:
+                    cell.number_format = "0.0000"
+        ws1.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    curr_row += 1
+    # Bagian B: 7 Komponen Pengeluaran
+    ws1.merge_cells(f"A{curr_row}:L{curr_row}")
+    ws1[f"A{curr_row}"] = "BAGIAN B: 7 KOMPONEN PDRB MENURUT PENGELUARAN VS TRANSPORTASI"
+    ws1[f"A{curr_row}"].font = section_font
+    ws1[f"A{curr_row}"].fill = indigo_section_fill
+    ws1[f"A{curr_row}"].alignment = align_left
+    ws1.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    headers_peng = [
+        "No", "Komponen Pengeluaran", "Tipe PDRB",
+        "r Penumpang", "R² Penumpang", "p-value Penumpang",
+        "r Bagasi", "R² Bagasi", "p-value Bagasi",
+        "r Barang", "R² Barang", "p-value Barang"
+    ]
+    for c_idx, h in enumerate(headers_peng, 1):
+        cell = ws1.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws1.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    corr_peng = _compute_correlations(province, year, type="peng", filter_mode="all", sort_by="default", pdrb_type="all", search="", analysis_mode=analysis_mode)
+    peng_rows = corr_peng.get("rows", [])
+
+    for idx, r in enumerate(peng_rows, 1):
+        comp_name = r.get("Komponen Pengeluaran", "-")
+        pt = r.get("Tipe PDRB", "HK")
+        rp = r.get("Korelasi dgn Penumpang")
+        r2p = (rp ** 2) if (rp is not None and not np.isnan(rp)) else None
+        pp = r.get("p-value Penumpang")
+
+        rbag = r.get("Korelasi dgn Bagasi")
+        r2bag = (rbag ** 2) if (rbag is not None and not np.isnan(rbag)) else None
+        pbag = r.get("p-value Bagasi")
+
+        rbar = r.get("Korelasi dgn Barang")
+        r2bar = (rbar ** 2) if (rbar is not None and not np.isnan(rbar)) else None
+        pbar = r.get("p-value Barang")
+
+        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
+        row_vals = [idx, comp_name, pt, rp, r2p, pp, rbag, r2bag, pbag, rbar, r2bar, pbar]
+
+        for c_idx, v in enumerate(row_vals, 1):
+            cell = ws1.cell(row=curr_row, column=c_idx, value=v)
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+            if c_idx == 1:
+                cell.alignment = align_center
+            elif c_idx in [2, 3]:
+                cell.alignment = align_left
+            else:
+                cell.alignment = align_right
+                if c_idx in [4, 7, 10]:
+                    cell.number_format = "0.0000"
+                elif c_idx in [5, 8, 11]:
+                    cell.number_format = "0.0%"
+                elif c_idx in [6, 9, 12]:
+                    cell.number_format = "0.0000"
+        ws1.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    autofit_columns(ws1)
+
+    # =========================================================================
+    # SHEET 2: 2_Diagnostik_VIF
+    # =========================================================================
+    ws2 = wb.create_sheet(title="2_Diagnostik_VIF")
+    ws2.views.sheetView[0].showGridLines = True
+
+    multi_res = compute_multicollinearity(province=province, price_type="HK", analysis_mode=analysis_mode, category="lu")
+    cond_num = multi_res.get("condition_number", 1.0)
+    method_str = multi_res.get("method", "Standard Inversion OLS")
+    has_multi = multi_res.get("has_multicollinearity", False)
+    status_overall = "⚠️ Terindikasi Multikolinearitas (Condition Number > 30 / VIF ≥ 5)" if has_multi else "✅ Bebas Multikolinearitas (Matrix Sehat & VIF < 5)"
+
+    ws2.merge_cells("A1:G1")
+    ws2["A1"] = "DIAGNOSTIK MULTIKOLINEARITAS & VARIANCE INFLATION FACTOR (VIF)"
+    ws2["A1"].font = title_font
+    ws2["A1"].fill = navy_title_fill
+    ws2["A1"].alignment = align_center
+    ws2.row_dimensions[1].height = 28
+
+    ws2.merge_cells("A2:G2")
+    ws2["A2"] = f"Provinsi: {prov_a_name} | Mode: {analysis_label} | Condition Number (κ): {cond_num:.2f} | Status: {status_overall}"
+    ws2["A2"].font = subtitle_font
+    ws2["A2"].fill = navy_header_fill
+    ws2["A2"].alignment = align_center
+    ws2.row_dimensions[2].height = 18
+
+    # Tabel 1: VIF 6 Sektor Inti
+    curr_row = 4
+    ws2.merge_cells(f"A{curr_row}:E{curr_row}")
+    ws2[f"A{curr_row}"] = f"TABEL 1: VARIANCE INFLATION FACTOR (VIF) & TOLERANCE 6 SEKTOR INTI ({method_str})"
+    ws2[f"A{curr_row}"].font = section_font
+    ws2[f"A{curr_row}"].fill = indigo_section_fill
+    ws2[f"A{curr_row}"].alignment = align_left
+    ws2.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    headers_vif = ["No", "Sektor PDRB (Subset Inti)", "Variance Inflation Factor (VIF)", "Tolerance (1/VIF)", "Status Evaluasi"]
+    for c_idx, h in enumerate(headers_vif, 1):
+        cell = ws2.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws2.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    vif_results = multi_res.get("vif_results", [])
+    for idx, v in enumerate(vif_results, 1):
+        sec = v.get("sector", "-")
+        vif_val = v.get("vif", 1.0)
+        tol_val = v.get("tolerance", 1.0)
+        st = v.get("status", "Aman")
+
+        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
+        c1 = ws2.cell(row=curr_row, column=1, value=idx)
+        c2 = ws2.cell(row=curr_row, column=2, value=sec)
+        c3 = ws2.cell(row=curr_row, column=3, value=vif_val)
+        c4 = ws2.cell(row=curr_row, column=4, value=tol_val)
+        c5 = ws2.cell(row=curr_row, column=5, value=st)
+
+        c1.alignment = align_center
+        c2.alignment = align_left
+        c3.alignment = align_right
+        c3.number_format = "0.00"
+        c4.alignment = align_right
+        c4.number_format = "0.0000"
+        c5.alignment = align_center
+
+        for cell in [c1, c2, c3, c4, c5]:
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+        ws2.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    # Tabel 2: Matriks Korelasi Antar-Sektor Rx
+    curr_row += 1
+    inter_mat = multi_res.get("inter_sector_matrix", {})
+    mat_labels = inter_mat.get("labels", [])
+    mat_vals = inter_mat.get("matrix", [])
+    k_len = len(mat_labels)
+    end_col_letter = get_column_letter(max(k_len + 1, 5))
+
+    ws2.merge_cells(f"A{curr_row}:{end_col_letter}{curr_row}")
+    ws2[f"A{curr_row}"] = "TABEL 2: MATRIKS KORELASI ANTAR-SEKTOR PDRB (Rx) [k x k]"
+    ws2[f"A{curr_row}"].font = section_font
+    ws2[f"A{curr_row}"].fill = indigo_section_fill
+    ws2[f"A{curr_row}"].alignment = align_left
+    ws2.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    cell_h0 = ws2.cell(row=curr_row, column=1, value="Sektor PDRB")
+    cell_h0.font = header_font
+    cell_h0.fill = navy_header_fill
+    cell_h0.alignment = align_center
+    cell_h0.border = header_border
+
+    for j, lbl in enumerate(mat_labels, 2):
+        cell_hj = ws2.cell(row=curr_row, column=j, value=lbl)
+        cell_hj.font = header_font
+        cell_hj.fill = navy_header_fill
+        cell_hj.alignment = align_center
+        cell_hj.border = header_border
+    ws2.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    for i, row_lbl in enumerate(mat_labels):
+        fill_row = zebra_light_fill if i % 2 == 0 else white_fill
+        cell_r = ws2.cell(row=curr_row, column=1, value=row_lbl)
+        cell_r.font = data_bold_font
+        cell_r.fill = fill_row
+        cell_r.border = thin_border
+        cell_r.alignment = align_left
+
+        for j in range(k_len):
+            val = mat_vals[i][j] if i < len(mat_vals) and j < len(mat_vals[i]) else 0.0
+            cell_v = ws2.cell(row=curr_row, column=j + 2, value=val)
+            cell_v.font = data_font
+            cell_v.fill = fill_row
+            cell_v.border = thin_border
+            cell_v.alignment = align_right
+            cell_v.number_format = "0.0000"
+        ws2.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    # Tabel 3: Multikolinearitas Transportasi
+    curr_row += 1
+    trans_multi = multi_res.get("transport_multicollinearity", {})
+    t_labels = trans_multi.get("labels", ["Penumpang", "Bagasi", "Barang"])
+    t_mat = trans_multi.get("correlation_matrix", [])
+    t_vifs = trans_multi.get("vif_results", [])
+
+    ws2.merge_cells(f"A{curr_row}:E{curr_row}")
+    ws2[f"A{curr_row}"] = "TABEL 3: MULTIKOLINEARITAS ANTAR-INDIKATOR TRANSPORTASI (RT) & VIF"
+    ws2[f"A{curr_row}"].font = section_font
+    ws2[f"A{curr_row}"].fill = indigo_section_fill
+    ws2[f"A{curr_row}"].alignment = align_left
+    ws2.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    cell_t0 = ws2.cell(row=curr_row, column=1, value="Moda Transportasi")
+    cell_t0.font = header_font
+    cell_t0.fill = navy_header_fill
+    cell_t0.alignment = align_center
+    cell_t0.border = header_border
+
+    for j, tlbl in enumerate(t_labels, 2):
+        cell_tj = ws2.cell(row=curr_row, column=j, value=tlbl)
+        cell_tj.font = header_font
+        cell_tj.fill = navy_header_fill
+        cell_tj.alignment = align_center
+        cell_tj.border = header_border
+    ws2.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    for i, t_row_lbl in enumerate(t_labels):
+        fill_row = zebra_light_fill if i % 2 == 0 else white_fill
+        cell_tr = ws2.cell(row=curr_row, column=1, value=t_row_lbl)
+        cell_tr.font = data_bold_font
+        cell_tr.fill = fill_row
+        cell_tr.border = thin_border
+        cell_tr.alignment = align_left
+
+        for j in range(len(t_labels)):
+            val = t_mat[i][j] if i < len(t_mat) and j < len(t_mat[i]) else 0.0
+            cell_tv = ws2.cell(row=curr_row, column=j + 2, value=val)
+            cell_tv.font = data_font
+            cell_tv.fill = fill_row
+            cell_tv.border = thin_border
+            cell_tv.alignment = align_right
+            cell_tv.number_format = "0.0000"
+        ws2.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    curr_row += 1
+    headers_tvif = ["No", "Indikator Transportasi", "VIF Transport", "Tolerance", "Status Multikolinearitas"]
+    for c_idx, h in enumerate(headers_tvif, 1):
+        cell = ws2.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws2.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    for idx, tv in enumerate(t_vifs, 1):
+        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
+        c1 = ws2.cell(row=curr_row, column=1, value=idx)
+        c2 = ws2.cell(row=curr_row, column=2, value=tv.get("indicator", "-"))
+        c3 = ws2.cell(row=curr_row, column=3, value=tv.get("vif", 1.0))
+        c4 = ws2.cell(row=curr_row, column=4, value=tv.get("tolerance", 1.0))
+        c5 = ws2.cell(row=curr_row, column=5, value=tv.get("status", "Aman"))
+
+        c1.alignment = align_center
+        c2.alignment = align_left
+        c3.alignment = align_right
+        c3.number_format = "0.00"
+        c4.alignment = align_right
+        c4.number_format = "0.0000"
+        c5.alignment = align_center
+
+        for cell in [c1, c2, c3, c4, c5]:
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+        ws2.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    autofit_columns(ws2)
+
+    # =========================================================================
+    # SHEET 3: 3_Komparasi_Wilayah
+    # =========================================================================
+    ws3 = wb.create_sheet(title="3_Komparasi_Wilayah")
+    ws3.views.sheetView[0].showGridLines = True
+
+    ws3.merge_cells("A1:I1")
+    ws3["A1"] = f"KOMPARASI REGIONAL HEAD-TO-HEAD: {prov_a_name.upper()} VS {prov_b_name.upper()}"
+    ws3["A1"].font = title_font
+    ws3["A1"].fill = navy_title_fill
+    ws3["A1"].alignment = align_center
+    ws3.row_dimensions[1].height = 28
+
+    ws3.merge_cells("A2:I2")
+    ws3["A2"] = f"Indikator Transportasi: {trans_label} | Mode Analisis: {analysis_label} | Tahun: {year}"
+    ws3["A2"].font = subtitle_font
+    ws3["A2"].fill = navy_header_fill
+    ws3["A2"].alignment = align_center
+    ws3.row_dimensions[2].height = 18
+
+    curr_row = 4
+    headers_comp = [
+        "No",
+        "Sektor Lapangan Usaha",
+        f"r Prov A ({prov_a_name})",
+        f"R² Prov A (%)",
+        f"r Prov B ({prov_b_name})",
+        f"R² Prov B (%)",
+        "Selisih Korelasi (|Δr|)",
+        f"VIF ({prov_a_name})",
+        f"VIF ({prov_b_name})"
+    ]
+    for c_idx, h in enumerate(headers_comp, 1):
+        cell = ws3.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = amber_section_fill if "Selisih" in h else navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws3.row_dimensions[curr_row].height = 26
+    curr_row += 1
+
+    corr_a = _compute_correlations(province, year, "lu", "all", "default", "all", "", analysis_mode)
+    corr_b = _compute_correlations(compare_province, year, "lu", "all", "default", "all", "", analysis_mode)
+
+    rows_a = corr_a.get("rows", [])
+    rows_b = corr_b.get("rows", [])
+
+    map_a = {}
+    for r in rows_a:
+        sec = r.get("Lapangan Usaha", "")
+        if "produk domestik" not in sec.lower() and "pdrb" not in sec.lower():
+            map_a[_normalize_name(sec)] = (sec, r)
+
+    map_b = {}
+    for r in rows_b:
+        sec = r.get("Lapangan Usaha", "")
+        if "produk domestik" not in sec.lower() and "pdrb" not in sec.lower():
+            map_b[_normalize_name(sec)] = (sec, r)
+
+    multi_a = compute_multicollinearity(province, "HK", analysis_mode, "lu")
+    multi_b = compute_multicollinearity(compare_province, "HK", analysis_mode, "lu")
+
+    vif_dict_a = {_normalize_name(v["sector"]): v["vif"] for v in multi_a.get("vif_results", [])}
+    vif_dict_b = {_normalize_name(v["sector"]): v["vif"] for v in multi_b.get("vif_results", [])}
+
+    target_metric_col = "Korelasi dgn Penumpang"
+    if transport_type.lower() == "bagasi":
+        target_metric_col = "Korelasi dgn Bagasi"
+    elif transport_type.lower() == "barang":
+        target_metric_col = "Korelasi dgn Barang"
+
+    all_keys = list(map_a.keys())
+    for k in map_b.keys():
+        if k not in all_keys:
+            all_keys.append(k)
+
+    comp_table_rows = []
+    for k in all_keys:
+        sec_name = map_a.get(k, (map_b.get(k, ("", {}))[0], {}))[0]
+        row_a = map_a.get(k, ("", {}))[1]
+        row_b = map_b.get(k, ("", {}))[1]
+
+        r_a = row_a.get(target_metric_col)
+        r2_a = (r_a ** 2) if (r_a is not None and not np.isnan(r_a)) else None
+
+        r_b = row_b.get(target_metric_col)
+        r2_b = (r_b ** 2) if (r_b is not None and not np.isnan(r_b)) else None
+
+        if r_a is not None and r_b is not None and not np.isnan(r_a) and not np.isnan(r_b):
+            delta = abs(r_a - r_b)
+        else:
+            delta = None
+
+        vif_a_val = vif_dict_a.get(k)
+        vif_b_val = vif_dict_b.get(k)
+
+        comp_table_rows.append({
+            "sector": sec_name,
+            "r_a": r_a,
+            "r2_a": r2_a,
+            "r_b": r_b,
+            "r2_b": r2_b,
+            "delta": delta,
+            "vif_a": vif_a_val,
+            "vif_b": vif_b_val
+        })
+
+    comp_table_rows.sort(key=lambda x: (x["delta"] is not None, x["delta"] or 0), reverse=True)
+
+    for idx, item in enumerate(comp_table_rows, 1):
+        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
+        c1 = ws3.cell(row=curr_row, column=1, value=idx)
+        c2 = ws3.cell(row=curr_row, column=2, value=item["sector"])
+        c3 = ws3.cell(row=curr_row, column=3, value=item["r_a"])
+        c4 = ws3.cell(row=curr_row, column=4, value=item["r2_a"])
+        c5 = ws3.cell(row=curr_row, column=5, value=item["r_b"])
+        c6 = ws3.cell(row=curr_row, column=6, value=item["r2_b"])
+        c7 = ws3.cell(row=curr_row, column=7, value=item["delta"])
+        c8 = ws3.cell(row=curr_row, column=8, value=item["vif_a"])
+        c9 = ws3.cell(row=curr_row, column=9, value=item["vif_b"])
+
+        c1.alignment = align_center
+        c2.alignment = align_left
+        c3.alignment = align_right
+        c3.number_format = "0.0000"
+        c4.alignment = align_right
+        c4.number_format = "0.0%"
+        c5.alignment = align_right
+        c5.number_format = "0.0000"
+        c6.alignment = align_right
+        c6.number_format = "0.0%"
+        c7.alignment = align_right
+        c7.number_format = "0.0000"
+        c8.alignment = align_right
+        c8.number_format = "0.00" if item["vif_a"] is not None else "@"
+        c9.alignment = align_right
+        c9.number_format = "0.00" if item["vif_b"] is not None else "@"
+
+        for cell in [c1, c2, c3, c4, c5, c6, c7, c8, c9]:
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+
+        ws3.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    autofit_columns(ws3)
+
+    # =========================================================================
+    # SHEET 4: 4_Tren_Triwulanan
+    # =========================================================================
+    ws4 = wb.create_sheet(title="4_Tren_Triwulanan")
+    ws4.views.sheetView[0].showGridLines = True
+
+    ws4.merge_cells("A1:O1")
+    ws4["A1"] = "DERET WAKTU TRIWULANAN (2020 - 2024) PDRB & TRANSPORTASI UDARA"
+    ws4["A1"].font = title_font
+    ws4["A1"].fill = navy_title_fill
+    ws4["A1"].alignment = align_center
+    ws4.row_dimensions[1].height = 28
+
+    ws4.merge_cells("A2:O2")
+    ws4["A2"] = f"Provinsi: {prov_a_name} | Rentang Runtun Waktu: 2020 Q1 s/d 2024 Q4 | BPS RI"
+    ws4["A2"].font = subtitle_font
+    ws4["A2"].fill = navy_header_fill
+    ws4["A2"].alignment = align_center
+    ws4.row_dimensions[2].height = 18
+
+    curr_row = 4
+    headers_ts = [
+        "Tahun", "Triwulan",
+        "Penumpang (Orang)", "Bagasi (Kg)", "Barang (Kg)",
+        "PDRB Total HK (Juta Rp)", "PDRB Total HB (Juta Rp)",
+        "YoY Penumpang (%)", "YoY Bagasi (%)", "YoY Barang (%)", "YoY PDRB Total HK (%)",
+        "QoQ Penumpang (%)", "QoQ Bagasi (%)", "QoQ Barang (%)", "QoQ PDRB Total HK (%)"
+    ]
+    for c_idx, h in enumerate(headers_ts, 1):
+        cell = ws4.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws4.row_dimensions[curr_row].height = 26
+    curr_row += 1
+
+    df_multi, _ = _build_multi_year_df_cached(province)
+    df_yoy = _get_growth_df_cached(province, 4)
+    df_qoq = _get_growth_df_cached(province, 1)
+
+    p_col = next((c for c in df_multi.columns if "penumpang" in c.lower()), None)
+    bag_col = next((c for c in df_multi.columns if "bagasi" in c.lower()), None)
+    bar_col = next((c for c in df_multi.columns if "barang" in c.lower()), None)
+
+    tot_hk_col = next((c for c in df_multi.columns if c.startswith("LU (HK)") and ("produk domestik" in c.lower() or "pdrb" in c.lower())), None)
+    tot_hb_col = next((c for c in df_multi.columns if c.startswith("LU (HB)") and ("produk domestik" in c.lower() or "pdrb" in c.lower())), None)
+
+    for idx, r in df_multi.iterrows():
+        yr_val = int(r["_tahun"])
+        tw_num = int(r["_triwulan_num"])
+        tw_str = f"Triwulan {tw_num}"
+
+        val_p = float(r[p_col]) if p_col and pd.notna(r[p_col]) else 0
+        val_bag = float(r[bag_col]) if bag_col and pd.notna(r[bag_col]) else 0
+        val_bar = float(r[bar_col]) if bar_col and pd.notna(r[bar_col]) else 0
+        val_hk = float(r[tot_hk_col]) if tot_hk_col and pd.notna(r[tot_hk_col]) else 0
+        val_hb = float(r[tot_hb_col]) if tot_hb_col and pd.notna(r[tot_hb_col]) else 0
+
+        yoy_p = None
+        yoy_bag = None
+        yoy_bar = None
+        yoy_hk = None
+        if not df_yoy.empty:
+            match_yoy = df_yoy[(df_yoy["_tahun"] == yr_val) & (df_yoy["_triwulan_num"] == tw_num)]
+            if not match_yoy.empty:
+                m_row = match_yoy.iloc[0]
+                yoy_p = float(m_row[p_col]) if p_col and pd.notna(m_row.get(p_col)) else None
+                yoy_bag = float(m_row[bag_col]) if bag_col and pd.notna(m_row.get(bag_col)) else None
+                yoy_bar = float(m_row[bar_col]) if bar_col and pd.notna(m_row.get(bar_col)) else None
+                yoy_hk = float(m_row[tot_hk_col]) if tot_hk_col and pd.notna(m_row.get(tot_hk_col)) else None
+
+        qoq_p = None
+        qoq_bag = None
+        qoq_bar = None
+        qoq_hk = None
+        if not df_qoq.empty:
+            match_qoq = df_qoq[(df_qoq["_tahun"] == yr_val) & (df_qoq["_triwulan_num"] == tw_num)]
+            if not match_qoq.empty:
+                m_row = match_qoq.iloc[0]
+                qoq_p = float(m_row[p_col]) if p_col and pd.notna(m_row.get(p_col)) else None
+                qoq_bag = float(m_row[bag_col]) if bag_col and pd.notna(m_row.get(bag_col)) else None
+                qoq_bar = float(m_row[bar_col]) if bar_col and pd.notna(m_row.get(bar_col)) else None
+                qoq_hk = float(m_row[tot_hk_col]) if tot_hk_col and pd.notna(m_row.get(tot_hk_col)) else None
+
+        fill_row = zebra_light_fill if curr_row % 2 == 0 else white_fill
+        ts_row_vals = [
+            yr_val, tw_str,
+            val_p, val_bag, val_bar, val_hk, val_hb,
+            (yoy_p / 100.0) if yoy_p is not None else None,
+            (yoy_bag / 100.0) if yoy_bag is not None else None,
+            (yoy_bar / 100.0) if yoy_bar is not None else None,
+            (yoy_hk / 100.0) if yoy_hk is not None else None,
+            (qoq_p / 100.0) if qoq_p is not None else None,
+            (qoq_bag / 100.0) if qoq_bag is not None else None,
+            (qoq_bar / 100.0) if qoq_bar is not None else None,
+            (qoq_hk / 100.0) if qoq_hk is not None else None
+        ]
+
+        for c_idx, v in enumerate(ts_row_vals, 1):
+            cell = ws4.cell(row=curr_row, column=c_idx, value=v)
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+            if c_idx in [1, 2]:
+                cell.alignment = align_center
+            elif c_idx in [3, 4, 5, 6, 7]:
+                cell.alignment = align_right
+                cell.number_format = "#,##0" if c_idx in [3, 4, 5] else "#,##0.00"
+            else:
+                cell.alignment = align_right
+                cell.number_format = "0.0%" if v is not None else "@"
+
+        ws4.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    autofit_columns(ws4)
+
+    # =========================================================================
+    # SHEET 5: 5_Data_Mentah
+    # =========================================================================
+    ws5 = wb.create_sheet(title="5_Data_Mentah")
+    ws5.views.sheetView[0].showGridLines = True
+
+    lu_hk_cols = [c for c in df_multi.columns if c.startswith("LU (HK)")]
+    lu_hb_cols = [c for c in df_multi.columns if c.startswith("LU (HB)")]
+
+    max_c5 = max(len(lu_hk_cols) + 5, 10)
+    end_col_5 = get_column_letter(max_c5)
+
+    ws5.merge_cells(f"A1:{end_col_5}1")
+    ws5["A1"] = "DATA MENTAH 17 SEKTOR PDRB LAPANGAN USAHA (ADHK & ADHB) & TRANSPORTASI"
+    ws5["A1"].font = title_font
+    ws5["A1"].fill = navy_title_fill
+    ws5["A1"].alignment = align_center
+    ws5.row_dimensions[1].height = 28
+
+    ws5.merge_cells(f"A2:{end_col_5}2")
+    ws5["A2"] = f"Provinsi: {prov_a_name} | Satuan: Juta Rupiah (PDRB) / Satuan Riil Transportasi | 2020-2024"
+    ws5["A2"].font = subtitle_font
+    ws5["A2"].fill = navy_header_fill
+    ws5["A2"].alignment = align_center
+    ws5.row_dimensions[2].height = 18
+
+    # Tabel 1: PDRB Harga Konstan (ADHK)
+    curr_row = 4
+    ws5.merge_cells(f"A{curr_row}:{end_col_5}{curr_row}")
+    ws5[f"A{curr_row}"] = "TABEL 1: PDRB ATAS DASAR HARGA KONSTAN (ADHK 2010) MENURUT 17 LAPANGAN USAHA & TRANSPORTASI"
+    ws5[f"A{curr_row}"].font = section_font
+    ws5[f"A{curr_row}"].fill = emerald_section_fill
+    ws5[f"A{curr_row}"].alignment = align_left
+    ws5.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    headers_adhk = ["Tahun", "Triwulan"] + [re.sub(r'^LU\s*\(HK\)\s*-\s*', '', c).strip() for c in lu_hk_cols] + ["Penumpang (Orang)", "Bagasi (Kg)", "Barang (Kg)"]
+    for c_idx, h in enumerate(headers_adhk, 1):
+        cell = ws5.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws5.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    for idx, r in df_multi.iterrows():
+        yr_val = int(r["_tahun"])
+        tw_str = f"Triwulan {int(r['_triwulan_num'])}"
+        vals_hk = [float(r[c]) if pd.notna(r[c]) else 0.0 for c in lu_hk_cols]
+        val_p = float(r[p_col]) if p_col and pd.notna(r[p_col]) else 0.0
+        val_bag = float(r[bag_col]) if bag_col and pd.notna(r[bag_col]) else 0.0
+        val_bar = float(r[bar_col]) if bar_col and pd.notna(r[bar_col]) else 0.0
+
+        fill_row = zebra_light_fill if curr_row % 2 == 0 else white_fill
+        row_cells = [yr_val, tw_str] + vals_hk + [val_p, val_bag, val_bar]
+
+        for c_idx, v in enumerate(row_cells, 1):
+            cell = ws5.cell(row=curr_row, column=c_idx, value=v)
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+            if c_idx in [1, 2]:
+                cell.alignment = align_center
+            else:
+                cell.alignment = align_right
+                cell.number_format = "#,##0.00" if c_idx <= len(lu_hk_cols) + 2 else "#,##0"
+        ws5.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    # Tabel 2: PDRB Harga Berlaku (ADHB)
+    curr_row += 2
+    ws5.merge_cells(f"A{curr_row}:{end_col_5}{curr_row}")
+    ws5[f"A{curr_row}"] = "TABEL 2: PDRB ATAS DASAR HARGA BERLAKU (ADHB NOMINAL) MENURUT 17 LAPANGAN USAHA"
+    ws5[f"A{curr_row}"].font = section_font
+    ws5[f"A{curr_row}"].fill = emerald_section_fill
+    ws5[f"A{curr_row}"].alignment = align_left
+    ws5.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    headers_adhb = ["Tahun", "Triwulan"] + [re.sub(r'^LU\s*\(HB\)\s*-\s*', '', c).strip() for c in lu_hb_cols]
+    for c_idx, h in enumerate(headers_adhb, 1):
+        cell = ws5.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws5.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    for idx, r in df_multi.iterrows():
+        yr_val = int(r["_tahun"])
+        tw_str = f"Triwulan {int(r['_triwulan_num'])}"
+        vals_hb = [float(r[c]) if pd.notna(r[c]) else 0.0 for c in lu_hb_cols]
+
+        fill_row = zebra_light_fill if curr_row % 2 == 0 else white_fill
+        row_cells = [yr_val, tw_str] + vals_hb
+
+        for c_idx, v in enumerate(row_cells, 1):
+            cell = ws5.cell(row=curr_row, column=c_idx, value=v)
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+            if c_idx in [1, 2]:
+                cell.alignment = align_center
+            else:
+                cell.alignment = align_right
+                cell.number_format = "#,##0.00"
+        ws5.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    autofit_columns(ws5)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
+
+
+@app.get("/api/export-full-excel")
+async def get_export_full_excel(
+    province: str = "sulawesi_selatan",
+    compare_province: str = "gorontalo",
+    year: str = "2024",
+    analysis_mode: str = "growth_yoy",
+    transport_type: str = "penumpang"
+):
+    """
+    Endpoint GET untuk menghasilkan dan mengunduh buku kerja Excel (.xlsx) 5-sheet
+    berdasarkan parameter analisis aktif.
+    """
+    try:
+        buf = generate_full_excel_report(
+            province=province,
+            compare_province=compare_province,
+            year=year,
+            analysis_mode=analysis_mode,
+            transport_type=transport_type
+        )
+        filename = f"Laporan_Analisis_PDRB_{province}_{year}.xlsx"
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Cache-Control": "no-cache"
+            }
+        )
+    except Exception as e:
+        import traceback
+        print(f"⚠️ Error generating Excel report: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Gagal menghasilkan laporan Excel: {str(e)}")
+
+
+@app.post("/api/export-full-excel")
+async def post_export_full_excel(req: ExportExcelRequest):
+    """
+    Endpoint POST untuk menghasilkan dan mengunduh buku kerja Excel (.xlsx) 5-sheet
+    melalui body JSON.
+    """
+    try:
+        buf = generate_full_excel_report(
+            province=req.province,
+            compare_province=req.compare_province,
+            year=req.year,
+            analysis_mode=req.analysis_mode,
+            transport_type=req.transport_type
+        )
+        filename = f"Laporan_Analisis_PDRB_{req.province}_{req.year}.xlsx"
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Cache-Control": "no-cache"
+            }
+        )
+    except Exception as e:
+        import traceback
+        print(f"⚠️ Error generating Excel report: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Gagal menghasilkan laporan Excel: {str(e)}")
 
 
 # ======================================================================================

@@ -303,6 +303,12 @@
           <i class="fa-solid fa-chevron-down absolute right-2.5 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
         </div>
 
+        <!-- Quick Excel Export Button -->
+        <button id="btnHeaderExportExcel" onclick="downloadFullExcelReport(this)" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700/60 rounded-lg shadow-sm transition" title="Unduh Laporan Lengkap Excel Multi-Sheet (.xlsx)">
+          <i class="fa-solid fa-file-excel text-emerald-600 dark:text-emerald-400"></i>
+          <span class="hidden md:inline">Export Excel</span>
+        </button>
+
         <!-- Theme Switcher Button -->
         <button id="btnThemeToggle" onclick="toggleTheme()" class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Ubah Tema Terang / Gelap">
           <i id="themeIcon" class="fa-solid fa-moon"></i>
@@ -677,6 +683,45 @@
 
     <!-- TAB 3: DATA LENGKAP & EKSPOR (SEMUA TABEL BPS) -->
     <div id="content-tab3" class="hidden space-y-6">
+
+      <!-- Executive Excel Report Download Banner -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/80 via-slate-900 to-slate-950 border border-emerald-500/30 p-6 shadow-2xl space-y-4">
+        <div class="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+        
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+          <div class="space-y-2 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold">
+              <i class="fa-solid fa-file-excel text-emerald-400"></i>
+              <span>Laporan Eksekutif Multi-Sheet (.xlsx)</span>
+            </div>
+            <h3 class="text-lg md:text-xl font-heading font-bold text-white leading-tight">
+              Unduh Buku Kerja Excel Lengkap Berbasis Data Aktif
+            </h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Menghasilkan file Excel terstandarisasi publikasi yang memuat 5 sheet analisis otomatis: 
+              <strong>1. Korelasi PDRB</strong>, <strong>2. Diagnostik VIF</strong>, <strong>3. Komparasi Wilayah</strong>, <strong>4. Tren Triwulanan</strong>, dan <strong>5. Data Mentah Sektoral</strong>.
+            </p>
+            
+            <!-- Active Parameters Badges -->
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <span id="badgeExcelProvA" class="px-2.5 py-1 rounded-md bg-slate-800/80 text-sky-300 border border-sky-500/30 text-[11px] font-mono">📍 Prov: Sulawesi Selatan</span>
+              <span id="badgeExcelYear" class="px-2.5 py-1 rounded-md bg-slate-800/80 text-emerald-300 border border-emerald-500/30 text-[11px] font-mono">📅 Tahun: 2024</span>
+              <span id="badgeExcelMode" class="px-2.5 py-1 rounded-md bg-slate-800/80 text-amber-300 border border-amber-500/30 text-[11px] font-mono">📈 Mode: YoY (%)</span>
+              <span id="badgeExcelComp" class="px-2.5 py-1 rounded-md bg-slate-800/80 text-purple-300 border border-purple-500/30 text-[11px] font-mono">⚔️ vs Gorontalo</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-2.5 shrink-0">
+            <button id="btnExecutiveExportExcel" onclick="downloadFullExcelReport(this)" class="px-6 py-3.5 rounded-xl font-heading font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] shadow-lg shadow-emerald-900/40 border border-emerald-400/40 transition flex items-center justify-center gap-2.5 group">
+              <i class="fa-solid fa-file-arrow-down text-base group-hover:translate-y-0.5 transition-transform"></i>
+              <span>📥 Download Laporan Eksekutif (.xlsx)</span>
+            </button>
+            <span class="text-[10px] text-slate-400 text-center lg:text-right font-mono">Format OpenXML Spreadsheet (5 Sheet)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel Koleksi Data -->
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
         
         <!-- Tab 3 Header & Table Selector -->
@@ -3449,6 +3494,7 @@
 
       updatePdrbTypeButtons();
       updateOlsScopeButtons();
+      updateExcelExportBadges();
       await loadCorrelations(force);
       await loadSectorData(force);
       await loadTab3Table(currentTab3Sheet, force);
@@ -4020,6 +4066,78 @@
       link.click();
     }
 
+    // =========================================================================
+    // EXPORT FULL EXCEL MULTI-SHEET WORKBOOK (.XLSX)
+    // =========================================================================
+    function updateExcelExportBadges() {
+      const pName = currentManifest.provinces?.[currentProvince]?.name || currentProvince;
+      const compName = currentManifest.provinces?.[compProvB]?.name || compProvB;
+      const modeLabel = getAnalysisModeLabel();
+      const yr = currentYear;
+
+      const bProv = document.getElementById("badgeExcelProvA");
+      const bYear = document.getElementById("badgeExcelYear");
+      const bMode = document.getElementById("badgeExcelMode");
+      const bComp = document.getElementById("badgeExcelComp");
+
+      if (bProv) bProv.textContent = `📍 Prov: ${pName}`;
+      if (bYear) bYear.textContent = `📅 Tahun: ${yr}`;
+      if (bMode) bMode.textContent = `📈 Mode: ${modeLabel.split('—')[0].trim()}`;
+      if (bComp) bComp.textContent = `⚔️ vs ${compName}`;
+    }
+
+    async function downloadFullExcelReport(btnElem) {
+      const prov = currentProvince || "sulawesi_selatan";
+      const compProv = compProvB || "gorontalo";
+      const yr = currentYear || "2024";
+      const mode = currentAnalysisMode || "growth_yoy";
+      const trans = compIndicator || currentRegMetric || "penumpang";
+
+      const originalHtml = btnElem ? btnElem.innerHTML : null;
+      const allExportBtns = [
+        document.getElementById("btnHeaderExportExcel"),
+        document.getElementById("btnExecutiveExportExcel")
+      ].filter(Boolean);
+
+      allExportBtns.forEach(b => {
+        b.disabled = true;
+        b.classList.add("opacity-75", "cursor-wait");
+      });
+
+      if (btnElem) {
+        btnElem.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-emerald-400 mr-2"></i><span>Menyiapkan Excel...</span>`;
+      }
+
+      const url = `/api/export-full-excel?province=${encodeURIComponent(prov)}&compare_province=${encodeURIComponent(compProv)}&year=${encodeURIComponent(yr)}&analysis_mode=${encodeURIComponent(mode)}&transport_type=${encodeURIComponent(trans)}`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: Gagal mengunduh laporan.`);
+        }
+        const blob = await res.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = `Laporan_Analisis_PDRB_${prov}_${yr}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (err) {
+        console.error("Excel download error:", err);
+        alert("Maaf, terjadi kendala saat mengunduh laporan Excel: " + err.message);
+      } finally {
+        allExportBtns.forEach(b => {
+          b.disabled = false;
+          b.classList.remove("opacity-75", "cursor-wait");
+        });
+        if (btnElem && originalHtml) {
+          btnElem.innerHTML = originalHtml;
+        }
+      }
+    }
+
     function switchTab(tabId) {
       document.getElementById("content-tab1")?.classList.add("hidden");
       document.getElementById("content-tab2")?.classList.add("hidden");
@@ -4041,7 +4159,9 @@
       const navBtn = document.getElementById(`nav-${tabId}`);
       if (navBtn) navBtn.className = activeColorClass;
 
-      if (tabId === 'tab4') {
+      if (tabId === 'tab3') {
+        updateExcelExportBadges();
+      } else if (tabId === 'tab4') {
         renderMultiSectorCheckboxes();
         loadMulticollinearityData();
       } else if (tabId === 'tab5') {
@@ -5419,6 +5539,7 @@
       const selB = document.getElementById("compProvB");
       if (selA) compProvA = selA.value;
       if (selB) compProvB = selB.value;
+      updateExcelExportBadges();
       loadComparisonData();
     }
 
