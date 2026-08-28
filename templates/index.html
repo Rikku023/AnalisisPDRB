@@ -1851,8 +1851,8 @@
             <span>Komparasi Antar-Wilayah</span>
           </button>
           <button id="btnSubTabCompSector" onclick="switchCompSubTab('sector')" class="subtab-comp-btn px-4 py-2 rounded-lg text-xs font-heading font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all duration-200 flex items-center gap-2">
-            <i class="fa-solid fa-diagram-project text-sky-500"></i>
-            <span>Komparasi Antar-Sektor (Inter-Sectoral Linkage)</span>
+            <i class="fa-solid fa-layer-group text-sky-500"></i>
+            <span>Komparasi Spasial-Sektoral</span>
           </button>
         </div>
         <div class="text-[11px] text-slate-500 dark:text-slate-400 px-2 flex items-center gap-2">
@@ -2430,22 +2430,22 @@
       <!-- END VIEW 1: KOMPARASI ANTAR-WILAYAH -->
 
       <!-- ========================================================================= -->
-      <!-- VIEW 2: KOMPARASI ANTAR-SEKTOR (INTER-SECTORAL LINKAGE) -->
+      <!-- VIEW 2: KOMPARASI SPASIAL-SEKTORAL (CROSS-PROVINCE & SECTORAL LINKAGE) -->
       <!-- ========================================================================= -->
       <div id="view-comp-sector" class="hidden space-y-6">
 
-        <!-- Section 1: Control Bar & Filter Sektor -->
+        <!-- Section 1: Control Bar (Dual Independent Region & Sector Groups) -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800/80">
             <div>
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 text-xs font-semibold uppercase tracking-wider mb-1.5">
-                <i class="fa-solid fa-diagram-project"></i> Analisis Keterkaitan Sektoral (Inter-Sectoral Linkage)
+                <i class="fa-solid fa-layer-group"></i> Analisis Spasial-Sektoral (Cross-Province &amp; Sectoral Comparison)
               </div>
               <h3 class="text-lg font-heading font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Komparasi Antar-Sektor: Korelasi Sektor A vs Sektor B &amp; Transmisi Transportasi</span>
+                <span>Komparasi Spasial-Sektoral: Sektor A (Provinsi A) vs Sektor B (Provinsi B)</span>
               </h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Evaluasi ko-pergerakan deret waktu, korelasi Pearson bivariat ($r_{A,B}$), regresi OLS ($y = mx + c$), serta sensitivitas transmisi ke sektor transportasi udara.
+                Evaluasi korelasi silang antar-wilayah ($r_{A_1, B_2}$), regresi OLS spasial, sinkronisasi runtun waktu 4-garis, dan kesenjangan elastisitas logistik lokal.
               </p>
             </div>
 
@@ -2453,85 +2453,120 @@
             <div class="flex items-center gap-2 self-start lg:self-auto">
               <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-mono font-medium border border-slate-200 dark:border-slate-700">
                 <span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
-                <span id="txtSecCompStatusBadge">Korelasi Antar-Sektor</span>
+                <span id="txtSecCompStatusBadge">Korelasi Spasial-Sektoral</span>
               </span>
             </div>
           </div>
 
-          <!-- Control Inputs Row -->
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          <!-- Dual Group Control Row -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
             
-            <!-- Dropdown Provinsi Target -->
-            <div class="md:col-span-3 space-y-1">
-              <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-location-dot text-sky-500"></i> Provinsi Target
-              </label>
-              <div class="relative">
-                <select id="secCompProv" onchange="onSecCompChange()" class="w-full bg-slate-50 dark:bg-slate-950/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs rounded-xl px-3 py-2.5 pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer font-medium shadow-inner">
-                  <!-- Populated dynamically via JS -->
-                </select>
-                <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
+            <!-- Group 1: Entitas A (Provinsi A & Sektor A) - 5 cols -->
+            <div class="lg:col-span-5 p-4 rounded-xl bg-sky-50/60 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800/60 space-y-3 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Entitas A (Sumbu X)
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold border border-sky-500/20">Basis X</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-1">
+                    <i class="fa-solid fa-location-dot text-sky-500"></i> Provinsi A
+                  </label>
+                  <div class="relative">
+                    <select id="secCompProvA" onchange="onSecCompChange()" class="w-full bg-white dark:bg-slate-900 border border-sky-300 dark:border-sky-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-2.5 py-2 pr-7 outline-none font-medium appearance-none cursor-pointer shadow-inner">
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[9px] text-sky-500 pointer-events-none"></i>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-1">
+                    <i class="fa-solid fa-cubes text-sky-500"></i> Sektor A
+                  </label>
+                  <div class="relative">
+                    <select id="secCompSectorA" onchange="onSecCompChange()" class="w-full bg-white dark:bg-slate-900 border border-sky-300 dark:border-sky-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-2.5 py-2 pr-7 outline-none font-medium appearance-none cursor-pointer shadow-inner">
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[9px] text-sky-500 pointer-events-none"></i>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Dropdown Sektor A -->
-            <div class="md:col-span-3 space-y-1">
-              <label class="text-[11px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-sky-500"></span> Sektor A (Sumbu X)
-              </label>
-              <div class="relative">
-                <select id="secCompSectorA" onchange="onSecCompChange()" class="w-full bg-slate-50 dark:bg-slate-950/80 border border-sky-300 dark:border-sky-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-3 py-2.5 pr-8 focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer font-medium shadow-inner">
-                  <!-- Populated dynamically via JS -->
-                </select>
-                <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-sky-500 pointer-events-none"></i>
-              </div>
-            </div>
-
-            <!-- Swap Button -->
-            <div class="md:col-span-1 flex items-end justify-center pb-0.5">
-              <button onclick="swapCompSectors()" class="p-2.5 w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-500 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition shadow-sm flex items-center justify-center" title="Tukar Posisi Sektor A & B">
-                <i class="fa-solid fa-right-left text-xs"></i>
+            <!-- Center Action Buttons - 2 cols -->
+            <div class="lg:col-span-2 flex flex-row lg:flex-col items-center justify-center gap-2">
+              <button onclick="swapCompSpatials()" class="flex-1 lg:flex-none w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-500 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition shadow-sm text-xs font-semibold flex items-center justify-center gap-1.5" title="Tukar Entitas A dan B">
+                <i class="fa-solid fa-right-left text-xs text-sky-500"></i>
+                <span>Tukar</span>
+              </button>
+              <button onclick="syncCompSectors()" class="flex-1 lg:flex-none w-full py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition shadow-sm text-xs font-semibold flex items-center justify-center gap-1.5" title="Samakan Sektor B dengan Sektor A (Benchmarking 1 Sektor Lintas Provinsi)">
+                <i class="fa-solid fa-arrows-rotate text-xs text-amber-500"></i>
+                <span>Samakan Sektor</span>
               </button>
             </div>
 
-            <!-- Dropdown Sektor B -->
-            <div class="md:col-span-3 space-y-1">
-              <label class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Sektor B (Sumbu Y)
-              </label>
-              <div class="relative">
-                <select id="secCompSectorB" onchange="onSecCompChange()" class="w-full bg-slate-50 dark:bg-slate-950/80 border border-amber-300 dark:border-amber-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-3 py-2.5 pr-8 focus:ring-2 focus:ring-amber-500 outline-none appearance-none cursor-pointer font-medium shadow-inner">
-                  <!-- Populated dynamically via JS -->
-                </select>
-                <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-amber-500 pointer-events-none"></i>
+            <!-- Group 2: Entitas B (Provinsi B & Sektor B) - 5 cols -->
+            <div class="lg:col-span-5 p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 space-y-3 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Entitas B (Sumbu Y)
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20">Target Y</span>
               </div>
-            </div>
-
-            <!-- Transport Indicator Selector -->
-            <div class="md:col-span-2 space-y-1">
-              <label class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Indikator Transportasi
-              </label>
-              <div class="inline-flex w-full rounded-xl bg-slate-100 dark:bg-slate-950/80 p-1 border border-slate-200 dark:border-slate-800 shadow-inner">
-                <button onclick="setSecCompMetric('penumpang')" id="btnSecCompIndPenumpang" class="flex-1 py-1.5 rounded-lg text-xs font-bold text-white bg-sky-600 shadow transition flex items-center justify-center gap-1">
-                  <i class="fa-solid fa-plane text-[10px]"></i> Penumpang
-                </button>
-                <button onclick="setSecCompMetric('barang')" id="btnSecCompIndBarang" class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center justify-center gap-1">
-                  <i class="fa-solid fa-box-open text-[10px]"></i> Barang
-                </button>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-1">
+                    <i class="fa-solid fa-location-dot text-amber-500"></i> Provinsi B
+                  </label>
+                  <div class="relative">
+                    <select id="secCompProvB" onchange="onSecCompChange()" class="w-full bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-2.5 py-2 pr-7 outline-none font-medium appearance-none cursor-pointer shadow-inner">
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[9px] text-amber-500 pointer-events-none"></i>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-1">
+                    <i class="fa-solid fa-cubes text-amber-500"></i> Sektor B
+                  </label>
+                  <div class="relative">
+                    <select id="secCompSectorB" onchange="onSecCompChange()" class="w-full bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/60 text-slate-900 dark:text-white text-xs rounded-xl px-2.5 py-2 pr-7 outline-none font-medium appearance-none cursor-pointer shadow-inner">
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[9px] text-amber-500 pointer-events-none"></i>
+                  </div>
+                </div>
               </div>
             </div>
 
           </div>
+
+          <!-- Sub-Row: Transport Metric Selector & Info -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+            <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <i class="fa-solid fa-circle-info text-sky-500"></i>
+              <span>Analisis Laju Pertumbuhan Triwulanan (YoY / QoQ) berbasis PDRB Harga Konstan/Berlaku.</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Moda Udara:</span>
+              <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 shadow-inner">
+                <button onclick="setSecCompMetric('penumpang')" id="btnSecCompIndPenumpang" class="py-1.5 px-3 rounded-lg text-xs font-bold text-white bg-sky-600 shadow transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-plane text-[10px]"></i> ✈️ Penumpang
+                </button>
+                <button onclick="setSecCompMetric('barang')" id="btnSecCompIndBarang" class="py-1.5 px-3 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-box-open text-[10px]"></i> 📦 Kargo / Barang
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Section 2: 4 Status & Summary KPI Cards Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          <!-- KPI 1: Status Keterkaitan Sektoral (r_A,B) -->
+          <!-- KPI 1: Status Korelasi Spasial-Sektoral (r_A1, B2) -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-sky-500">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Keterkaitan Sektor (A ↔ B)</span>
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Korelasi Lintas Wilayah</span>
               <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
                 <i class="fa-solid fa-arrows-split-up-and-left text-sm"></i>
               </div>
@@ -2547,49 +2582,49 @@
                 </span>
               </div>
             </div>
-            <div id="kpiSecCompStatusSub" class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">Korelasi Pearson antar kedua sektor</div>
+            <div id="kpiSecCompStatusSub" class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">Korelasi Prov A (Sektor A) vs Prov B (Sektor B)</div>
           </div>
 
-          <!-- KPI 2: Sensitivitas Sektor A ke Transportasi -->
+          <!-- KPI 2: Respon Logistik Sektor A di Prov A (r_A1, T1) -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-sky-500">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sektor A ↔ Transportasi</span>
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Logistik Prov A</span>
               <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
                 <i class="fa-solid fa-plane-departure text-sm"></i>
               </div>
             </div>
             <div class="my-2">
-              <div id="kpiSecCompNameA" class="text-xs font-heading font-bold text-sky-600 dark:text-sky-400 truncate" title="Sektor A">Sektor A</div>
+              <div id="kpiSecCompNameA" class="text-xs font-heading font-bold text-sky-600 dark:text-sky-400 truncate" title="Sektor A (Prov A)">Sektor A (Prov A)</div>
               <div class="flex items-baseline gap-2 mt-1">
                 <span id="kpiSecCompRTransA" class="text-2xl font-heading font-bold text-slate-900 dark:text-white font-mono">-</span>
                 <span id="kpiSecCompTransBadgeA" class="text-[11px] font-semibold text-slate-400">-</span>
               </div>
             </div>
-            <div id="kpiSecCompTransStatusA" class="text-[11px] text-slate-500 dark:text-slate-400">Koefisien elastisitas terhadap moda udara</div>
+            <div id="kpiSecCompTransStatusA" class="text-[11px] text-slate-500 dark:text-slate-400">Korelasi ke transportasi udara Prov A</div>
           </div>
 
-          <!-- KPI 3: Sensitivitas Sektor B ke Transportasi -->
+          <!-- KPI 3: Respon Logistik Sektor B di Prov B (r_B2, T2) -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-amber-500">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sektor B ↔ Transportasi</span>
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Logistik Prov B</span>
               <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <i class="fa-solid fa-truck-plane text-sm"></i>
               </div>
             </div>
             <div class="my-2">
-              <div id="kpiSecCompNameB" class="text-xs font-heading font-bold text-amber-600 dark:text-amber-400 truncate" title="Sektor B">Sektor B</div>
+              <div id="kpiSecCompNameB" class="text-xs font-heading font-bold text-amber-600 dark:text-amber-400 truncate" title="Sektor B (Prov B)">Sektor B (Prov B)</div>
               <div class="flex items-baseline gap-2 mt-1">
                 <span id="kpiSecCompRTransB" class="text-2xl font-heading font-bold text-slate-900 dark:text-white font-mono">-</span>
                 <span id="kpiSecCompTransBadgeB" class="text-[11px] font-semibold text-slate-400">-</span>
               </div>
             </div>
-            <div id="kpiSecCompTransStatusB" class="text-[11px] text-slate-500 dark:text-slate-400">Koefisien elastisitas terhadap moda udara</div>
+            <div id="kpiSecCompTransStatusB" class="text-[11px] text-slate-500 dark:text-slate-400">Korelasi ke transportasi udara Prov B</div>
           </div>
 
-          <!-- KPI 4: Dominansi Respon Transportasi -->
+          <!-- KPI 4: Kesenjangan Elastisitas Antar-Wilayah -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md transition hover:border-indigo-500">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dominansi Respon Transport</span>
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kesenjangan Logistik</span>
               <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                 <i class="fa-solid fa-scale-balanced text-sm"></i>
               </div>
@@ -2600,21 +2635,21 @@
                 <span id="kpiSecCompTransGap" class="text-lg font-bold text-indigo-600 dark:text-indigo-400">|Δr| = -</span>
               </div>
             </div>
-            <div class="text-[11px] text-slate-500 dark:text-slate-400">Kesenjangan transmisi dampak logistik</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400">Disparitas elastisitas logistik antar-wilayah</div>
           </div>
 
         </div>
 
-        <!-- Section 3: Dual Charts Row (Scatter Regresi & Time-Series Co-movement) -->
+        <!-- Section 3: Dual Charts Row (Scatter Regresi & 4-Line Time-Series Sinkronisasi) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           
-          <!-- Chart 1: Scatter Plot Regresi Sektor A vs Sektor B -->
+          <!-- Chart 1: Scatter Plot Regresi Spasial-Sektoral -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 gap-2">
               <div>
                 <h4 class="font-heading font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                   <i class="fa-solid fa-chart-line text-sky-500"></i>
-                  <span>Scatter Plot Regresi: Sektor A vs Sektor B</span>
+                  <span>Scatter Plot Regresi Spasial: Sektor A (Prov A) vs Sektor B (Prov B)</span>
                 </h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Titik kuartalan + garis regresi OLS ($y = mx + c$) dan koefisien determinasi ($R^2$).
@@ -2628,34 +2663,35 @@
             <div id="chartSectorScatter" class="w-full h-[430px]"></div>
 
             <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
-              <span><i class="fa-solid fa-circle-info text-sky-500 mr-1"></i> Sumbu X: <strong id="lblScatterXName" class="text-slate-700 dark:text-slate-300">Sektor A</strong> • Sumbu Y: <strong id="lblScatterYName" class="text-slate-700 dark:text-slate-300">Sektor B</strong>.</span>
+              <span><i class="fa-solid fa-circle-info text-sky-500 mr-1"></i> Sumbu X: <strong id="lblScatterXName" class="text-slate-700 dark:text-slate-300">Sektor A (Prov A)</strong> • Sumbu Y: <strong id="lblScatterYName" class="text-slate-700 dark:text-slate-300">Sektor B (Prov B)</strong>.</span>
               <span id="lblScatterSummary" class="font-mono text-sky-600 dark:text-sky-400 font-semibold"></span>
             </div>
           </div>
 
-          <!-- Chart 2: Time-Series Co-Movement Line Chart -->
+          <!-- Chart 2: 4-Series Time-Series Co-Movement Line Chart -->
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 gap-2">
               <div>
                 <h4 class="font-heading font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                   <i class="fa-solid fa-wave-square text-amber-500"></i>
-                  <span>Runtun Waktu: Sinkronisasi Dinamis (Co-Movement)</span>
+                  <span>Runtun Waktu: Sinkronisasi 4-Garis (Co-Movement)</span>
                 </h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Perbandingan fluktuasi deret waktu kuartalan antara Sektor A, Sektor B, dan Transportasi Udara.
+                  Perbandingan fluktuasi deret waktu kuartalan Sektor &amp; Transportasi di kedua provinsi.
                 </p>
               </div>
               <div class="flex items-center gap-2 text-[11px] font-medium flex-wrap">
-                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> <span id="legSecAName">Sektor A</span></span>
-                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> <span id="legSecBName">Sektor B</span></span>
-                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> <span id="legSecTransName">Transportasi</span></span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> <span id="legSecAName">Sektor A (Prov A)</span></span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> <span id="legSecBName">Sektor B (Prov B)</span></span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5 bg-cyan-400"></span> <span id="legSecTransAName">Trans Prov A</span></span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5 bg-yellow-400"></span> <span id="legSecTransBName">Trans Prov B</span></span>
               </div>
             </div>
 
             <div id="chartSectorTimeSeries" class="w-full h-[430px]"></div>
 
             <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
-              <span><i class="fa-solid fa-chart-area text-amber-500 mr-1"></i> Data diplot per kuartal multi-tahun (Pooled) untuk melihat koherensi siklus ekonomi.</span>
+              <span><i class="fa-solid fa-chart-area text-amber-500 mr-1"></i> Data diplot per kuartal (Pooled) untuk mengevaluasi integrasi pasar dan transmisi siklus ekonomi.</span>
             </div>
           </div>
 
@@ -2665,13 +2701,13 @@
         <div class="bg-gradient-to-br from-sky-950/40 via-slate-900 to-slate-950 border border-sky-500/30 rounded-2xl p-6 shadow-xl space-y-4">
           <div class="flex items-center justify-between border-b border-sky-500/20 pb-3">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-semibold">
-              <i class="fa-solid fa-brain"></i> Executive Interpretation &amp; Inter-Sectoral Economic Insight
+              <i class="fa-solid fa-brain"></i> Executive Interpretation &amp; Cross-Province Economic Insight
             </div>
-            <span id="txtSecCompProvBadge" class="text-xs font-mono text-sky-400">Provinsi: -</span>
+            <span id="txtSecCompProvBadge" class="text-xs font-mono text-sky-400">Komparasi: -</span>
           </div>
 
           <div id="secCompInterpretationText" class="text-xs text-slate-200 leading-relaxed bg-slate-950/70 p-4 rounded-xl border border-sky-500/20 space-y-3">
-            Memuat interpretasi ekonometrika keterkaitan antar-sektor...
+            Memuat interpretasi ekonometrika spasial-sektoral...
           </div>
         </div>
 
@@ -2684,73 +2720,73 @@
               </div>
               <div>
                 <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Landasan Teori: Analisis Keterkaitan Antar-Sektor (Inter-Sectoral Linkage)</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 font-mono font-normal">Input-Output &amp; Co-movement</span>
+                  <span>Landasan Teori: Analisis Spasial-Sektoral (Cross-Province &amp; Sectoral Linkage)</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 font-mono font-normal">Inter-Regional Econometrics</span>
                 </h4>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Formulasi matematis korelasi bivariat, koefisien determinasi regresi OLS, dan transmisi elastisitas logistik.
+                  Formulasi matematis korelasi silang antar-wilayah, regresi linier spasial OLS, dan disparitas elastisitas logistik lokal.
                 </p>
               </div>
             </div>
             <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] font-mono font-semibold border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto shrink-0">
-              Formulasi Bivariat
+              Formulasi Spasial
             </span>
           </div>
 
           <!-- 3 Formula Cards Grid -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-            <!-- Card 1: Pearson r_A,B -->
+            <!-- Card 1: Pearson r_A1, B2 -->
             <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
               <div class="flex items-center justify-between">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs">
-                  <i class="fa-solid fa-link"></i> 1. Korelasi Antar-Sektor ($r_{A,B}$)
+                  <i class="fa-solid fa-link"></i> 1. Korelasi Silang ($r_{A_1, B_2}$)
                 </span>
                 <span class="text-[11px] font-mono text-slate-400">[-1.0, 1.0]</span>
               </div>
               <div class="bg-white dark:bg-slate-900/90 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-1.5">
                 <div class="text-sky-600 dark:text-sky-300 font-semibold text-xs">
-                  $$r_{A,B} = \frac{\sum (X_A - \bar{X}_A)(X_B - \bar{X}_B)}{\sqrt{\sum (X_A - \bar{X}_A)^2 \sum (X_B - \bar{X}_B)^2}}$$
+                  $$r_{A_1, B_2} = \frac{\sum (X_{A_1} - \bar{X}_{A_1})(X_{B_2} - \bar{X}_{B_2})}{\sqrt{\sum (X_{A_1} - \bar{X}_{A_1})^2 \sum (X_{B_2} - \bar{X}_{B_2})^2}}$$
                 </div>
               </div>
               <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                Mengukur tingkat sinkronisasi pergerakan output antara Sektor A dan Sektor B. Nilai $r \ge 0.70$ mencerminkan sinergi struktural yang solid.
+                Mengukur ko-pergerakan output Sektor A di Provinsi A dengan Sektor B di Provinsi B. Mengindikasikan integrasi inter-regional dan transmisi siklus bisnis antar-daerah.
               </p>
             </div>
 
-            <!-- Card 2: Regresi OLS & R^2 -->
+            <!-- Card 2: Regresi Spasial OLS & R^2 -->
             <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
               <div class="flex items-center justify-between">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs">
-                  <i class="fa-solid fa-chart-line"></i> 2. Regresi OLS &amp; $R^2$
+                  <i class="fa-solid fa-chart-line"></i> 2. Regresi Spasial &amp; $R^2$
                 </span>
                 <span class="text-[11px] font-mono text-slate-400">[0.0, 1.0]</span>
               </div>
               <div class="bg-white dark:bg-slate-900/90 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-1.5">
                 <div class="text-amber-600 dark:text-amber-300 font-semibold text-xs">
-                  $$X_B = \beta_0 + \beta_1 X_A + \varepsilon \quad|\quad R^2 = r_{A,B}^2$$
+                  $$X_{B_2} = \beta_0 + \beta_1 X_{A_1} + \varepsilon \quad|\quad R^2 = r_{A_1, B_2}^2$$
                 </div>
               </div>
               <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                Menjelaskan proporsi variansi pertumbuhan Sektor B yang dapat diprediksi secara linier dari fluktuasi pertumbuhan Sektor A.
+                Menjelaskan persentase variansi pertumbuhan Sektor B di Provinsi B yang dapat diprediksi secara linier dari trajektori output Sektor A di Provinsi A.
               </p>
             </div>
 
-            <!-- Card 3: Transmisi Transportasi -->
+            <!-- Card 3: Kesenjangan Elastisitas Logistik -->
             <div class="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
               <div class="flex items-center justify-between">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold text-xs">
-                  <i class="fa-solid fa-plane"></i> 3. Transmisi Logistik
+                  <i class="fa-solid fa-plane"></i> 3. Disparitas Logistik ($|\Delta r|$)
                 </span>
-                <span class="text-[11px] font-mono text-slate-400">Asimetri Elasticity</span>
+                <span class="text-[11px] font-mono text-slate-400">Elasticity Gap</span>
               </div>
               <div class="bg-white dark:bg-slate-900/90 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center shadow-inner space-y-1.5">
                 <div class="text-purple-600 dark:text-purple-300 font-semibold text-xs">
-                  $$|\Delta r_{\text{Trans}}| = |r_{A,\text{Trans}} - r_{B,\text{Trans}}|$$
+                  $$|\Delta r_{\text{Trans}}| = |r_{A_1, T_1} - r_{B_2, T_2}|$$
                 </div>
               </div>
               <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                Mengevaluasi sektor mana yang memiliki ketergantungan transmisi lebih intensif terhadap konektivitas udara di provinsi target.
+                Mengevaluasi kesenjangan respon terhadap transportasi udara antara Provinsi A ($r_{A_1, T_1}$) dan Provinsi B ($r_{B_2, T_2}$).
               </p>
             </div>
 
@@ -2758,7 +2794,7 @@
         </div>
 
       </div>
-      <!-- END VIEW 2: KOMPARASI ANTAR-SEKTOR -->
+      <!-- END VIEW 2: KOMPARASI SPASIAL-SEKTORAL -->
 
     </div>
 
@@ -5903,10 +5939,11 @@
     }
 
     // =========================================================================
-    // TAB 5: SUB-TAB SWITCHER & SUB-TAB 2 (KOMPARASI ANTAR-SEKTOR LINKAGE)
+    // TAB 5: SUB-TAB SWITCHER & SUB-TAB 2 (KOMPARASI SPASIAL-SEKTORAL)
     // =========================================================================
     let currentCompSubTab = "region"; // "region" | "sector"
-    let secCompProv = "sulawesi_selatan";
+    let secCompProvA = "sulawesi_selatan";
+    let secCompProvB = "gorontalo";
     let secCompSectorA = "Industri Pengolahan";
     let secCompSectorB = "Transportasi dan Pergudangan";
     let secCompMetric = "penumpang"; // "penumpang" | "barang"
@@ -5928,7 +5965,7 @@
         if (btnSector) btnSector.className = activeBtnClass;
         if (viewRegion) viewRegion.classList.add("hidden");
         if (viewSector) viewSector.classList.remove("hidden");
-        if (descEl) descEl.textContent = "Mode: Komparasi 2 Sektor (Inter-Sectoral Linkage)";
+        if (descEl) descEl.textContent = "Mode: Komparasi Spasial-Sektoral (Lintas Wilayah & Sektor)";
         populateSectorCompDropdowns();
         loadSectorComparisonData();
       } else {
@@ -5948,14 +5985,15 @@
     }
 
     function populateSectorCompDropdowns() {
-      const selProv = document.getElementById("secCompProv");
-      const selA = document.getElementById("secCompSectorA");
-      const selB = document.getElementById("secCompSectorB");
-      if (!selProv || !selA || !selB) return;
+      const selProvA = document.getElementById("secCompProvA");
+      const selProvB = document.getElementById("secCompProvB");
+      const selSecA = document.getElementById("secCompSectorA");
+      const selSecB = document.getElementById("secCompSectorB");
+      if (!selProvA || !selProvB || !selSecA || !selSecB) return;
 
       const provinces = currentManifest.provinces || {};
 
-      if (selProv.options.length === 0) {
+      if (selProvA.options.length === 0 || selProvB.options.length === 0) {
         let provHtml = '';
         ISLAND_GROUPS.forEach(grp => {
           const matchingKeys = grp.keys.filter(k => provinces[k]);
@@ -5971,36 +6009,62 @@
             provHtml += `<option value="${k}">${prov.name}</option>`;
           });
         }
-        selProv.innerHTML = provHtml;
+        selProvA.innerHTML = provHtml;
+        selProvB.innerHTML = provHtml;
+
         if (currentProvince && provinces[currentProvince]) {
-          secCompProv = currentProvince;
+          secCompProvA = currentProvince;
         }
-        selProv.value = secCompProv;
+        selProvA.value = secCompProvA;
+
+        // Default Prov B
+        if (!secCompProvB || secCompProvB === secCompProvA) {
+          const allKeys = Object.keys(provinces);
+          const other = allKeys.find(k => k !== secCompProvA);
+          if (other) secCompProvB = other;
+        }
+        selProvB.value = secCompProvB;
       }
 
-      if (selA.options.length === 0 || selB.options.length === 0) {
+      if (selSecA.options.length === 0 || selSecB.options.length === 0) {
         let secHtml = '';
         ALL_LU_SECTORS.forEach(sec => {
           secHtml += `<option value="${sec}">${sec}</option>`;
         });
-        selA.innerHTML = secHtml;
-        selB.innerHTML = secHtml;
+        selSecA.innerHTML = secHtml;
+        selSecB.innerHTML = secHtml;
 
-        selA.value = secCompSectorA;
-        selB.value = secCompSectorB;
+        selSecA.value = secCompSectorA;
+        selSecB.value = secCompSectorB;
       }
     }
 
-    function swapCompSectors() {
-      const temp = secCompSectorA;
+    function swapCompSpatials() {
+      const tempProv = secCompProvA;
+      secCompProvA = secCompProvB;
+      secCompProvB = tempProv;
+
+      const tempSec = secCompSectorA;
       secCompSectorA = secCompSectorB;
-      secCompSectorB = temp;
+      secCompSectorB = tempSec;
 
-      const selA = document.getElementById("secCompSectorA");
-      const selB = document.getElementById("secCompSectorB");
-      if (selA) selA.value = secCompSectorA;
-      if (selB) selB.value = secCompSectorB;
+      const selProvA = document.getElementById("secCompProvA");
+      const selProvB = document.getElementById("secCompProvB");
+      const selSecA = document.getElementById("secCompSectorA");
+      const selSecB = document.getElementById("secCompSectorB");
 
+      if (selProvA) selProvA.value = secCompProvA;
+      if (selProvB) selProvB.value = secCompProvB;
+      if (selSecA) selSecA.value = secCompSectorA;
+      if (selSecB) selSecB.value = secCompSectorB;
+
+      loadSectorComparisonData();
+    }
+
+    function syncCompSectors() {
+      secCompSectorB = secCompSectorA;
+      const selSecB = document.getElementById("secCompSectorB");
+      if (selSecB) selSecB.value = secCompSectorB;
       loadSectorComparisonData();
     }
 
@@ -6009,8 +6073,8 @@
       const btnP = document.getElementById("btnSecCompIndPenumpang");
       const btnBar = document.getElementById("btnSecCompIndBarang");
 
-      const activeClass = "flex-1 py-1.5 rounded-lg text-xs font-bold text-white bg-sky-600 shadow transition flex items-center justify-center gap-1";
-      const inactiveClass = "flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center justify-center gap-1";
+      const activeClass = "py-1.5 px-3 rounded-lg text-xs font-bold text-white bg-sky-600 shadow transition flex items-center gap-1.5";
+      const inactiveClass = "py-1.5 px-3 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-white transition flex items-center gap-1.5";
 
       if (btnP) btnP.className = metric === 'penumpang' ? activeClass : inactiveClass;
       if (btnBar) btnBar.className = metric === 'barang' ? activeClass : inactiveClass;
@@ -6019,26 +6083,33 @@
     }
 
     function onSecCompChange() {
-      const selProv = document.getElementById("secCompProv");
-      const selA = document.getElementById("secCompSectorA");
-      const selB = document.getElementById("secCompSectorB");
-      if (selProv) secCompProv = selProv.value;
-      if (selA) secCompSectorA = selA.value;
-      if (selB) secCompSectorB = selB.value;
+      const selProvA = document.getElementById("secCompProvA");
+      const selProvB = document.getElementById("secCompProvB");
+      const selSecA = document.getElementById("secCompSectorA");
+      const selSecB = document.getElementById("secCompSectorB");
+
+      if (selProvA) secCompProvA = selProvA.value;
+      if (selProvB) secCompProvB = selProvB.value;
+      if (selSecA) secCompSectorA = selSecA.value;
+      if (selSecB) secCompSectorB = selSecB.value;
+
       loadSectorComparisonData();
     }
 
     async function loadSectorComparisonData(force = false) {
-      const provData = currentManifest.provinces?.[secCompProv] || { name: secCompProv };
+      const provDataA = currentManifest.provinces?.[secCompProvA] || { name: secCompProvA };
+      const provDataB = currentManifest.provinces?.[secCompProvB] || { name: secCompProvB };
       const statusBadge = document.getElementById("txtSecCompStatusBadge");
       const provBadge = document.getElementById("txtSecCompProvBadge");
+
       if (statusBadge) statusBadge.textContent = "Mengambil Data...";
-      if (provBadge) provBadge.textContent = `Provinsi: ${provData.name}`;
+      if (provBadge) provBadge.textContent = `Komparasi: ${provDataA.name} ↔ ${provDataB.name}`;
 
       try {
         const priceType = currentAnalysisMode === 'abs_hb' ? 'HB' : 'HK';
-        const urlDataA = `/api/data?province=${encodeURIComponent(secCompProv)}&sector=${encodeURIComponent(secCompSectorA)}&category=lu&tipe_pdrb=${priceType}&transport_metric=${secCompMetric}&analysis_mode=${currentAnalysisMode}&ols_scope=pooled`;
-        const urlDataB = `/api/data?province=${encodeURIComponent(secCompProv)}&sector=${encodeURIComponent(secCompSectorB)}&category=lu&tipe_pdrb=${priceType}&transport_metric=${secCompMetric}&analysis_mode=${currentAnalysisMode}&ols_scope=pooled`;
+        const urlDataA = `/api/data?province=${encodeURIComponent(secCompProvA)}&sector=${encodeURIComponent(secCompSectorA)}&category=lu&tipe_pdrb=${priceType}&transport_metric=${secCompMetric}&analysis_mode=${currentAnalysisMode}&ols_scope=pooled`;
+        const urlDataB = `/api/data?province=${encodeURIComponent(secCompProvB)}&sector=${encodeURIComponent(secCompSectorB)}&category=lu&tipe_pdrb=${priceType}&transport_metric=${secCompMetric}&analysis_mode=${currentAnalysisMode}&ols_scope=pooled`;
+
         const [dataA, dataB] = await Promise.all([
           fetchWithCache(urlDataA, { bypassCache: force }),
           fetchWithCache(urlDataB, { bypassCache: force })
@@ -6061,56 +6132,68 @@
             aligned.push({
               label: k,
               valA: Number(pA.x),
+              transA: Number(pA.y),
               valB: Number(pB.x),
-              valTrans: Number(pA.y)
+              transB: Number(pB.y)
             });
           }
         });
 
-        // 1. Hitung Korelasi Pearson r_A,B dan Regresi Linear OLS
+        // 1. Komputasi Korelasi Pearson Spasial-Sektoral (r_A1, B2) & Regresi Linear OLS
         const N = aligned.length;
-        let r_AB = 0, R2 = 0, r_AT = 0, r_BT = 0;
+        let r_AB = 0, R2 = 0, r_AT1 = 0, r_BT2 = 0;
         let slope = 0, intercept = 0, eqStr = "y = 0x + 0";
         let trendLine = [];
 
         if (N >= 2) {
-          let sumA = 0, sumB = 0, sumT = 0;
+          let sumA = 0, sumB = 0, sumT1 = 0, sumT2 = 0;
           aligned.forEach(p => {
             sumA += p.valA;
             sumB += p.valB;
-            sumT += p.valTrans;
+            sumT1 += p.transA;
+            sumT2 += p.transB;
           });
           const meanA = sumA / N;
           const meanB = sumB / N;
-          const meanT = sumT / N;
+          const meanT1 = sumT1 / N;
+          const meanT2 = sumT2 / N;
 
-          let ssA = 0, ssB = 0, ssT = 0;
-          let spAB = 0, spAT = 0, spBT = 0;
+          let ssA = 0, ssB = 0, ssT1 = 0, ssT2 = 0;
+          let spAB = 0, spAT1 = 0, spBT2 = 0;
+
           aligned.forEach(p => {
             const dA = p.valA - meanA;
             const dB = p.valB - meanB;
-            const dT = p.valTrans - meanT;
+            const dT1 = p.transA - meanT1;
+            const dT2 = p.transB - meanT2;
+
             ssA += dA * dA;
             ssB += dB * dB;
-            ssT += dT * dT;
+            ssT1 += dT1 * dT1;
+            ssT2 += dT2 * dT2;
+
             spAB += dA * dB;
-            spAT += dA * dT;
-            spBT += dB * dT;
+            spAT1 += dA * dT1;
+            spBT2 += dB * dT2;
           });
 
+          // Korelasi Silang r_A1, B2
           const denomAB = Math.sqrt(ssA * ssB);
           r_AB = denomAB > 0 ? (spAB / denomAB) : 0;
           r_AB = Math.max(-1, Math.min(1, r_AB));
           R2 = r_AB * r_AB;
 
-          const denomAT = Math.sqrt(ssA * ssT);
-          r_AT = denomAT > 0 ? (spAT / denomAT) : 0;
-          r_AT = Math.max(-1, Math.min(1, r_AT));
+          // Korelasi Logistik Prov A (r_A1, T1)
+          const denomAT1 = Math.sqrt(ssA * ssT1);
+          r_AT1 = denomAT1 > 0 ? (spAT1 / denomAT1) : 0;
+          r_AT1 = Math.max(-1, Math.min(1, r_AT1));
 
-          const denomBT = Math.sqrt(ssB * ssT);
-          r_BT = denomBT > 0 ? (spBT / denomBT) : 0;
-          r_BT = Math.max(-1, Math.min(1, r_BT));
+          // Korelasi Logistik Prov B (r_B2, T2)
+          const denomBT2 = Math.sqrt(ssB * ssT2);
+          r_BT2 = denomBT2 > 0 ? (spBT2 / denomBT2) : 0;
+          r_BT2 = Math.max(-1, Math.min(1, r_BT2));
 
+          // OLS Slope & Intercept
           slope = ssA > 0 ? (spAB / ssA) : 0;
           intercept = meanB - slope * meanA;
           const signC = intercept >= 0 ? "+" : "-";
@@ -6126,7 +6209,7 @@
         }
 
         // Status Badge Logic
-        let statusBadgeText = "⚪ Independen / Jalur Terpisah";
+        let statusBadgeText = "⚪ Independen / Terpisah";
         let statusBadgeClass = "bg-slate-500/10 text-slate-400 border-slate-500/20";
         let statusCategory = "independent";
         let statusColorHex = "#94a3b8";
@@ -6149,17 +6232,19 @@
         }
 
         activeSecCompData = {
-          province: secCompProv,
-          provName: provData.name,
+          provA: secCompProvA,
+          provNameA: provDataA.name,
           sectorA: secCompSectorA,
+          provB: secCompProvB,
+          provNameB: provDataB.name,
           sectorB: secCompSectorB,
           metric: secCompMetric,
           aligned,
           N,
           r_AB,
           R2,
-          r_AT,
-          r_BT,
+          r_AT1,
+          r_BT2,
           slope,
           intercept,
           eqStr,
@@ -6175,20 +6260,20 @@
         renderSectorTimeSeriesPlot(activeSecCompData);
         renderSectorInterpretation(activeSecCompData);
 
-        const shortA = secCompSectorA.length > 14 ? secCompSectorA.substring(0, 12) + '..' : secCompSectorA;
-        const shortB = secCompSectorB.length > 14 ? secCompSectorB.substring(0, 12) + '..' : secCompSectorB;
-        if (statusBadge) statusBadge.textContent = `${provData.name}: ${shortA} vs ${shortB}`;
+        const shortA = secCompSectorA.length > 12 ? secCompSectorA.substring(0, 10) + '..' : secCompSectorA;
+        const shortB = secCompSectorB.length > 12 ? secCompSectorB.substring(0, 10) + '..' : secCompSectorB;
+        if (statusBadge) statusBadge.textContent = `${provDataA.name} (${shortA}) ↔ ${provDataB.name} (${shortB})`;
         if (typeof renderKatexMath === 'function') {
           setTimeout(renderKatexMath, 50);
         }
       } catch (err) {
-        console.error("Error loading sector comparison data:", err);
-        if (statusBadge) statusBadge.textContent = "Gagal memuat data sektor";
+        console.error("Error loading spatial sector comparison data:", err);
+        if (statusBadge) statusBadge.textContent = "Gagal memuat data komparasi spasial";
       }
     }
 
     function renderSectorComparisonCards(data) {
-      const { r_AB, R2, r_AT, r_BT, sectorA, sectorB, metric, statusBadgeText, statusBadgeClass, statusColorHex } = data;
+      const { r_AB, R2, r_AT1, r_BT2, sectorA, provNameA, sectorB, provNameB, statusBadgeText, statusBadgeClass, statusColorHex } = data;
 
       // Card 1
       const elRVal = document.getElementById("kpiSecCompRVal");
@@ -6211,12 +6296,13 @@
       const elNameA = document.getElementById("kpiSecCompNameA");
       const elRTransA = document.getElementById("kpiSecCompRTransA");
       const elBadgeTransA = document.getElementById("kpiSecCompTransBadgeA");
-      if (elNameA) { elNameA.textContent = sectorA; elNameA.title = sectorA; }
-      if (elRTransA) elRTransA.textContent = (r_AT >= 0 ? '+' : '') + r_AT.toFixed(4);
+      const shortTitleA = `${sectorA} (${provNameA})`;
+      if (elNameA) { elNameA.textContent = shortTitleA; elNameA.title = shortTitleA; }
+      if (elRTransA) elRTransA.textContent = (r_AT1 >= 0 ? '+' : '') + r_AT1.toFixed(4);
       if (elBadgeTransA) {
         let txt = "Rendah";
-        if (Math.abs(r_AT) >= 0.7) txt = "Sangat Kuat";
-        else if (Math.abs(r_AT) >= 0.3) txt = "Moderat";
+        if (Math.abs(r_AT1) >= 0.7) txt = "Sangat Kuat";
+        else if (Math.abs(r_AT1) >= 0.3) txt = "Moderat";
         elBadgeTransA.textContent = `(${txt})`;
       }
 
@@ -6224,25 +6310,26 @@
       const elNameB = document.getElementById("kpiSecCompNameB");
       const elRTransB = document.getElementById("kpiSecCompRTransB");
       const elBadgeTransB = document.getElementById("kpiSecCompTransBadgeB");
-      if (elNameB) { elNameB.textContent = sectorB; elNameB.title = sectorB; }
-      if (elRTransB) elRTransB.textContent = (r_BT >= 0 ? '+' : '') + r_BT.toFixed(4);
+      const shortTitleB = `${sectorB} (${provNameB})`;
+      if (elNameB) { elNameB.textContent = shortTitleB; elNameB.title = shortTitleB; }
+      if (elRTransB) elRTransB.textContent = (r_BT2 >= 0 ? '+' : '') + r_BT2.toFixed(4);
       if (elBadgeTransB) {
         let txt = "Rendah";
-        if (Math.abs(r_BT) >= 0.7) txt = "Sangat Kuat";
-        else if (Math.abs(r_BT) >= 0.3) txt = "Moderat";
+        if (Math.abs(r_BT2) >= 0.7) txt = "Sangat Kuat";
+        else if (Math.abs(r_BT2) >= 0.3) txt = "Moderat";
         elBadgeTransB.textContent = `(${txt})`;
       }
 
       // Card 4
       const elDomName = document.getElementById("kpiSecCompDominantName");
       const elGap = document.getElementById("kpiSecCompTransGap");
-      const gap = Math.abs(r_AT - r_BT);
+      const gap = Math.abs(r_AT1 - r_BT2);
       if (elDomName) {
-        if (Math.abs(r_AT) > Math.abs(r_BT) + 0.05) {
-          elDomName.textContent = `Sektor A Lebih Responsif`;
+        if (Math.abs(r_AT1) > Math.abs(r_BT2) + 0.05) {
+          elDomName.textContent = `${provNameA} Lebih Responsif`;
           elDomName.className = "text-xs font-heading font-bold text-sky-600 dark:text-sky-400 truncate";
-        } else if (Math.abs(r_BT) > Math.abs(r_AT) + 0.05) {
-          elDomName.textContent = `Sektor B Lebih Responsif`;
+        } else if (Math.abs(r_BT2) > Math.abs(r_AT1) + 0.05) {
+          elDomName.textContent = `${provNameB} Lebih Responsif`;
           elDomName.className = "text-xs font-heading font-bold text-amber-600 dark:text-amber-400 truncate";
         } else {
           elDomName.textContent = `Sensitivitas Seimbang`;
@@ -6253,15 +6340,17 @@
     }
 
     function renderSectorScatterPlot(data) {
-      const { aligned, trendLine, sectorA, sectorB, eqStr, r_AB, R2, statusColorHex, N } = data;
+      const { aligned, trendLine, sectorA, provNameA, sectorB, provNameB, eqStr, r_AB, R2, statusColorHex, N } = data;
       const chartEl = document.getElementById("chartSectorScatter");
       if (!chartEl) return;
 
       const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
       const textColor = isDarkMode ? '#94a3b8' : '#475569';
 
-      const shortA = sectorA.length > 28 ? sectorA.substring(0, 26) + '...' : sectorA;
-      const shortB = sectorB.length > 28 ? sectorB.substring(0, 26) + '...' : sectorB;
+      const labelA = `${sectorA} (${provNameA})`;
+      const labelB = `${sectorB} (${provNameB})`;
+      const shortA = labelA.length > 30 ? labelA.substring(0, 28) + '...' : labelA;
+      const shortB = labelB.length > 30 ? labelB.substring(0, 28) + '...' : labelB;
 
       const badgeEq = document.getElementById("badgeScatterEq");
       if (badgeEq) badgeEq.textContent = eqStr;
@@ -6277,7 +6366,7 @@
         x: trendLine.map(p => p.x),
         y: trendLine.map(p => p.y),
         mode: 'lines',
-        name: 'Garis Tren OLS',
+        name: 'Garis Tren OLS Spasial',
         line: { color: '#f59e0b', width: 2.5 },
         hoverinfo: 'skip'
       };
@@ -6349,28 +6438,32 @@
     }
 
     function renderSectorTimeSeriesPlot(data) {
-      const { aligned, sectorA, sectorB, metric } = data;
+      const { aligned, sectorA, provNameA, sectorB, provNameB, metric } = data;
       const chartEl = document.getElementById("chartSectorTimeSeries");
       if (!chartEl) return;
 
       const gridColor = isDarkMode ? '#1e293b' : '#e2e8f0';
       const textColor = isDarkMode ? '#94a3b8' : '#475569';
 
-      const shortA = sectorA.length > 20 ? sectorA.substring(0, 18) + '...' : sectorA;
-      const shortB = sectorB.length > 20 ? sectorB.substring(0, 18) + '...' : sectorB;
-      const transLabel = metric === 'penumpang' ? '✈️ Penumpang' : '📦 Barang';
+      const shortSecA = sectorA.length > 18 ? sectorA.substring(0, 16) + '..' : sectorA;
+      const shortSecB = sectorB.length > 18 ? sectorB.substring(0, 16) + '..' : sectorB;
+      const transMetricName = metric === 'penumpang' ? 'Penumpang' : 'Kargo';
 
       const legA = document.getElementById("legSecAName");
       const legB = document.getElementById("legSecBName");
-      const legT = document.getElementById("legSecTransName");
-      if (legA) legA.textContent = shortA;
-      if (legB) legB.textContent = shortB;
-      if (legT) legT.textContent = transLabel;
+      const legT1 = document.getElementById("legSecTransAName");
+      const legT2 = document.getElementById("legSecTransBName");
 
+      if (legA) legA.textContent = `${shortSecA} (${provNameA})`;
+      if (legB) legB.textContent = `${shortSecB} (${provNameB})`;
+      if (legT1) legT1.textContent = `Trans (${provNameA})`;
+      if (legT2) legT2.textContent = `Trans (${provNameB})`;
+
+      // 4 Garis Runtun Waktu
       const traceA = {
         x: aligned.map(p => p.label),
         y: aligned.map(p => p.valA),
-        name: `Sektor A: ${shortA}`,
+        name: `Sektor A: ${shortSecA} (${provNameA})`,
         mode: 'lines+markers',
         line: { color: '#0ea5e9', width: 3 },
         marker: { size: 7, symbol: 'circle' }
@@ -6379,26 +6472,35 @@
       const traceB = {
         x: aligned.map(p => p.label),
         y: aligned.map(p => p.valB),
-        name: `Sektor B: ${shortB}`,
+        name: `Sektor B: ${shortSecB} (${provNameB})`,
         mode: 'lines+markers',
         line: { color: '#f59e0b', width: 3 },
         marker: { size: 8, symbol: 'diamond' }
       };
 
-      const traceT = {
+      const traceT1 = {
         x: aligned.map(p => p.label),
-        y: aligned.map(p => p.valTrans),
-        name: transLabel,
+        y: aligned.map(p => p.transA),
+        name: `Trans ${provNameA} (${transMetricName})`,
         mode: 'lines+markers',
-        line: { color: '#a855f7', width: 2.5, dash: 'dash' },
-        marker: { size: 7, symbol: 'square' }
+        line: { color: '#06b6d4', width: 2, dash: 'dash' },
+        marker: { size: 6, symbol: 'square' }
+      };
+
+      const traceT2 = {
+        x: aligned.map(p => p.label),
+        y: aligned.map(p => p.transB),
+        name: `Trans ${provNameB} (${transMetricName})`,
+        mode: 'lines+markers',
+        line: { color: '#eab308', width: 2, dash: 'dot' },
+        marker: { size: 6, symbol: 'triangle-up' }
       };
 
       const layout = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: textColor, family: 'Inter' },
-        margin: { l: 50, r: 25, t: 20, b: 45 },
+        margin: { l: 50, r: 25, t: 20, b: 50 },
         hovermode: 'x unified',
         xaxis: { gridcolor: gridColor },
         yaxis: {
@@ -6409,51 +6511,47 @@
         },
         legend: {
           orientation: 'h',
-          y: -0.22,
+          y: -0.24,
           x: 0.5,
-          xanchor: 'center'
+          xanchor: 'center',
+          font: { size: 10 }
         }
       };
 
-      Plotly.newPlot('chartSectorTimeSeries', [traceA, traceB, traceT], layout, { responsive: true, displayModeBar: false });
+      Plotly.newPlot('chartSectorTimeSeries', [traceA, traceB, traceT1, traceT2], layout, { responsive: true, displayModeBar: false });
     }
 
     function renderSectorInterpretation(data) {
-      const { provName, sectorA, sectorB, metric, r_AB, R2, r_AT, r_BT, statusCategory } = data;
+      const { provNameA, sectorA, provNameB, sectorB, metric, r_AB, R2, r_AT1, r_BT2, statusCategory } = data;
       const el = document.getElementById("secCompInterpretationText");
       if (!el) return;
 
-      const transLabel = metric === 'penumpang' ? 'arus penumpang penerbangan' : 'volume kargo & barang udara';
-      const gap = Math.abs(r_AT - r_BT);
+      const transLabel = metric === 'penumpang' ? 'arus penerbangan penumpang' : 'volume kargo/barang udara';
+      const gap = Math.abs(r_AT1 - r_BT2);
 
       let directAnalysis = "";
       if (statusCategory === 'synergistic') {
-        directAnalysis = `<strong>Sinergi Kuat dan Ko-Pergerakan Harmonis ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Sektor <em>${sectorA}</em> dan <em>${sectorB}</em> bergerak sangat serasi. Pertumbuhan pada satu sektor secara konsisten diiringi oleh ekspansi output pada sektor pasangannya, menandakan adanya keterkaitan rantai pasok (<em>supply chain linkage</em>) dan efek pengganda yang kuat.`;
+        directAnalysis = `<strong>Integrasi Inter-Regional Kuat ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Terdapat sinkronisasi siklus bisnis yang solid antara sektor <em>${sectorA}</em> di <strong>${provNameA}</strong> dengan sektor <em>${sectorB}</em> di <strong>${provNameB}</strong>. Ekspansi output di ${provNameA} bergerak selaras dengan pertumbuhan di ${provNameB}, mencerminkan interdependensi rantai pasok antar-daerah yang kokoh.`;
       } else if (statusCategory === 'moderate') {
-        directAnalysis = `<strong>Keterkaitan Moderat ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Sektor <em>${sectorA}</em> dan <em>${sectorB}</em> menunjukkan korelasi positif yang cukup berarti. Meskipun dipengaruhi faktor sektoral internal masing-masing, terdapat transmisi spillover yang saling mendukung pertumbuhan regional.`;
+        directAnalysis = `<strong>Keterkaitan Lintas-Wilayah Moderat ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Sektor <em>${sectorA}</em> (${provNameA}) dan <em>${sectorB}</em> (${provNameB}) menunjukkan korelasi positif sedang. Meskipun terdapat transmisi *spillover* antar-provinsi, faktor determinan ekonomi domestik masing-masing daerah masih dominan.`;
       } else if (statusCategory === 'divergent') {
-        directAnalysis = `<strong>Pola Berlawanan / Divergensi Terbuka ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Pertumbuhan sektor <em>${sectorA}</em> cenderung berbanding terbalik dengan <em>${sectorB}</em>. Hal ini mengindikasikan adanya substitusi sumber daya, perbedaan orientasi pasar musiman, atau pergeseran struktur prioritas sektoral.`;
+        directAnalysis = `<strong>Pola Berlawanan / Divergensi Spasial ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Pertumbuhan <em>${sectorA}</em> di <strong>${provNameA}</strong> cenderung berbanding terbalik dengan <em>${sectorB}</em> di <strong>${provNameB}</strong>. Kondisi ini mengindikasikan adanya kompetisi pasar, substitusi pasokan regional, atau perbedaan arah siklus ekonomi antar-wilayah.`;
       } else {
-        directAnalysis = `<strong>Pertumbuhan Independen / Terpisah ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Sektor <em>${sectorA}</em> dan <em>${sectorB}</em> beroperasi dengan dinamika otonom. Fluktuasi siklus pada sektor satu tidak secara langsung mentransmisikan tekanan ataupun ekspansi ke sektor lainnya, memberikan stabilitas diversifikasi portofolio ekonomi daerah.`;
+        directAnalysis = `<strong>Dinamika Otonom / Jalur Terpisah ($r = ${r_AB.toFixed(4)}, R^2 = ${(R2*100).toFixed(1)}\\%$):</strong> Pertumbuhan <em>${sectorA}</em> (${provNameA}) dan <em>${sectorB}</em> (${provNameB}) berlangsung secara independen. Tidak terdapat transmisi siklus atau ketergantungan langsung antar kedua entitas wilayah tersebut.`;
       }
 
       let transAnalysis = "";
-      if (Math.abs(r_AT) >= 0.6 && Math.abs(r_BT) >= 0.6) {
-        transAnalysis = `<strong>Transmisi Simultan ke Moda Udara:</strong> Kedua sektor memiliki sensitivitas tinggi terhadap ${transLabel} (${sectorA}: $r = ${r_AT.toFixed(4)}$, ${sectorB}: $r = ${r_BT.toFixed(4)}$). Peningkatan konektivitas udara di <strong>${provName}</strong> memberikan dampak ganda yang berlipat pada kedua sektor sekaligus.`;
-      } else if (Math.abs(r_AT) > Math.abs(r_BT) + 0.15) {
-        transAnalysis = `<strong>Asimetri Sensitivitas Logistik:</strong> Sektor <em>${sectorA}</em> ($r = ${r_AT.toFixed(4)}$) jauh lebih peka terhadap ${transLabel} dibandingkan sektor <em>${sectorB}</em> ($r = ${r_BT.toFixed(4)}$) dengan selisih transmisi $|\Delta r| = ${gap.toFixed(4)}$. Sektor <em>${sectorA}</em> bertindak sebagai <em>primary logistical beneficiary</em>.`;
-      } else if (Math.abs(r_BT) > Math.abs(r_AT) + 0.15) {
-        transAnalysis = `<strong>Asimetri Sensitivitas Logistik:</strong> Sektor <em>${sectorB}</em> ($r = ${r_BT.toFixed(4)}$) jauh lebih peka terhadap ${transLabel} dibandingkan sektor <em>${sectorA}</em> ($r = ${r_AT.toFixed(4)}$) dengan selisih transmisi $|\Delta r| = ${gap.toFixed(4)}$. Sektor <em>${sectorB}</em> bertindak sebagai <em>primary logistical beneficiary</em>.`;
+      if (Math.abs(r_AT1) >= 0.6 && Math.abs(r_BT2) >= 0.6) {
+        transAnalysis = `<strong>Sensitivitas Logistik Simultan:</strong> Kedua sektor di masing-masing provinsi sama-sama sangat responsif terhadap ${transLabel} (${provNameA}: $r = ${r_AT1.toFixed(4)}$, ${provNameB}: $r = ${r_BT2.toFixed(4)}$). Penguatan konektivitas penerbangan di kedua hub akan mengakselerasi aktivitas kedua sektor secara serentak.`;
+      } else if (Math.abs(r_AT1) > Math.abs(r_BT2) + 0.15) {
+        transAnalysis = `<strong>Asimetri Elastisitas Logistik:</strong> Sektor <em>${sectorA}</em> di <strong>${provNameA}</strong> ($r = ${r_AT1.toFixed(4)}$) jauh lebih sensitif terhadap moda transportasi udara lokalnya dibandingkan sektor <em>${sectorB}</em> di <strong>${provNameB}</strong> ($r = ${r_BT2.toFixed(4)}$) dengan selisih elastisitas $|\Delta r| = ${gap.toFixed(4)}$.`;
+      } else if (Math.abs(r_BT2) > Math.abs(r_AT1) + 0.15) {
+        transAnalysis = `<strong>Asimetri Elastisitas Logistik:</strong> Sektor <em>${sectorB}</em> di <strong>${provNameB}</strong> ($r = ${r_BT2.toFixed(4)}$) jauh lebih sensitif terhadap moda transportasi udara lokalnya dibandingkan sektor <em>${sectorA}</em> di <strong>${provNameA}</strong> ($r = ${r_AT1.toFixed(4)}$) dengan selisih elastisitas $|\Delta r| = ${gap.toFixed(4)}$.`;
       } else {
-        transAnalysis = `<strong>Respon Seimbang terhadap Transportasi:</strong> Kedua sektor memiliki profil elastisitas yang relatif seimbang terhadap ${transLabel} (${sectorA}: $r = ${r_AT.toFixed(4)}$ vs ${sectorB}: $r = ${r_BT.toFixed(4)}$).`;
+        transAnalysis = `<strong>Respon Seimbang terhadap Moda Udara:</strong> Kedua wilayah menunjukkan elastisitas yang seimbang terhadap ${transLabel} lokal masing-masing (${provNameA}: $r = ${r_AT1.toFixed(4)}$ vs ${provNameB}: $r = ${r_BT2.toFixed(4)}$).`;
       }
 
-      let policyRec = "";
-      if (statusCategory === 'synergistic' || (Math.abs(r_AT) >= 0.5 && Math.abs(r_BT) >= 0.5)) {
-        policyRec = `<strong>Rekomendasi Kebijakan Terpadu:</strong> Kebijakan penguatan logistik &amp; konektivitas penerbangan di <strong>${provName}</strong> harus dipadukan dengan integrasi rantai nilai industri antara <em>${sectorA}</em> dan <em>${sectorB}</em> untuk memaksimalkan <em>co-expansion</em> output regional.`;
-      } else {
-        policyRec = `<strong>Rekomendasi Kebijakan Terarah:</strong> Diperlukan intervensi kebijakan yang tersegregasi antara pengembangan infrastruktur transportasi udara dengan perbaikan rantai pasok sektoral agar pemulihan atau akselerasi sektor tidak terhambat oleh <em>bottleneck</em> logistik lokal.`;
-      }
+      let policyRec = `<strong>Rekomendasi Koridor Logistik Inter-Regional:</strong> Pengembangan koridor konektivitas udara antara <strong>${provNameA}</strong> dan <strong>${provNameB}</strong> dapat dioptimalkan untuk memfasilitasi integrasi rantai pasok antara sektor <em>${sectorA}</em> dan <em>${sectorB}</em>, meminimalkan disparitas biaya logistik, serta mempercepat konvergensi pertumbuhan antar-wilayah.`;
 
       el.innerHTML = `
         <div class="space-y-2.5">
