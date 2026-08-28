@@ -2094,20 +2094,32 @@
                   <tr>
                     <th onclick="sortCompTable('sector')" class="px-4 py-3 min-w-[200px] cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Sektor">
                       <div class="flex items-center gap-1.5">
-                        <span>Nama Sektor PDRB</span>
+                        <span>No / Sektor PDRB</span>
                         <span id="compSortIcon_sector"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
                       </div>
                     </th>
-                    <th onclick="sortCompTable('r_a')" class="px-3 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Korelasi Prov A">
+                    <th onclick="sortCompTable('r_a')" class="px-3 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Korelasi (r) Prov A">
                       <div class="flex items-center justify-end gap-1.5">
                         <span id="thCompProvAName">r Prov A</span>
                         <span id="compSortIcon_r_a"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
                       </div>
                     </th>
-                    <th onclick="sortCompTable('r_b')" class="px-3 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Korelasi Prov B">
+                    <th onclick="sortCompTable('r2_a')" class="px-3 py-3 text-right w-20 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Koefisien Determinasi (R²) Prov A">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <span id="thCompProvAR2Name">R² Prov A</span>
+                        <span id="compSortIcon_r2_a"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortCompTable('r_b')" class="px-3 py-3 text-right w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Korelasi (r) Prov B">
                       <div class="flex items-center justify-end gap-1.5">
                         <span id="thCompProvBName">r Prov B</span>
                         <span id="compSortIcon_r_b"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
+                      </div>
+                    </th>
+                    <th onclick="sortCompTable('r2_b')" class="px-3 py-3 text-right w-20 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Koefisien Determinasi (R²) Prov B">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <span id="thCompProvBR2Name">R² Prov B</span>
+                        <span id="compSortIcon_r2_b"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
                       </div>
                     </th>
                     <th onclick="sortCompTable('delta')" class="px-3 py-3 text-center w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort Selisih |Δr|">
@@ -2116,15 +2128,15 @@
                         <span id="compSortIcon_delta"><i class="fa-solid fa-sort-down text-amber-500 text-xs"></i></span>
                       </div>
                     </th>
-                    <th onclick="sortCompTable('vif_a')" class="px-3 py-3 text-center w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort VIF Prov A">
+                    <th onclick="sortCompTable('vif_a')" class="px-3 py-3 text-center w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort VIF Prov A (Subset 6 Sektor Inti)">
                       <div class="flex items-center justify-center gap-1.5">
-                        <span>VIF Prov A</span>
+                        <span id="thCompProvAVifName">VIF Prov A</span>
                         <span id="compSortIcon_vif_a"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
                       </div>
                     </th>
-                    <th onclick="sortCompTable('vif_b')" class="px-3 py-3 text-center w-28 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort VIF Prov B">
+                    <th onclick="sortCompTable('vif_b')" class="px-3 py-3 text-center w-24 whitespace-nowrap cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-800/80 transition-colors" title="Klik untuk sort VIF Prov B (Subset 6 Sektor Inti)">
                       <div class="flex items-center justify-center gap-1.5">
-                        <span>VIF Prov B</span>
+                        <span id="thCompProvBVifName">VIF Prov B</span>
                         <span id="compSortIcon_vif_b"><i class="fa-solid fa-sort text-slate-400/40 text-[10px]"></i></span>
                       </div>
                     </th>
@@ -5436,6 +5448,10 @@
       const legB = document.getElementById("legendProvBName");
       const thA = document.getElementById("thCompProvAName");
       const thB = document.getElementById("thCompProvBName");
+      const thR2A = document.getElementById("thCompProvAR2Name");
+      const thR2B = document.getElementById("thCompProvBR2Name");
+      const thVifA = document.getElementById("thCompProvAVifName");
+      const thVifB = document.getElementById("thCompProvBVifName");
 
       if (lblA1) lblA1.textContent = provAData.name;
       if (lblB1) lblB1.textContent = provBData.name;
@@ -5447,6 +5463,10 @@
       if (legB) legB.textContent = provBData.name;
       if (thA) thA.textContent = `r ${provAData.name}`;
       if (thB) thB.textContent = `r ${provBData.name}`;
+      if (thR2A) thR2A.textContent = `R² ${provAData.name}`;
+      if (thR2B) thR2B.textContent = `R² ${provBData.name}`;
+      if (thVifA) thVifA.textContent = `VIF ${provAData.name}`;
+      if (thVifB) thVifB.textContent = `VIF ${provBData.name}`;
 
       const statusBadge = document.getElementById("txtCompStatusBadge");
       if (statusBadge) statusBadge.textContent = "Mengambil Data...";
@@ -5526,11 +5546,15 @@
           const vA = vifMapA.get(normSec);
           const vB = vifMapB.get(normSec);
           const delta = Math.abs(itemA.r - itemB.r);
+          const r2_a = (itemA.r !== null && !isNaN(itemA.r)) ? Math.pow(itemA.r, 2) : 0;
+          const r2_b = (itemB.r !== null && !isNaN(itemB.r)) ? Math.pow(itemB.r, 2) : 0;
           return {
             sector: sec,
             r_a: itemA.r,
+            r2_a: r2_a,
             p_a: itemA.p,
             r_b: itemB.r,
+            r2_b: r2_b,
             p_b: itemB.p,
             delta: delta,
             raw_delta: itemA.r - itemB.r,
@@ -5739,7 +5763,7 @@
     }
 
     function updateCompSortIcons() {
-      const cols = ['sector', 'r_a', 'r_b', 'delta', 'vif_a', 'vif_b'];
+      const cols = ['sector', 'r_a', 'r2_a', 'r_b', 'r2_b', 'delta', 'vif_a', 'vif_b'];
       cols.forEach(c => {
         const iconSpan = document.getElementById(`compSortIcon_${c}`);
         if (!iconSpan) return;
@@ -5766,8 +5790,12 @@
         sorted.sort((a, b) => compSortDir === 'asc' ? a.sector.localeCompare(b.sector, 'id') : b.sector.localeCompare(a.sector, 'id'));
       } else if (compSortCol === 'r_a') {
         sorted.sort((a, b) => compSortDir === 'asc' ? a.r_a - b.r_a : b.r_a - a.r_a);
+      } else if (compSortCol === 'r2_a') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.r2_a - b.r2_a : b.r2_a - a.r2_a);
       } else if (compSortCol === 'r_b') {
         sorted.sort((a, b) => compSortDir === 'asc' ? a.r_b - b.r_b : b.r_b - a.r_b);
+      } else if (compSortCol === 'r2_b') {
+        sorted.sort((a, b) => compSortDir === 'asc' ? a.r2_b - b.r2_b : b.r2_b - a.r2_b);
       } else if (compSortCol === 'delta') {
         sorted.sort((a, b) => compSortDir === 'asc' ? a.delta - b.delta : b.delta - a.delta);
       } else if (compSortCol === 'vif_a') {
@@ -5788,6 +5816,11 @@
       sorted.forEach((item, idx) => {
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-100 dark:hover:bg-slate-800/80 transition";
+
+        const r_A = item.r_a;
+        const r_B = item.r_b;
+        const r2_A = (r_A !== null && !isNaN(r_A)) ? (Math.pow(r_A, 2) * 100).toFixed(1) + '%' : '-';
+        const r2_B = (r_B !== null && !isNaN(r_B)) ? (Math.pow(r_B, 2) * 100).toFixed(1) + '%' : '-';
 
         const deltaPct = Math.min(100, Math.round((item.delta / 1.5) * 100));
         let deltaColor = "bg-slate-400";
@@ -5815,8 +5848,14 @@
           <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.abs(item.r_a) >= 0.7 ? 'font-bold text-sky-600 dark:text-sky-400' : 'text-slate-700 dark:text-slate-300'}">
             ${item.r_a.toFixed(4)}
           </td>
+          <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.pow(item.r_a, 2) >= 0.5 ? 'font-bold text-sky-600 dark:text-sky-400' : 'text-slate-600 dark:text-slate-400'}" title="R² Prov A = ${(Math.pow(item.r_a, 2)).toFixed(4)}">
+            ${r2_A}
+          </td>
           <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.abs(item.r_b) >= 0.7 ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}">
             ${item.r_b.toFixed(4)}
+          </td>
+          <td class="px-3 py-2.5 text-right font-mono align-middle ${Math.pow(item.r_b, 2) >= 0.5 ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-slate-600 dark:text-slate-400'}" title="R² Prov B = ${(Math.pow(item.r_b, 2)).toFixed(4)}">
+            ${r2_B}
           </td>
           <td class="px-3 py-2.5 text-center font-mono align-middle">
             <div class="flex flex-col items-center gap-1">
