@@ -27,9 +27,15 @@ class TestExcelExport(unittest.TestCase):
         self.assertGreater(ws1.max_row, 10)
         self.assertEqual(ws1.max_column, 12)
 
-        # Check Sheet 2
+        # Check Sheet 2 (Diagnostik VIF, Korelasi Silang X x Y, and Multiko Transport Y x Y)
         ws2 = wb["2_Diagnostik_VIF"]
-        self.assertGreater(ws2.max_row, 10)
+        self.assertGreaterEqual(ws2.max_row, 35)
+
+        cell_texts = [str(ws2.cell(row=r, column=1).value or "") for r in range(1, ws2.max_row + 1)]
+        all_text = " ".join(cell_texts)
+        self.assertIn("BAGIAN A: DIAGNOSTIK MULTIKOLINEARITAS", all_text)
+        self.assertIn("BAGIAN B: KORELASI SILANG PDRB", all_text)
+        self.assertIn("BAGIAN C: MULTIKOLINEARITAS ANTAR-INDIKATOR TRANSPORTASI", all_text)
 
         # Check Sheet 3
         ws3 = wb["3_Komparasi_Wilayah"]

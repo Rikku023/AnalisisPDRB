@@ -2000,33 +2000,36 @@ def generate_full_excel_report(
     cond_num = multi_res.get("condition_number", 1.0)
     method_str = multi_res.get("method", "Standard Inversion OLS")
     has_multi = multi_res.get("has_multicollinearity", False)
-    status_overall = "⚠️ Terindikasi Multikolinearitas (Condition Number > 30 / VIF ≥ 5)" if has_multi else "✅ Bebas Multikolinearitas (Matrix Sehat & VIF < 5)"
+    status_overall = "Terindikasi Multikolinearitas (Condition Number > 30 / VIF >= 5)" if has_multi else "Bebas Multikolinearitas (Matrix Sehat & VIF < 5)"
 
-    ws2.merge_cells("A1:G1")
-    ws2["A1"] = "DIAGNOSTIK MULTIKOLINEARITAS & VARIANCE INFLATION FACTOR (VIF)"
+    ws2.merge_cells("A1:H1")
+    ws2["A1"] = "DIAGNOSTIK MULTIKOLINEARITAS & KORELASI SILANG (VIF & X × Y)"
     ws2["A1"].font = title_font
     ws2["A1"].fill = navy_title_fill
     ws2["A1"].alignment = align_center
     ws2.row_dimensions[1].height = 28
 
-    ws2.merge_cells("A2:G2")
+    ws2.merge_cells("A2:H2")
     ws2["A2"] = f"Provinsi: {prov_a_name} | Mode: {analysis_label} | Condition Number (κ): {cond_num:.2f} | Status: {status_overall}"
     ws2["A2"].font = subtitle_font
     ws2["A2"].fill = navy_header_fill
     ws2["A2"].alignment = align_center
     ws2.row_dimensions[2].height = 18
 
-    # Tabel 1: VIF 6 Sektor Inti
+    # -------------------------------------------------------------------------
+    # BAGIAN A: DIAGNOSTIK MULTIKOLINEARITAS ANTAR-SEKTOR PDRB (X × X)
+    # -------------------------------------------------------------------------
     curr_row = 4
-    ws2.merge_cells(f"A{curr_row}:E{curr_row}")
-    ws2[f"A{curr_row}"] = f"TABEL 1: VARIANCE INFLATION FACTOR (VIF) & TOLERANCE 6 SEKTOR INTI ({method_str})"
+    ws2.merge_cells(f"A{curr_row}:H{curr_row}")
+    ws2[f"A{curr_row}"] = "BAGIAN A: DIAGNOSTIK MULTIKOLINEARITAS ANTAR-SEKTOR PDRB (X × X)"
     ws2[f"A{curr_row}"].font = section_font
     ws2[f"A{curr_row}"].fill = indigo_section_fill
     ws2[f"A{curr_row}"].alignment = align_left
     ws2.row_dimensions[curr_row].height = 22
     curr_row += 1
 
-    headers_vif = ["No", "Sektor PDRB (Subset Inti)", "Variance Inflation Factor (VIF)", "Tolerance (1/VIF)", "Status Evaluasi"]
+    # Tabel 1: VIF Sektor PDRB
+    headers_vif = ["No", "Sektor PDRB (Subset 6 Sektor Inti)", "Variance Inflation Factor (VIF)", "Tolerance (1/VIF)", "Status Evaluasi"]
     for c_idx, h in enumerate(headers_vif, 1):
         cell = ws2.cell(row=curr_row, column=c_idx, value=h)
         cell.font = header_font
@@ -2071,10 +2074,10 @@ def generate_full_excel_report(
     mat_labels = inter_mat.get("labels", [])
     mat_vals = inter_mat.get("matrix", [])
     k_len = len(mat_labels)
-    end_col_letter = get_column_letter(max(k_len + 1, 5))
+    end_col_letter = get_column_letter(max(k_len + 1, 8))
 
     ws2.merge_cells(f"A{curr_row}:{end_col_letter}{curr_row}")
-    ws2[f"A{curr_row}"] = "TABEL 2: MATRIKS KORELASI ANTAR-SEKTOR PDRB (Rx) [k x k]"
+    ws2[f"A{curr_row}"] = "TABEL 2: MATRIKS KORELASI ANTAR-SEKTOR PDRB (Rx) [k × k]"
     ws2[f"A{curr_row}"].font = section_font
     ws2[f"A{curr_row}"].fill = indigo_section_fill
     ws2[f"A{curr_row}"].alignment = align_left
@@ -2115,20 +2118,135 @@ def generate_full_excel_report(
         ws2.row_dimensions[curr_row].height = 18
         curr_row += 1
 
-    # Tabel 3: Multikolinearitas Transportasi
+    # -------------------------------------------------------------------------
+    # BAGIAN B: KORELASI SILANG PDRB × TRANSPORTASI (X × Y) & REKOMENDASI TARGET OPTIMAL
+    # -------------------------------------------------------------------------
     curr_row += 1
-    trans_multi = multi_res.get("transport_multicollinearity", {})
-    t_labels = trans_multi.get("labels", ["Penumpang", "Bagasi", "Barang"])
-    t_mat = trans_multi.get("correlation_matrix", [])
-    t_vifs = trans_multi.get("vif_results", [])
-
-    ws2.merge_cells(f"A{curr_row}:E{curr_row}")
-    ws2[f"A{curr_row}"] = "TABEL 3: MULTIKOLINEARITAS ANTAR-INDIKATOR TRANSPORTASI (RT) & VIF"
+    ws2.merge_cells(f"A{curr_row}:H{curr_row}")
+    ws2[f"A{curr_row}"] = "BAGIAN B: KORELASI SILANG PDRB × TRANSPORTASI (X × Y) & REKOMENDASI TARGET OPTIMAL"
     ws2[f"A{curr_row}"].font = section_font
-    ws2[f"A{curr_row}"].fill = indigo_section_fill
+    ws2[f"A{curr_row}"].fill = sky_section_fill
     ws2[f"A{curr_row}"].alignment = align_left
     ws2.row_dimensions[curr_row].height = 22
     curr_row += 1
+
+    # Tabel 3: Korelasi Silang & Rekomendasi Target Y
+    headers_cross = [
+        "No", "Sektor PDRB", "r Penumpang", "r Bagasi", "r Barang",
+        "Target Terkuat (Y*)", "Korelasi Maksimum (|r|)", "p-value Target"
+    ]
+    for c_idx, h in enumerate(headers_cross, 1):
+        cell = ws2.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws2.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    cross_data = multi_res.get("cross_transport_matrix", {})
+    cross_sec_labels = cross_data.get("sector_labels", [])
+    cross_mat = cross_data.get("matrix", [])
+    strongest_targets = cross_data.get("strongest_targets", [])
+
+    for idx, sec_name in enumerate(cross_sec_labels, 1):
+        i_0 = idx - 1
+        rp = cross_mat[i_0][0] if i_0 < len(cross_mat) and len(cross_mat[i_0]) > 0 else 0.0
+        rbag = cross_mat[i_0][1] if i_0 < len(cross_mat) and len(cross_mat[i_0]) > 1 else 0.0
+        rbar = cross_mat[i_0][2] if i_0 < len(cross_mat) and len(cross_mat[i_0]) > 2 else 0.0
+
+        st_obj = strongest_targets[i_0] if i_0 < len(strongest_targets) else {}
+        best_target = st_obj.get("best_target", "Penumpang")
+        best_r = st_obj.get("r", max(abs(rp), abs(rbag), abs(rbar)))
+        best_p = st_obj.get("p", 0.0)
+
+        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
+        row_vals = [idx, sec_name, rp, rbag, rbar, best_target, best_r, best_p]
+
+        for c_idx, v in enumerate(row_vals, 1):
+            cell = ws2.cell(row=curr_row, column=c_idx, value=v)
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+            if c_idx == 1:
+                cell.alignment = align_center
+            elif c_idx == 2:
+                cell.alignment = align_left
+            elif c_idx in [3, 4, 5, 7, 8]:
+                cell.alignment = align_right
+                cell.number_format = "0.0000"
+            elif c_idx == 6:
+                cell.alignment = align_center
+                cell.font = data_bold_font
+
+        ws2.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    # -------------------------------------------------------------------------
+    # BAGIAN C: MULTIKOLINEARITAS ANTAR-INDIKATOR TRANSPORTASI (Y × Y)
+    # -------------------------------------------------------------------------
+    curr_row += 1
+    trans_multi = multi_res.get("transport_multicollinearity", {})
+    t_cond = trans_multi.get("condition_number", 1.0)
+    t_has_multi = trans_multi.get("has_multicollinearity", False)
+    t_status_str = "Terindikasi Multiko Transport" if t_has_multi else "Bebas Multiko (Aman Digabung Simultan)"
+
+    ws2.merge_cells(f"A{curr_row}:H{curr_row}")
+    ws2[f"A{curr_row}"] = f"BAGIAN C: MULTIKOLINEARITAS ANTAR-INDIKATOR TRANSPORTASI (Y × Y) | Condition Number: {t_cond:.2f} ({t_status_str})"
+    ws2[f"A{curr_row}"].font = section_font
+    ws2[f"A{curr_row}"].fill = amber_section_fill
+    ws2[f"A{curr_row}"].alignment = align_left
+    ws2.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    # Tabel 4: Diagnostik VIF Indikator Transportasi
+    headers_tvif = ["No", "Indikator Transportasi", "Variance Inflation Factor (VIF)", "Tolerance (1/VIF)", "Status Evaluasi"]
+    for c_idx, h in enumerate(headers_tvif, 1):
+        cell = ws2.cell(row=curr_row, column=c_idx, value=h)
+        cell.font = header_font
+        cell.fill = navy_header_fill
+        cell.alignment = align_center
+        cell.border = header_border
+    ws2.row_dimensions[curr_row].height = 24
+    curr_row += 1
+
+    t_vifs = trans_multi.get("vif_results", [])
+    for idx, tv in enumerate(t_vifs, 1):
+        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
+        c1 = ws2.cell(row=curr_row, column=1, value=idx)
+        c2 = ws2.cell(row=curr_row, column=2, value=tv.get("indicator", "-"))
+        c3 = ws2.cell(row=curr_row, column=3, value=tv.get("vif", 1.0))
+        c4 = ws2.cell(row=curr_row, column=4, value=tv.get("tolerance", 1.0))
+        c5 = ws2.cell(row=curr_row, column=5, value=tv.get("status", "Bebas Multiko (< 5)"))
+
+        c1.alignment = align_center
+        c2.alignment = align_left
+        c3.alignment = align_right
+        c3.number_format = "0.00"
+        c4.alignment = align_right
+        c4.number_format = "0.0000"
+        c5.alignment = align_center
+
+        for cell in [c1, c2, c3, c4, c5]:
+            cell.font = data_font
+            cell.fill = fill_row
+            cell.border = thin_border
+        ws2.row_dimensions[curr_row].height = 18
+        curr_row += 1
+
+    # Tabel 5: Matriks Korelasi Antar-Indikator Transportasi (RT) [3 × 3]
+    curr_row += 1
+    ws2.merge_cells(f"A{curr_row}:D{curr_row}")
+    ws2[f"A{curr_row}"] = "TABEL 5: MATRIKS KORELASI ANTAR-INDIKATOR TRANSPORTASI (RT) [3 × 3]"
+    ws2[f"A{curr_row}"].font = section_font
+    ws2[f"A{curr_row}"].fill = amber_section_fill
+    ws2[f"A{curr_row}"].alignment = align_left
+    ws2.row_dimensions[curr_row].height = 22
+    curr_row += 1
+
+    t_mat_obj = trans_multi.get("matrix", {})
+    t_labels = t_mat_obj.get("labels", ["Penumpang", "Bagasi", "Barang"])
+    t_mat = t_mat_obj.get("matrix", [])
 
     cell_t0 = ws2.cell(row=curr_row, column=1, value="Moda Transportasi")
     cell_t0.font = header_font
@@ -2154,47 +2272,13 @@ def generate_full_excel_report(
         cell_tr.alignment = align_left
 
         for j in range(len(t_labels)):
-            val = t_mat[i][j] if i < len(t_mat) and j < len(t_mat[i]) else 0.0
+            val = t_mat[i][j] if i < len(t_mat) and j < len(t_mat[i]) else (1.0 if i == j else 0.0)
             cell_tv = ws2.cell(row=curr_row, column=j + 2, value=val)
             cell_tv.font = data_font
             cell_tv.fill = fill_row
             cell_tv.border = thin_border
             cell_tv.alignment = align_right
             cell_tv.number_format = "0.0000"
-        ws2.row_dimensions[curr_row].height = 18
-        curr_row += 1
-
-    curr_row += 1
-    headers_tvif = ["No", "Indikator Transportasi", "VIF Transport", "Tolerance", "Status Multikolinearitas"]
-    for c_idx, h in enumerate(headers_tvif, 1):
-        cell = ws2.cell(row=curr_row, column=c_idx, value=h)
-        cell.font = header_font
-        cell.fill = navy_header_fill
-        cell.alignment = align_center
-        cell.border = header_border
-    ws2.row_dimensions[curr_row].height = 24
-    curr_row += 1
-
-    for idx, tv in enumerate(t_vifs, 1):
-        fill_row = zebra_light_fill if idx % 2 == 0 else white_fill
-        c1 = ws2.cell(row=curr_row, column=1, value=idx)
-        c2 = ws2.cell(row=curr_row, column=2, value=tv.get("indicator", "-"))
-        c3 = ws2.cell(row=curr_row, column=3, value=tv.get("vif", 1.0))
-        c4 = ws2.cell(row=curr_row, column=4, value=tv.get("tolerance", 1.0))
-        c5 = ws2.cell(row=curr_row, column=5, value=tv.get("status", "Aman"))
-
-        c1.alignment = align_center
-        c2.alignment = align_left
-        c3.alignment = align_right
-        c3.number_format = "0.00"
-        c4.alignment = align_right
-        c4.number_format = "0.0000"
-        c5.alignment = align_center
-
-        for cell in [c1, c2, c3, c4, c5]:
-            cell.font = data_font
-            cell.fill = fill_row
-            cell.border = thin_border
         ws2.row_dimensions[curr_row].height = 18
         curr_row += 1
 
