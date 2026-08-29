@@ -22,7 +22,8 @@ class TestKalimantanIntegration(unittest.TestCase):
             "kalimantan_selatan",
             "kalimantan_timur",
             "kalimantan_barat",
-            "kalimantan_tengah"
+            "kalimantan_tengah",
+            "kalimantan_utara"
         ]
 
     def test_manifest_includes_kalimantan_provinces(self):

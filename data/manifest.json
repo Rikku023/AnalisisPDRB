@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-24T17:09:17.110768",
+  "generated_at": "2026-08-29T09:25:24.781874",
   "provinces": {
     "gorontalo": {
       "name": "Gorontalo",
@@ -1143,6 +1143,78 @@
         },
         "2024": {
           "source_file": "Kep_Bangka_Belitung_2024.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        }
+      }
+    },
+    "kalimantan_utara": {
+      "name": "Kalimantan Utara",
+      "airports": [
+        "Juwata (Tarakan)",
+        "Tanjung Harapan (Tanjung Selor/Bulungan)",
+        "Kolonel RA Bessing (Malinau)",
+        "Nunukan (Nunukan)",
+        "Yuvai Semaring (Long Bawan/Krayan)"
+      ],
+      "years": {
+        "2020": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2021": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2022": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2023": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
+          "sheets": [
+            "raw",
+            "penumpang",
+            "bagasi",
+            "barang",
+            "pdrb_triwulan",
+            "pdrb_correl_lu",
+            "pdrb_correl_peng"
+          ]
+        },
+        "2024": {
+          "source_file": "ANALISIS TRANSPORTASI UDARA.xlsx",
           "sheets": [
             "raw",
             "penumpang",
